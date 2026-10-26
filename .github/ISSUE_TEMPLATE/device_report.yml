@@ -1,0 +1,21 @@
+name: Device report
+description: Tell us how the island works on your phone
+labels: [device-report]
+body:
+  - type: input
+    id: phone
+    attributes: { label: Phone model, placeholder: "e.g. Samsung Galaxy A55" }
+    validations: { required: true }
+  - type: input
+    id: android
+    attributes: { label: Android version & skin, placeholder: "e.g. Android 15, One UI 7" }
+    validations: { required: true }
+  - type: dropdown
+    id: works
+    attributes:
+      label: Does it work?
+      options: [Everything works, Mostly works, Partly works, Doesn't work]
+    validations: { required: true }
+  - type: textarea
+    id: details
+    attributes: { label: What works / what doesn't, description: Attach a screenshot of the Diagnostics card (bottom of the app) }

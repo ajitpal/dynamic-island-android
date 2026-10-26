@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Dynamic Island</string>
+    <string name="accessibility_desc">Draws the Dynamic Island around your front camera and shows live activities (music, calls, timers, messages, downloads). It only listens for which app is on screen so it can hide that app\'s own activity. It does not read or collect screen content.</string>
+</resources>

@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.Island" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#0A84FF</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+    <!-- Used for views inside the overlay window (always dark). -->
+    <style name="Theme.Island.Overlay" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#0A84FF</item>
+        <item name="colorControlActivated">#0A84FF</item>
+    </style>
+</resources>
