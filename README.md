@@ -1,0 +1,113 @@
+<div align="center">
+
+# Dynamic Island for Android
+
+**An open-source, privacy-first Dynamic Island for any Android 12+ phone with a punch-hole or notch.**
+Music, calls, timers, message previews with quick reply, live scores, deliveries, payments, charging and more.
+At rest it shrinks into your camera hole and disappears.
+
+[**Website**](https://ajitpal.github.io/dynamic-island-android/) ·
+[**Download APK**](https://github.com/ajitpal/dynamic-island-android/releases/latest) ·
+[Install guide](docs/INSTALL.md) ·
+[Features](docs/FEATURES.md) ·
+[How it works](docs/ARCHITECTURE.md) ·
+[Privacy](PRIVACY.md)
+
+![Android 12+](https://img.shields.io/badge/Android-12%2B-3DDC84?logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white)
+![No internet permission](https://img.shields.io/badge/Internet%20permission-none-success)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue)
+
+<img src="docs/screenshots/01-resting.webp" width="19%" alt="Invisible at rest"/> <img src="docs/screenshots/02-music.webp" width="19%" alt="Now playing"/> <img src="docs/screenshots/04-message-preview.webp" width="19%" alt="Message preview"/> <img src="docs/screenshots/06-call.webp" width="19%" alt="Incoming call"/> <img src="docs/screenshots/09-live-updates.webp" width="19%" alt="Live updates"/>
+
+<sub>Screenshots are illustrations of the app's layouts. Real-device captures from contributors are welcome; see <a href="docs/screenshots/README.md">docs/screenshots</a>.</sub>
+
+</div>
+
+---
+
+## Why this exists
+
+The iPhone's Dynamic Island is a great idea: a small, living glimpse of what your phone is doing. Pixel phones have *Live Updates* chips, and some Android skins have their own islands, but most Android phones get nothing, or an app full of ads that needs network access.
+
+This app aims to be the clean alternative:
+- **Open source** (MIT): read every line.
+- **No internet permission**, no ads, no analytics. Nothing leaves your phone.
+- Works across brands: Xiaomi / Redmi / POCO, Samsung, OnePlus, OPPO, realme, vivo, iQOO, Motorola, Nothing, Pixel and more.
+
+## Features at a glance
+
+| | |
+|---|---|
+| 🫥 **Invisible at rest** | Shrinks to exactly your camera hole, with a calibrate mode for a pixel-perfect fit |
+| 🎵 **Now playing** | Any music or video app: artwork colour, animated bars, seek progress, play/pause/skip |
+| 💬 **Preview, then decide** | Tap to read the full notification in the island; **quick reply** inline, or open the app |
+| 📞 **Calls** | Answer or decline in the island (phone, WhatsApp, Telegram…), then a live call timer |
+| ⏱ **Timers & stopwatch** | From your Clock app or the island's own tools |
+| 🧭 **Navigation · 📦 deliveries · 🚕 rides · 🏏 live scores** | Progress and live info from any app (Android 16 *Live Updates* supported) |
+| 💳 **Payments** | Confirmation glimpse for Google Wallet and UPI apps (GPay, PhonePe, Paytm, BHIM, CRED) |
+| ⚡ **System glimpses** | Charging, low battery, silent/vibrate, DND, earbuds + battery, airplane mode, offline / back online, hotspot, NFC, unlock, flashlight |
+| 🔴 **Recording** | Screen and voice recording with a red REC timer · camera/mic in-use dots |
+| 🧰 **Island tools** | Long-press the empty island: flashlight, 1/5-min timer, stopwatch, screenshot, pin a note |
+| 🎨 **Make it yours** | 7 themes (iPhone Black, Glass, Light, Rose, Ocean, Lavender, Graphite), width, height, roundness, opacity, glow outline, animation speed |
+| 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
+
+Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.md)**.
+
+### Gestures
+| Gesture | Action |
+|---|---|
+| Tap | Preview the full content (or open the app; set this in Behaviour) |
+| Long-press / swipe down | Expand · music controls · on the empty island: **tools** |
+| Swipe up or sideways | Shrink back to the pill (the activity keeps running) |
+| Tap the side bubble | Switch between two running activities |
+| Tap the empty pill | Bring back shrunk activities |
+
+## Install (2 minutes)
+
+1. Download the latest **APK** from [Releases](https://github.com/ajitpal/dynamic-island-android/releases/latest) and open it. If Play Protect warns about an unknown developer, tap *More details → Install anyway*.
+2. **Android 13+:** Android blocks notification and accessibility access for apps installed from a file. Try the toggle once, then go to *App info → ⋮ → Allow restricted settings*.
+3. In the app, turn on **Notification access** and the **Accessibility service**.
+4. Follow **"Keep it running"** for your phone brand (the app detects it).
+5. Tap the **Try it** chips to see every state.
+
+Step-by-step guides per brand, plus an ADB alternative: **[docs/INSTALL.md](docs/INSTALL.md)**.
+
+## Permissions, honestly
+
+| Permission | Why |
+|---|---|
+| Notification access | Read notifications and media sessions **on the device** to show them in the island, reply and control playback |
+| Accessibility service | Draw the island **above the status bar and lock screen**, and know which app is open (to hide its own activity). **No screen content is read** (`canRetrieveWindowContent=false`). |
+| Bluetooth (optional) | Show your earbuds' name |
+| Vibrate, network state, Wi-Fi state | Haptics; "offline / back online" and hotspot glimpses |
+| **Internet** | **Not requested.** The app can't send anything anywhere. |
+
+See [PRIVACY.md](PRIVACY.md).
+
+## Build from source
+
+```bash
+git clone https://github.com/ajitpal/dynamic-island-android.git
+cd dynamic-island-android
+./gradlew assembleDebug            # → app/build/outputs/apk/debug/app-debug.apk
+```
+Requires JDK 17+ and the Android SDK (or just open the folder in Android Studio).
+Release signing is optional: create `keystore.properties` (git-ignored) with `storeFile`, `storePassword`, `keyAlias` and `keyPassword`.
+Without it, release builds fall back to the debug key.
+
+Stack: Kotlin 2.0 · AGP 8.7 · minSdk 31 / targetSdk 35 · coroutines · Material 3 · no Compose · ~2.5 MB APK.
+
+## Contributing
+
+Ideas, bug reports and device reports are very welcome. The most useful thing you can send is a **Diagnostics** screenshot from the bottom of the app's screen together with your phone model. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Good first issues: real-device screenshots, translations, three simultaneous activities, a home-screen widget.
+
+## How it was built
+
+This app was designed and built by [Ajit Kumar Pal](https://github.com/ajitpal) in a few short iterations with an AI pair-programmer (Claude), and tested on a real POCO M8. The story, including what went wrong and how each problem was fixed, is in the accompanying blog post.
+
+## License
+
+[MIT](LICENSE) © 2026 Ajit Kumar Pal. "Dynamic Island" is used descriptively; this project is not affiliated with Apple, Google or any phone maker.

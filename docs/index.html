@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dynamic Island for Android: open source, private</title>
+<meta name="description" content="An open-source, privacy-first Dynamic Island for any Android 12+ phone. Music, calls, timers, message previews with quick reply, live scores, payments and more. Invisible at rest.">
+<meta property="og:title" content="Dynamic Island for Android">
+<meta property="og:description" content="Open-source, no internet permission, works on Xiaomi, Samsung, OnePlus, vivo, Pixel and more.">
+<meta property="og:image" content="https://ajitpal.github.io/dynamic-island-android/screenshots/04-message-preview.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07080b;--panel:#11131a;--line:#1f2330;--fg:#f4f5f8;--mut:#9aa0ae;--acc:#0a84ff;--grn:#34c759;--pink:#ff375f}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:0;z-index:10;background:rgba(7,8,11,.8);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;text-decoration:none}
+.logo{width:34px;height:14px;border-radius:7px;background:#000;box-shadow:0 0 0 1px #2c2f3a;position:relative}
+.logo:after{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:#1c2230;top:4px;left:14px}
+nav .links{display:flex;gap:22px;font-size:14px;color:var(--mut)}
+nav .links a{text-decoration:none}nav .links a:hover{color:var(--fg)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;font-weight:700;text-decoration:none;font-size:15px;border:1px solid var(--line)}
+.btn.pri{background:var(--fg);color:#000;border-color:var(--fg)}
+.btn.sm{padding:8px 14px;font-size:13px}
+header{padding:80px 0 40px;text-align:center;overflow:hidden}
+h1{font-size:clamp(36px,6vw,64px);line-height:1.05;letter-spacing:-.03em;font-weight:800}
+h1 span{background:linear-gradient(90deg,#7aa8ff,#c08bff 50%,#ff7aa0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{color:var(--mut);font-size:clamp(16px,2.2vw,20px);max-width:680px;margin:18px auto 30px}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px;font-size:13px;color:var(--mut)}
+.badges span{border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+/* live demo */
+.stage{margin:56px auto 0;width:min(380px,100%);aspect-ratio:380/240;border-radius:36px 36px 0 0;background:linear-gradient(160deg,#3a2f7a,#1b4a8c 50%,#0f7c8c);position:relative;box-shadow:0 0 0 10px #000,0 0 0 11px #2a2d35;overflow:hidden}
+.cam{position:absolute;top:14px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#000;box-shadow:inset 0 0 0 3px #111,inset 0 0 0 5px #1d2433;z-index:3}
+.isl{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#000;color:#fff;width:14px;height:14px;border-radius:14px;z-index:2;overflow:hidden;transition:width .55s cubic-bezier(.34,1.56,.64,1),height .55s cubic-bezier(.34,1.56,.64,1),border-radius .55s,top .55s}
+.isl .c{position:absolute;inset:0;opacity:0;transition:opacity .25s;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:13px;font-weight:700}
+.isl.compact{width:170px;height:30px;top:6px}
+.isl.expanded{width:92%;height:136px;top:6px;border-radius:28px}
+.isl .x{flex-direction:column;align-items:stretch;justify-content:flex-start;padding:40px 16px 0}
+.dot{width:20px;height:20px;border-radius:6px}
+.eq{display:flex;gap:2.5px;align-items:center;height:14px}.eq i{width:3px;border-radius:2px;background:var(--pink);animation:eq 1s infinite ease-in-out}
+.eq i:nth-child(2){animation-delay:.2s}.eq i:nth-child(3){animation-delay:.4s}.eq i:nth-child(4){animation-delay:.1s}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
+.msg{display:flex;gap:10px;align-items:center;text-align:left}.msg b{display:block;font-size:14px}.msg small{color:#aeaeb2;font-weight:400;font-size:12.5px}
+.av{width:40px;height:40px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;flex:none}
+.acts{display:flex;gap:8px;margin-top:10px}.acts span{flex:1;background:#2c2c2e;border-radius:16px;padding:6px 0;text-align:center;font-size:12.5px}
+.caption{text-align:center;color:var(--mut);font-size:13px;margin-top:14px;min-height:20px}
+section{padding:80px 0;border-top:1px solid var(--line)}
+h2{font-size:clamp(28px,4vw,40px);letter-spacing:-.02em;font-weight:800;margin-bottom:10px}
+.sec-lead{color:var(--mut);max-width:640px;margin-bottom:36px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
+.card .ic{font-size:24px}.card h3{font-size:16px;margin:8px 0 4px}.card p{color:var(--mut);font-size:14px}
+.gallery{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:12px}
+.gallery img{height:460px;border-radius:28px;scroll-snap-align:start;flex:none}
+.note{color:var(--mut);font-size:12.5px;margin-top:8px}
+ol.steps{counter-reset:s;list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+ol.steps li{min-width:0;overflow-wrap:anywhere;counter-increment:s;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px 16px 60px;position:relative}
+ol.steps li:before{content:counter(s);position:absolute;left:16px;top:14px;width:30px;height:30px;border-radius:50%;background:var(--fg);color:#000;font-weight:800;display:flex;align-items:center;justify-content:center}
+code{background:#1a1d26;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px}
+pre{background:#0d0f15;border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto;font-size:13px;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:500}
+.tw{overflow-x:auto}
+details{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:700}
+details p{color:var(--mut);margin-top:8px;font-size:14px}
+footer{border-top:1px solid var(--line);padding:40px 0;color:var(--mut);font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+@media (max-width:720px){nav .links{display:none}.gallery img{height:380px}section{padding:60px 0}}
+@media (prefers-reduced-motion:reduce){.isl,.isl .c{transition:none}.eq i{animation:none;height:10px}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="#"><span class="logo"></span>Dynamic Island</a>
+  <div class="links"><a href="#features">Features</a><a href="#screens">Screens</a><a href="#install">Install</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a></div>
+  <a class="btn sm" href="https://github.com/ajitpal/dynamic-island-android">★ GitHub</a>
+</div></nav>
+
+<header><div class="wrap">
+  <h1>The <span>Dynamic Island</span><br>for every Android phone.</h1>
+  <p class="lead">Music, calls, timers, message previews with quick reply, live scores, deliveries and payments, right around your camera. At rest it shrinks into the camera hole and disappears. Open source, with no internet permission.</p>
+  <div class="cta">
+    <a class="btn pri" href="https://github.com/ajitpal/dynamic-island-android/releases/latest">⬇ Download APK</a>
+    <a class="btn" href="https://github.com/ajitpal/dynamic-island-android">View source</a>
+  </div>
+  <div class="badges"><span>Android 12+</span><span>~2.5 MB</span><span>No ads · no tracking</span><span>MIT licensed</span></div>
+
+  <div class="stage" aria-label="Animated demo of the island"><div class="cam"></div><div class="isl" id="isl">
+    <div class="c" id="c-music"><span class="dot" style="background:linear-gradient(135deg,#ff375f,#ff9f0a)"></span><span class="eq"><i></i><i></i><i></i><i></i></span></div>
+    <div class="c" id="c-charge"><span style="color:#34c759">⚡</span><span style="color:#34c759">64%</span></div>
+    <div class="c x" id="c-msg"><div class="msg"><span class="av">P</span><span><b>Priya</b><small>Dinner at 7? I booked the table 🍕</small></span></div><div class="acts"><span>Reply</span><span>Mark read</span><span>Open</span></div></div>
+  </div></div>
+  <p class="caption" id="cap">Invisible at rest</p>
+</div></header>
+
+<section id="features"><div class="wrap">
+  <h2>Everything the iPhone island does, plus more.</h2>
+  <p class="sec-lead">Built from Apple's Dynamic Island and Android 16 Live Updates, with features neither has.</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🫥</div><h3>Invisible at rest</h3><p>Shrinks to exactly your camera hole. A calibrate mode helps you fit it pixel-perfect.</p></div>
+    <div class="card"><div class="ic">💬</div><h3>Preview, then decide</h3><p>Tap to read the whole notification in the island, reply inline, or open the app.</p></div>
+    <div class="card"><div class="ic">🎵</div><h3>Now playing</h3><p>Any music or video app: artwork colour, animated bars, progress, play / pause / skip.</p></div>
+    <div class="card"><div class="ic">📞</div><h3>Calls</h3><p>Answer or decline phone, WhatsApp and Telegram calls, then see a live call timer.</p></div>
+    <div class="card"><div class="ic">🏏</div><h3>Live updates</h3><p>Scores, rides, food and grocery delivery, downloads, navigation. Supports Android 16 Live Updates.</p></div>
+    <div class="card"><div class="ic">💳</div><h3>Payments</h3><p>A confirmation glimpse for Google Wallet and UPI apps: GPay, PhonePe, Paytm, BHIM, CRED.</p></div>
+    <div class="card"><div class="ic">⚡</div><h3>System glimpses</h3><p>Charging, low battery, silent, DND, earbuds + battery, offline / back online, hotspot, NFC, unlock.</p></div>
+    <div class="card"><div class="ic">🔴</div><h3>Recording & privacy</h3><p>Screen / voice recording timer, plus camera and microphone in-use dots.</p></div>
+    <div class="card"><div class="ic">🧰</div><h3>Island tools</h3><p>Long-press the empty island: flashlight, timers, stopwatch, screenshot, pin a note.</p></div>
+    <div class="card"><div class="ic">🪄</div><h3>Two at once</h3><p>The main activity sits in the pill and the second in a bubble. Tap to swap.</p></div>
+    <div class="card"><div class="ic">🎨</div><h3>Make it yours</h3><p>7 themes, width, height, roundness, opacity, glow outline, animation speed.</p></div>
+    <div class="card"><div class="ic">🙈</div><h3>Polite by design</h3><p>Hides message text on the lock screen and an app's activity while you're in it. Per-app on/off.</p></div>
+  </div>
+</div></section>
+
+<section id="screens"><div class="wrap">
+  <h2>A look inside</h2>
+  <p class="sec-lead">Swipe through the states the island can take.</p>
+  <div class="gallery">
+    <img src="screenshots/01-resting.webp" alt="Invisible at rest" loading="lazy">
+    <img src="screenshots/02-music.webp" alt="Now playing" loading="lazy">
+    <img src="screenshots/03-music-controls.webp" alt="Music controls" loading="lazy">
+    <img src="screenshots/04-message-preview.webp" alt="Message preview" loading="lazy">
+    <img src="screenshots/05-quick-reply.webp" alt="Quick reply" loading="lazy">
+    <img src="screenshots/06-call.webp" alt="Incoming call" loading="lazy">
+    <img src="screenshots/07-split.webp" alt="Two activities" loading="lazy">
+    <img src="screenshots/08-tools.webp" alt="Island tools" loading="lazy">
+    <img src="screenshots/09-live-updates.webp" alt="Live updates" loading="lazy">
+    <img src="screenshots/10-themes.webp" alt="Themes" loading="lazy">
+  </div>
+  <p class="note">Illustrations of the app's real layouts. Real-device screenshots from the community are welcome.</p>
+</div></section>
+
+<section id="install"><div class="wrap">
+  <h2>Install in two minutes</h2>
+  <p class="sec-lead">Works on Xiaomi / Redmi / POCO, Samsung, OnePlus, OPPO, realme, vivo, iQOO, Motorola, Nothing, Pixel and other Android 12+ phones.</p>
+  <ol class="steps">
+    <li><b>Download the APK</b> from <a href="https://github.com/ajitpal/dynamic-island-android/releases/latest">Releases</a> and open it. If Play Protect warns about an unknown developer, tap <i>More details → Install anyway</i>.</li>
+    <li><b>Allow restricted settings</b> (Android 13+): try the Notification-access toggle once, then go to <i>App info → ⋮ → Allow restricted settings</i>.
+      <pre>adb shell appops set com.ajit.dynamicisland ACCESS_RESTRICTED_SETTINGS allow</pre><span class="note">No menu option? Use the command above from a computer.</span></li>
+    <li><b>Turn on</b> Notification access and the Accessibility service from the app's first screen.</li>
+    <li><b>Keep it running:</b> the app detects your brand and shows the right battery and autostart switches.</li>
+    <li><b>Calibrate</b> (optional): turn on Calibrate, then line the red circle up with your camera. Done.</li>
+  </ol>
+  <p class="note" style="margin-top:14px">Detailed per-brand guide: <a href="https://github.com/ajitpal/dynamic-island-android/blob/main/docs/INSTALL.md">INSTALL.md</a></p>
+</div></section>
+
+<section id="privacy"><div class="wrap">
+  <h2>Private by construction</h2>
+  <p class="sec-lead">The app doesn't even request internet access, so it can't send anything anywhere.</p>
+  <div class="tw"><table>
+    <tr><th>Permission</th><th>Used for</th></tr>
+    <tr><td>Notification access</td><td>Showing notifications and media in the island, quick reply, playback control: on-device only</td></tr>
+    <tr><td>Accessibility service</td><td>Drawing over the status bar and lock screen; knowing which app is open. Screen content is <b>not</b> readable (<code>canRetrieveWindowContent=false</code>).</td></tr>
+    <tr><td>Bluetooth (optional)</td><td>Your earbuds' name</td></tr>
+    <tr><td>Internet</td><td><b>Not requested</b></td></tr>
+  </table></div>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <h2>FAQ</h2>
+  <details><summary>Why isn't it on the Play Store?</summary><p>Not yet. The project is new and open source. Install the signed APK from GitHub Releases or build it yourself.</p></details>
+  <details><summary>Why does it need Accessibility?</summary><p>It's the only way for a normal app to draw above the status bar and lock screen. The service listens only to "which window is on screen" events and can't read screen content.</p></details>
+  <details><summary>Does it drain the battery?</summary><p>It's event-driven: it reacts to notifications and system broadcasts, and animates only while something changes. Nothing polls in the background.</p></details>
+  <details><summary>My phone has a notch or a corner camera.</summary><p>It still works. Use the width/height and offset sliders to place it where you like.</p></details>
+  <details><summary>It stops working after a while.</summary><p>Your phone's battery saver is stopping it. Follow the brand steps in the app (or <a href="https://dontkillmyapp.com">dontkillmyapp.com</a>).</p></details>
+</div></section>
+
+<footer><div class="wrap">
+  <span>© 2026 <a href="https://github.com/ajitpal">Ajit Kumar Pal</a> · MIT License · Not affiliated with Apple or Google.</span>
+  <span><a href="https://github.com/ajitpal/dynamic-island-android">GitHub</a> · <a href="https://github.com/ajitpal/dynamic-island-android/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/ajitpal/dynamic-island-android/issues">Report an issue</a></span>
+</div></footer>
+
+<script>
+(() => {
+  const isl = document.getElementById('isl'), cap = document.getElementById('cap');
+  const show = id => document.querySelectorAll('.isl .c').forEach(c => c.style.opacity = c.id === id ? 1 : 0);
+  const steps = [
+    ['', '', 'Invisible at rest', 1800],
+    ['compact', 'c-music', 'Now playing', 2600],
+    ['', '', '', 700],
+    ['expanded', 'c-msg', 'New message: preview & reply', 3200],
+    ['', '', '', 700],
+    ['compact', 'c-charge', 'Charging', 2200],
+  ];
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { isl.className = 'isl expanded'; show('c-msg'); cap.textContent = 'New message: preview & reply'; return; }
+  let i = 0;
+  const tick = () => {
+    const [cls, id, text, ms] = steps[i++ % steps.length];
+    show(''); isl.className = 'isl ' + cls;
+    setTimeout(() => show(id), 260);
+    if (text) cap.textContent = text;
+    setTimeout(tick, ms);
+  };
+  tick();
+})();
+</script>
+</body>
+</html>
