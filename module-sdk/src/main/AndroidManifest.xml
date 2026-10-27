@@ -3,6 +3,8 @@
     <!-- Lets a module see the Dynamic Island app (to verify it). -->
     <queries>
         <package android:name="com.ajit.dynamicisland" />
+        <!-- The on-device AI Engine module (verified by certificate before use). -->
+        <package android:name="com.ajit.dynamicisland.module.ai" />
     </queries>
     <!-- Lets the Dynamic Island app recognise this module as coming from an approved developer
          (granted automatically when the module's signing certificate is on the app's allow-list). -->

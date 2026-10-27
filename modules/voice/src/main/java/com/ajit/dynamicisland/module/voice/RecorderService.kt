@@ -23,6 +23,7 @@ import ai.moonshine.voice.Transcriber
 import com.ajit.dynamicisland.sdk.ActionStyle
 import com.ajit.dynamicisland.sdk.IslandCard
 import com.ajit.dynamicisland.sdk.IslandModuleService
+import com.ajit.dynamicisland.sdk.ai.AiClient
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -34,7 +35,7 @@ import java.util.Locale
  */
 class RecorderService : Service() {
 
-    enum class State { IDLE, STARTING, RECORDING, PAUSED, SAVING }
+    enum class State { IDLE, STARTING, RECORDING, PAUSED, SAVING, SUMMARIZING }
 
     companion object {
         private const val TAG = "VoiceRecorder"
@@ -42,12 +43,17 @@ class RecorderService : Service() {
         const val ACTION_STOP = "stop"
         const val ACTION_PAUSE = "pause"
         const val ACTION_RESUME = "resume"
+        const val ACTION_SUMMARIZE = "summarize"
+        const val ACTION_CANCEL_NOTES = "cancelNotes"
+        private const val EXTRA_ID = "id"
+        private const val EXTRA_TEMPLATE = "template"
         private const val CHANNEL = "recording"
         private const val NOTIF_ID = 7
         const val CARD_REC = "rec"
         const val CARD_SAVED = "saved"
         private const val RATE = 16_000
         private const val RED = 0xFFFF453A.toInt()
+        private const val PURPLE = 0xFF5E5CE6.toInt()
 
         @Volatile var instance: RecorderService? = null
             private set
@@ -56,6 +62,17 @@ class RecorderService : Service() {
         val state: State get() = instance?.st ?: State.IDLE
 
         fun start(ctx: Context) = ctx.startForegroundService(Intent(ctx, RecorderService::class.java).setAction(ACTION_START))
+        /** Write AI notes for a saved recording. Call from a visible screen. */
+        fun summarize(ctx: Context, id: String, t: Template) = ctx.startForegroundService(
+            Intent(ctx, RecorderService::class.java).setAction(ACTION_SUMMARIZE).putExtra(EXTRA_ID, id).putExtra(EXTRA_TEMPLATE, t.name))
+
+        // Progress of the notes being written (read by the UI).
+        @Volatile var notesFor: String? = null; private set
+        @Volatile var notesStatus: String = ""; private set
+        @Volatile var notesFraction: Float = 0f; private set
+        @Volatile var notesPreview: String = ""; private set
+        /** Last failure per recording id (cleared when a new attempt starts). */
+        val notesErrors = java.util.concurrent.ConcurrentHashMap<String, String>()
         fun command(ctx: Context, action: String) {
             instance?.handle(action) ?: Unit
         }
@@ -84,7 +101,13 @@ class RecorderService : Service() {
     override fun onCreate() { super.onCreate(); instance = this }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        handle(intent?.action ?: ACTION_START)
+        val action = intent?.action ?: ACTION_START
+        if (action == ACTION_SUMMARIZE) {
+            val rid = intent?.getStringExtra(EXTRA_ID)
+            val t = runCatching { Template.valueOf(intent?.getStringExtra(EXTRA_TEMPLATE)!!) }.getOrDefault(VoicePrefs.template(this))
+            if (st == State.IDLE && rid != null) beginNotes(rid, t)
+            else if (st == State.IDLE) stopSelf()
+        } else handle(action)
         return START_NOT_STICKY
     }
 
@@ -93,6 +116,7 @@ class RecorderService : Service() {
             ACTION_START -> if (st == State.IDLE) begin()
             ACTION_PAUSE -> if (st == State.RECORDING) { paused = true; st = State.PAUSED; changed(force = true) }
             ACTION_RESUME -> if (st == State.PAUSED) { paused = false; st = State.RECORDING; changed(force = true) }
+            ACTION_CANCEL_NOTES -> if (st == State.SUMMARIZING) { notesCancelled = true; notesStatus = "Cancelling…"; changed(force = true) }
             ACTION_STOP -> if (st == State.RECORDING || st == State.PAUSED || st == State.STARTING) { stopRequested = true; st = State.SAVING; changed(force = true) }
         }
     }
@@ -207,7 +231,13 @@ class RecorderService : Service() {
             }
             State.PAUSED -> b.title("Paused · ${Notes.clock(elapsedMs)}").text("Nothing is being recorded")
                 .action(ACTION_RESUME, "Resume", ActionStyle.POSITIVE).action(ACTION_STOP, "Stop", ActionStyle.NEGATIVE)
-            State.SAVING -> b.title("Saving notes…").text("Finishing the transcript")
+            State.SAVING -> b.title("Saving…").text("Finishing the transcript")
+            State.SUMMARIZING -> {
+                b.title("Writing notes · ${(notesFraction * 100).toInt()}%").text(notesStatus).icon(R.drawable.ic_spark).accent(PURPLE)
+                    .progress(notesFraction.coerceIn(0.02f, 1f)).style(com.ajit.dynamicisland.sdk.IslandContract.STYLE_PROGRESS)
+                    .action(ACTION_CANCEL_NOTES, "Cancel", ActionStyle.NEGATIVE)
+                notesFor?.let { b.tapActivity(TranscriptActivity::class.java, it) }
+            }
             State.IDLE -> { island.remove(CARD_REC); return }
         }
         island.post(b.build())
@@ -224,11 +254,15 @@ class RecorderService : Service() {
         st = State.IDLE
         val island = IslandModuleService.current?.island
         island?.remove(CARD_REC)
+        if (hasAudio && saved.isNotEmpty() && VoicePrefs.autoNotes(this) && AiClient.isTrusted(this)) {
+            listeners.toList().forEach { it() }
+            beginNotes(id, VoicePrefs.template(this)); return
+        }
         if (hasAudio && island != null) {
             val items = Notes.actionItems(saved).size
             val words = Notes.wordCount(saved)
             island.post(
-                IslandCard.Builder(this, CARD_SAVED).title("Meeting notes saved")
+                IslandCard.Builder(this, CARD_SAVED).title("Meeting saved")
                     .text("${Notes.clock(elapsedMs)} · $words words" + if (items > 0) " · $items possible action items" else "")
                     .icon(R.drawable.ic_notes).accent(0xFF30D158.toInt())
                     .tapActivity(TranscriptActivity::class.java, id)
@@ -253,6 +287,12 @@ class RecorderService : Service() {
         fun pi(action: String, code: Int) = PendingIntent.getService(this, code, Intent(this, RecorderService::class.java).setAction(action), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val paused = st == State.PAUSED
+        if (st == State.SUMMARIZING) return Notification.Builder(this, CHANNEL)
+            .setSmallIcon(R.drawable.ic_spark).setContentTitle("Writing meeting notes").setContentText(notesStatus)
+            .setProgress(100, (notesFraction * 100).toInt(), notesFraction <= 0f)
+            .setOngoing(true).setOnlyAlertOnce(true).setContentIntent(open)
+            .addAction(Notification.Action.Builder(null, "Cancel", pi(ACTION_CANCEL_NOTES, 3)).build())
+            .setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE).build()
         return Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_mic)
             .setContentTitle(if (paused) "Recording paused" else "Recording meeting")
@@ -263,6 +303,62 @@ class RecorderService : Service() {
             .addAction(Notification.Action.Builder(null, "Stop", pi(ACTION_STOP, 2)).build())
             .setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
+    }
+
+    // ---- AI notes (through the AI Engine module) ----
+
+    @Volatile private var notesCancelled = false
+
+    private fun beginNotes(rid: String, t: Template) {
+        val rec = Recordings.load(this, rid) ?: run { if (st == State.IDLE) stopSelf(); return }
+        createChannel()
+        st = State.SUMMARIZING; notesFor = rid; notesStatus = "Starting the AI Engine…"; notesFraction = 0f; notesPreview = ""; notesCancelled = false
+        notesErrors.remove(rid)
+        try {
+            // Not using the mic any more: switch the service type to a data job.
+            startForeground(NOTIF_ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } catch (e: Exception) { Log.w(TAG, "startForeground(dataSync) refused", e); st = State.IDLE; notesFor = null; stopSelf(); return }
+        changed(force = true)
+        Thread({
+            var err: String? = null
+            var notes: AiNotes? = null
+            try {
+                notes = NoteWriter(this).write(rec, t, { status, frac, preview ->
+                    notesStatus = status; notesFraction = frac; notesPreview = preview
+                    main.post { changed() }
+                }, { notesCancelled })
+                NotesStore.save(this, rid, notes)
+                // Use the AI title unless the user already renamed the meeting.
+                if (notes.title != null && rec.title.startsWith("Meeting · ")) Recordings.rename(this, rid, notes.title)
+            } catch (e: NoteWriter.Failed) { err = if (notesCancelled) null else e.message }
+            catch (t: Throwable) { Log.e(TAG, "notes failed", t); err = t.message ?: "Couldn't write notes" }
+            main.post { notesDone(rid, notes, err) }
+        }, "notes").start()
+    }
+
+    private fun notesDone(rid: String, notes: AiNotes?, err: String?) {
+        st = State.IDLE; notesFor = null
+        if (err != null) notesErrors[rid] = err
+        val island = IslandModuleService.current?.island
+        island?.remove(CARD_REC)
+        val title = Recordings.load(this, rid)?.title ?: "Meeting"
+        if (island != null && !notesCancelled) {
+            val b = IslandCard.Builder(this, CARD_SAVED).tapActivity(TranscriptActivity::class.java, rid).expiresIn(120_000)
+            if (notes != null) {
+                val actions = notes.sections.firstOrNull { it.first == "Action items" || it.first == "Follow-ups" || it.first == "Next" }?.second?.size ?: 0
+                b.title("Notes ready · $title").text(notes.sections.firstOrNull { it.second.isNotEmpty() }?.second?.first() ?: "Tap to open")
+                    .compact(if (actions > 0) "$actions to-dos" else "Notes")
+                    .icon(R.drawable.ic_spark).accent(0xFF30D158.toInt()).peek(6000)
+                    .activityAction("open", "Open notes", TranscriptActivity::class.java, rid, ActionStyle.POSITIVE)
+            } else {
+                b.title("Meeting saved, notes failed").text(err ?: "Open it to try again").icon(R.drawable.ic_notes).accent(0xFFFF9F0A.toInt()).peek(5000)
+                    .activityAction("open", "Open", TranscriptActivity::class.java, rid)
+            }
+            island.post(b.build())
+        }
+        listeners.toList().forEach { it() }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override fun onDestroy() {

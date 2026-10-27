@@ -77,6 +77,10 @@ class Prefs(context: Context) {
     val inboxEnabled get() = b(INBOX_ENABLED, true)
     val inboxDays get() = sp.getInt(INBOX_DAYS, 7).coerceIn(1, 90)
 
+    // Smart Inbox (optional, uses the on-device AI Engine module)
+    val smartDigest get() = b(SMART_DIGEST, false)
+    val smartReplies get() = b(SMART_REPLIES, false)
+
     // Pop-up duplicates: apps whose notifications are moved out of the shade into the island
     fun moveApps(): Set<String> = sp.getStringSet(MOVE_APPS, emptySet()) ?: emptySet()
     fun setMoveApps(pkgs: Set<String>) = sp.edit().putStringSet(MOVE_APPS, pkgs).apply()
@@ -85,6 +89,13 @@ class Prefs(context: Context) {
     fun approvedModules(): Set<String> = sp.getStringSet(APPROVED_MODULES, emptySet()) ?: emptySet()
     fun setApprovedModules(pkgs: Set<String>) = sp.edit().putStringSet(APPROVED_MODULES, pkgs).apply()
     val modulesDevMode get() = b(MODULES_DEV_MODE, false)
+    /** New modules from the same developer as this app are switched on and their tools added. */
+    val modulesAuto get() = b(MODULES_AUTO, true)
+    /** Modules / module tools the island has already offered once (so removing one is respected). */
+    fun seenModules(): Set<String> = sp.getStringSet(SEEN_MODULES, emptySet()) ?: emptySet()
+    fun setSeenModules(v: Set<String>) = sp.edit().putStringSet(SEEN_MODULES, v).apply()
+    fun seenModuleTools(): Set<String> = sp.getStringSet(SEEN_MODULE_TOOLS, emptySet()) ?: emptySet()
+    fun setSeenModuleTools(v: Set<String>) = sp.edit().putStringSet(SEEN_MODULE_TOOLS, v).apply()
 
     var note: String
         get() = sp.getString(NOTE, "") ?: ""
@@ -146,8 +157,13 @@ class Prefs(context: Context) {
         const val TOOLS_PER_PAGE = "tools_per_page"
         const val INBOX_ENABLED = "inbox_enabled"
         const val INBOX_DAYS = "inbox_days"
+        const val SMART_DIGEST = "smart_digest"
+        const val SMART_REPLIES = "smart_replies"
         const val MOVE_APPS = "move_apps"
         const val APPROVED_MODULES = "approved_modules"
         const val MODULES_DEV_MODE = "modules_dev_mode"
+        const val MODULES_AUTO = "modules_auto"
+        const val SEEN_MODULES = "seen_modules"
+        const val SEEN_MODULE_TOOLS = "seen_module_tools"
     }
 }

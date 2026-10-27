@@ -39,6 +39,7 @@ How this app compares with Apple's Dynamic Island (iPhone 14 Pro and later) and 
 
 ## Add-on modules
 Optional apps that add abilities to the island, each with its own permissions (see [MODULES.md](MODULES.md)):
-- **Meeting Notes**: "Record meeting" island tool, red REC timer with live captions, Pause / Stop in the island, on-device English transcript (Moonshine Small or Tiny), playback with tap-to-jump, possible action items, share / copy.
+- **Meeting Notes**: "Record meeting" island tool, red REC timer with live captions, Pause / Stop in the island, on-device English transcript (Moonshine Small or Tiny), playback with tap-to-jump, share / copy, and with AI Engine: automatic **AI notes** (summary, decisions, action items, open questions; 5 templates) with progress in the island.
+- **AI Engine**: on-device language model (Qwen3 0.6B / 1.7B or Gemma 4 E2B on LiteRT-LM), optional GPU, "Try it" box with speed. Powers Meeting Notes and Smart Inbox ("Catch me up" digest, ✨ reply suggestions; both opt-in).
 - **Calendar**: next-meeting countdown, pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs.
 - **Automation Bridge**: Tasker, MacroDroid or adb can show cards and tools in the island.

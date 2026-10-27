@@ -31,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recordBtn: MaterialButton
     private lateinit var live: TextView
     private lateinit var list: LinearLayout
+    private lateinit var aiStatus: TextView
+    private lateinit var aiButton: MaterialButton
     private val onChange: () -> Unit = { refreshRecording() }
 
     private val ask = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh() }
@@ -77,6 +79,19 @@ class MainActivity : AppCompatActivity() {
             text = "Open Dynamic Island → Modules"; setOnClickListener { HostVerifier.openHostModules(this@MainActivity) }
         })
 
+        // ---- AI notes ----
+        text(c, "AI notes", 18f, bold = true)
+        aiStatus = text(c, "", 14f, alpha = 0.8f)
+        c.addView(com.google.android.material.materialswitch.MaterialSwitch(this).apply {
+            text = "Write notes automatically after each recording"
+            isChecked = VoicePrefs.autoNotes(this@MainActivity)
+            setOnCheckedChangeListener { _, on -> VoicePrefs.setAutoNotes(this@MainActivity, on) }
+        })
+        aiButton = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = "Open AI Engine"; setOnClickListener { com.ajit.dynamicisland.sdk.ai.AiClient.openEngineApp(this@MainActivity) }
+        }
+        c.addView(aiButton)
+
         // ---- recordings ----
         text(c, "Saved meetings", 18f, bold = true)
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -108,6 +123,13 @@ class MainActivity : AppCompatActivity() {
         downloadBtn.isEnabled = dl == null
         downloadBtn.visibility = if (present) android.view.View.GONE else android.view.View.VISIBLE
         deleteBtn.visibility = if (present && dl == null && RecorderService.state == RecorderService.State.IDLE) android.view.View.VISIBLE else android.view.View.GONE
+        val ai = com.ajit.dynamicisland.sdk.ai.AiClient
+        aiStatus.text = when {
+            !ai.isInstalled(this) -> "Install the AI Engine module (a separate app) to get a summary, decisions and action items written on this phone after each meeting."
+            !ai.isTrusted(this) -> "⚠ The installed AI Engine isn't from the same developer, so it won't be used."
+            else -> "✓ AI Engine installed. Notes use the \"${VoicePrefs.template(this).label}\" template; pick another on a meeting's page."
+        }
+        aiButton.visibility = if (ai.isInstalled(this)) android.view.View.VISIBLE else android.view.View.GONE
         refreshRecording()
         refreshList()
     }
@@ -117,20 +139,25 @@ class MainActivity : AppCompatActivity() {
         recordBtn.text = when (st) {
             RecorderService.State.IDLE -> "● Start recording"
             RecorderService.State.SAVING -> "Saving…"
+            RecorderService.State.SUMMARIZING -> "● Start recording"
             else -> "■ Stop and save"
         }
-        recordBtn.isEnabled = st != RecorderService.State.SAVING && (st != RecorderService.State.IDLE || ModelStore.isPresent(this))
+        recordBtn.isEnabled = st != RecorderService.State.SAVING && st != RecorderService.State.SUMMARIZING && (st != RecorderService.State.IDLE || ModelStore.isPresent(this))
         val svc = RecorderService.instance
         live.text = when (st) {
             RecorderService.State.IDLE -> if (ModelStore.isPresent(this)) "" else "Download a model first."
             RecorderService.State.STARTING -> "Loading the speech model…"
             RecorderService.State.SAVING -> "Finishing the transcript…"
+            RecorderService.State.SUMMARIZING -> "✨ ${RecorderService.notesStatus} · ${(RecorderService.notesFraction * 100).toInt()}%"
             else -> "${if (st == RecorderService.State.PAUSED) "Paused" else "Recording"} · ${Notes.clock(svc?.elapsedMs ?: 0)} · ${svc?.lineCount ?: 0} lines\n${svc?.liveCaption ?: ""}"
         }
         if (st == RecorderService.State.IDLE) refreshListIfChanged()
+        if (st == RecorderService.State.IDLE && lastSt == RecorderService.State.SUMMARIZING) refreshList()
+        lastSt = st
     }
 
     private var shownCount = -1
+    private var lastSt = RecorderService.State.IDLE
     private fun refreshListIfChanged() { if (Recordings.root(this).list()?.size != shownCount) refreshList() }
 
     private fun refreshList() {
@@ -146,10 +173,12 @@ class MainActivity : AppCompatActivity() {
             val inner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(10), dp(16), dp(10)) }
             card.addView(inner)
             text(inner, r.title, 16f, bold = true)
-            val items = Notes.actionItems(r.lines).size
+            val ai = NotesStore.load(this, r.id)
+            val items = ai?.sections?.firstOrNull { it.first == "Action items" }?.second?.size ?: Notes.actionItems(r.lines).size
             text(inner, DateUtils.getRelativeTimeSpanString(r.startedAt).toString() + " · ${Notes.clock(r.durationMs)} · ${Notes.wordCount(r.lines)} words" +
-                if (items > 0) " · $items possible action items" else "", 13f, alpha = 0.7f)
-            r.lines.firstOrNull()?.let { text(inner, it.text.take(140), 13f, alpha = 0.85f).maxLines = 2 }
+                (if (items > 0) " · $items ${if (ai != null) "action items" else "possible action items"}" else "") + if (ai != null) " · ✨ notes" else "", 13f, alpha = 0.7f)
+            (ai?.sections?.firstOrNull { it.second.isNotEmpty() }?.second?.first() ?: r.lines.firstOrNull()?.text)
+                ?.let { text(inner, it.take(140), 13f, alpha = 0.85f).maxLines = 2 }
             list.addView(card)
         }
     }

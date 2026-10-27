@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Only to download a model (Hugging Face). Prompts and answers never leave the phone. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Island · AI Engine"
+        android:theme="@style/Theme.Module">
+
+        <!-- Optional GPU support for LiteRT-LM. -->
+        <uses-native-library android:name="libvndksupport.so" android:required="false" />
+        <uses-native-library android:name="libOpenCL.so" android:required="false" />
+
+        <service android:name=".AiModule" android:exported="true" android:label="AI Engine">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.MODULE" />
+            </intent-filter>
+            <meta-data android:name="com.ajit.dynamicisland.module.DESCRIPTION"
+                android:value="An on-device language model for Meeting Notes summaries and Smart Inbox. Runs offline; the internet is only used to download a model." />
+            <meta-data android:name="com.ajit.dynamicisland.module.SETTINGS_ACTIVITY" android:value=".MainActivity" />
+            <meta-data android:name="com.ajit.dynamicisland.module.DEVELOPER" android:value="Ajit Kumar Pal" />
+        </service>
+
+        <!-- Every call is checked in code: only apps signed with the Dynamic Island key can use it. -->
+        <service android:name=".AiEngineService" android:exported="true">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.AI_ENGINE" />
+            </intent-filter>
+        </service>
+
+        <service android:name=".DownloadService" android:exported="false" android:foregroundServiceType="dataSync" />
+
+        <activity android:name=".MainActivity" android:exported="true" android:label="AI Engine">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
 
         // Modules
         section("Modules")
-        hint("Add-on apps that give the island new abilities (automation, calendar, and later meeting notes and AI), each with its own permissions. You approve every module before it can show anything.")
+        hint("Add-on apps that give the island new abilities (automation, calendar, meeting notes, an on-device AI engine), each with its own permissions. You approve every module before it can show anything.")
         button("Manage modules") { startActivity(Intent(this, ModulesActivity::class.java)) }
 
         // Notification inbox
@@ -164,6 +164,19 @@ class MainActivity : AppCompatActivity() {
         card { switch(it, "Keep notifications in the Inbox", Prefs.INBOX_ENABLED, true) }
         slider("Keep for (days)", Prefs.INBOX_DAYS, 1f, 30f, 7f)
         button("Open Inbox") { startActivity(Intent(this, InboxActivity::class.java)) }
+
+        // Smart Inbox (AI)
+        section("Smart Inbox (AI, optional)")
+        val ai = com.ajit.dynamicisland.sdk.ai.AiClient
+        hint(when {
+            !ai.isInstalled(this) -> "Install the AI Engine module to get a \"Catch me up\" summary of your Inbox and reply suggestions in the island. Everything runs on your phone."
+            !ai.isTrusted(this) -> "⚠ The installed AI Engine isn't signed by the same developer as this app, so Smart Inbox won't use it."
+            else -> "Uses the AI Engine module on this phone. When a feature is on, the text of the notifications involved is passed to that module only, never to the internet. OTP codes are masked first."
+        })
+        card {
+            switch(it, "\"Catch me up\" summary in the Inbox", Prefs.SMART_DIGEST, false)
+            switch(it, "Suggest replies in the island (✨ button next to Reply)", Prefs.SMART_REPLIES, false)
+        }
 
         // Pop-up duplicates
         section("Stop duplicate pop-ups")

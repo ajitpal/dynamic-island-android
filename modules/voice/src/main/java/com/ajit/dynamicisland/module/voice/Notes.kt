@@ -30,10 +30,13 @@ object Notes {
     fun wordCount(lines: List<Line>) = lines.sumOf { it.text.split(Regex("\\s+")).count { w -> w.isNotBlank() } }
 
     /** Plain-text export with timestamps. */
-    fun toText(title: String, dateLabel: String, durationMs: Long, lines: List<Line>): String = buildString {
+    fun toText(title: String, dateLabel: String, durationMs: Long, lines: List<Line>, ai: AiNotes? = null): String = buildString {
         appendLine(title); appendLine("$dateLabel · ${clock(durationMs)}"); appendLine()
         val items = actionItems(lines)
-        if (items.isNotEmpty()) {
+        if (ai != null && !ai.isEmpty()) {
+            ai.sections.filter { it.second.isNotEmpty() }.forEach { (h, list) -> appendLine(h); list.forEach { appendLine("• $it") }; appendLine() }
+            appendLine("(Notes written on-device by ${ai.model ?: "AI"}. Check them against the transcript.)"); appendLine()
+        } else if (items.isNotEmpty()) {
             appendLine("Possible action items"); items.forEach { appendLine("• ${it.text}  [${clock(it.startMs)}]") }; appendLine()
         }
         appendLine("Transcript"); lines.forEach { appendLine("[${clock(it.startMs)}] ${it.text}") }

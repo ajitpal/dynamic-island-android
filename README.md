@@ -14,7 +14,7 @@ At rest it shrinks into your camera hole and disappears.
 [Privacy](PRIVACY.md)
 
 ![Android 12+](https://img.shields.io/badge/Android-12%2B-3DDC84?logo=android&logoColor=white)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white)
 ![No internet permission](https://img.shields.io/badge/Internet%20permission-none-success)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue)
 
@@ -52,8 +52,9 @@ This app aims to be the clean alternative:
 | 📥 **Notification Inbox** | Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy. Swipe down on the empty island |
 | 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
 | 🎨 **Make it yours** | 7 themes (iPhone Black, Glass, Light, Rose, Ocean, Lavender, Graphite), width, height, roundness, opacity, glow outline, animation speed |
-| 🎙 **Meeting Notes** (module) | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, possible action items. Nothing leaves the phone |
-| 🧩 **Modules** | Optional add-on apps with their own permissions: **Automation Bridge** (Tasker/MacroDroid/adb → island), **Calendar** (next meeting, one-tap Join) and **Meeting Notes**. [Build your own](docs/MODULES.md) |
+| 🎙 **Meeting Notes** (module) | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, then **AI notes** (summary, decisions, action items). Nothing leaves the phone |
+| ✨ **AI Engine** (module) | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM) for meeting notes, an Inbox "Catch me up" summary and reply suggestions. Offline after a one-time model download |
+| 🧩 **Modules** | Optional add-on apps with their own permissions: **Automation Bridge** (Tasker/MacroDroid/adb → island), **Calendar** (next meeting, one-tap Join), **Meeting Notes** and **AI Engine**. [Build your own](docs/MODULES.md) |
 | 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
 
 Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.md)**.
@@ -88,7 +89,7 @@ Step-by-step guides per brand, plus an ADB alternative: **[docs/INSTALL.md](docs
 | Vibrate, network state, Wi-Fi state | Haptics; "offline / back online" and hotspot glimpses |
 | **Internet** | **Not requested.** The app can't send anything anywhere. |
 
-Modules ask for their own permissions, only if you install them. For example, Meeting Notes asks for the microphone, and for internet only to download its speech model once.
+Modules ask for their own permissions, only if you install them. For example, Meeting Notes asks for the microphone, and Meeting Notes and AI Engine use the internet only to download their models once.
 
 See [PRIVACY.md](PRIVACY.md).
 
@@ -104,7 +105,7 @@ Requires JDK 17+ and the Android SDK (or just open the folder in Android Studio)
 Release signing is optional: create `keystore.properties` (git-ignored) with `storeFile`, `storePassword`, `keyAlias` and `keyPassword`.
 Without it, release builds fall back to the debug key.
 
-Stack: Kotlin 2.0 · AGP 8.7 · minSdk 31 / targetSdk 35 · coroutines · Material 3 · no Compose · ~2.5 MB APK.
+Stack: Kotlin 2.4 · AGP 8.7 · minSdk 31 / targetSdk 35 · coroutines · Material 3 · no Compose · ~2.5 MB APK.
 
 ## Contributing
 

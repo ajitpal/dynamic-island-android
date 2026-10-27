@@ -20,8 +20,8 @@ android {
         applicationId = "com.ajit.dynamicisland"
         minSdk = 31          // Android 12+ (Poco M8 ships with Android 15 / HyperOS)
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.6.0"
+        versionCode = 12
+        versionName = "1.7.1"
     }
 
     signingConfigs {
@@ -47,7 +47,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
@@ -59,4 +58,8 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     testImplementation("junit:junit:4.13.2")
+}
+
+kotlin {
+    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
 }

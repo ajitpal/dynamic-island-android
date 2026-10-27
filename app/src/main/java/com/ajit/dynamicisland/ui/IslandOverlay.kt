@@ -655,7 +655,10 @@ class IslandOverlay(
     override fun perform(a: IslandActivity, act: IslandAction) {
         haptic()
         when {
-            act.onInput != null -> { startInput(a.id, act.inputHint ?: "Reply…", act.onInput); return }
+            act.onInput != null -> {
+                val replyTo = if (a.kind == Kind.MESSAGE && !a.text.isNullOrBlank()) a.title.toString() to a.text.toString() else null
+                startInput(a.id, act.inputHint ?: "Reply…", replyTo, act.onInput); return
+            }
             act.onClick != null -> act.onClick.invoke()
             act.intent != null -> sendPending(act.intent)
         }
@@ -853,9 +856,9 @@ class IslandOverlay(
         collapse()
     }
 
-    private fun startInput(forId: String, hint: String, onSend: (String) -> Unit) {
+    private fun startInput(forId: String, hint: String, replyTo: Pair<String, String>? = null, onSend: (String) -> Unit) {
         handler.removeCallbacks(collapseRunnable)
-        input = ContentBinder.InputState(hint, onSend)
+        input = ContentBinder.InputState(hint, onSend, replyTo)
         inputFor = forId
         expandedId = forId
         stickyPeekId = null
@@ -871,7 +874,38 @@ class IslandOverlay(
         }, 200)
     }
 
+    // ---- Smart replies (optional, on-device AI Engine) ----
+
+    private var ai: com.ajit.dynamicisland.sdk.ai.AiClient? = null
+
+    override val smartReplies: Boolean
+        get() = prefs.smartReplies && com.ajit.dynamicisland.sdk.ai.AiClient.isTrusted(ctx)
+
+    override fun suggestReplies(input: ContentBinder.InputState) {
+        val (from, msg) = input.replyTo ?: return
+        if (input.loading) return
+        input.loading = true; input.suggestions = null
+        binder.fillReplyChips(input, primary?.accent ?: com.ajit.dynamicisland.core.Colors.BLUE)
+        val client = ai ?: com.ajit.dynamicisland.sdk.ai.AiClient(ctx).also { ai = it }
+        input.requestId = client.generate(
+            system = com.ajit.dynamicisland.core.ai.SmartInbox.REPLY_SYSTEM,
+            prompt = com.ajit.dynamicisland.core.ai.SmartInbox.replyPrompt(from, msg),
+            maxTokens = com.ajit.dynamicisland.core.ai.SmartInbox.REPLY_TOKENS, temperature = 0.7f,
+            onDone = { text ->
+                input.loading = false; input.suggestions = com.ajit.dynamicisland.core.ai.SmartInbox.parseReplies(text)
+                if (this.input === input) binder.fillReplyChips(input, primary?.accent ?: com.ajit.dynamicisland.core.Colors.BLUE)
+            },
+            onError = { _, msg2 ->
+                input.loading = false; input.suggestions = emptyList()
+                if (this.input === input) { binder.fillReplyChips(input, primary?.accent ?: com.ajit.dynamicisland.core.Colors.BLUE); android.widget.Toast.makeText(ctx, msg2, android.widget.Toast.LENGTH_SHORT).show() }
+            },
+        )
+        // Keep the island open while the model thinks.
+        handler.removeCallbacks(collapseRunnable)
+    }
+
     private fun endInput() {
+        input?.requestId?.let { id -> ai?.cancel(id) }
         input?.editText?.let { et ->
             ctx.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(et.windowToken, 0)
         }

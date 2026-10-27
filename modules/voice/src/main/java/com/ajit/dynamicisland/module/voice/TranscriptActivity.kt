@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.ajit.dynamicisland.sdk.IslandContract
+import com.ajit.dynamicisland.sdk.ai.AiClient
 import com.google.android.material.button.MaterialButton
 
 /** One meeting: playback, possible action items and the timestamped transcript. */
@@ -29,6 +30,9 @@ class TranscriptActivity : AppCompatActivity() {
     private lateinit var pos: TextView
     private val tick = Handler(Looper.getMainLooper())
     private lateinit var rec: Recording
+    private lateinit var notesBox: LinearLayout
+    private lateinit var titleView: TextView
+    private val onChange: () -> Unit = { if (::notesBox.isInitialized) { reloadTitle(); renderNotes() } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +45,7 @@ class TranscriptActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(scroll) { v, i -> val b = i.getInsets(WindowInsetsCompat.Type.systemBars()); v.setPadding(0, b.top, 0, b.bottom); i }
 
         val title = text(c, rec.title, 24f, bold = true).apply { setOnClickListener { rename(this) } }
+        titleView = title
         text(c, DateUtils.formatDateTime(this, rec.startedAt, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_SHOW_WEEKDAY) +
             " · ${Notes.clock(rec.durationMs)} · ${Notes.wordCount(rec.lines)} words · tap the title to rename", 13f, alpha = 0.7f)
         title.contentDescription = "Title, tap to rename"
@@ -53,10 +58,14 @@ class TranscriptActivity : AppCompatActivity() {
         pos = TextView(this).apply { setPadding(dp(12), 0, 0, 0); alpha = 0.8f }
         row.addView(pos, LinearLayout.LayoutParams(-2, -2).apply { gravity = android.view.Gravity.CENTER_VERTICAL })
 
+        notesBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        c.addView(notesBox)
+        renderNotes()
+
         val items = Notes.actionItems(rec.lines)
-        if (items.isNotEmpty()) {
+        if (items.isNotEmpty() && NotesStore.load(this, rec.id) == null) {
             text(c, "Possible action items", 18f, bold = true)
-            text(c, "Picked out by simple rules (\"will\", \"need to\", \"by Friday\"…). Check them; smarter on-device summaries come later.", 12f, alpha = 0.6f)
+            text(c, "Picked out by simple rules (\"will\", \"need to\", \"by Friday\"…). Check them, or tap Write notes for an AI summary.", 12f, alpha = 0.6f)
             items.forEach { l -> line(c, l, bullet = true) }
         }
         text(c, "Transcript", 18f, bold = true)
@@ -74,13 +83,71 @@ class TranscriptActivity : AppCompatActivity() {
         setContentView(scroll)
     }
 
+    override fun onResume() { super.onResume(); RecorderService.listeners += onChange; onChange() }
+    override fun onPause() { RecorderService.listeners -= onChange; super.onPause() }
+
+    private fun reloadTitle() { Recordings.load(this, rec.id)?.let { rec = it; titleView.text = it.title } }
+
+    /** The AI notes card: notes if we have them, progress while writing, or a button to write them. */
+    private fun renderNotes() {
+        val box = notesBox
+        box.removeAllViews()
+        val notes = NotesStore.load(this, rec.id)
+        val writing = RecorderService.state == RecorderService.State.SUMMARIZING && RecorderService.notesFor == rec.id
+        val busy = RecorderService.state != RecorderService.State.IDLE && !writing
+        text(box, "✨ Notes", 18f, bold = true)
+        when {
+            writing -> {
+                text(box, "${RecorderService.notesStatus} · ${(RecorderService.notesFraction * 100).toInt()}%", 14f, alpha = 0.8f)
+                RecorderService.notesPreview.takeIf { it.isNotBlank() }?.let { text(box, it.takeLast(600), 13f, alpha = 0.6f) }
+                box.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    text = "Cancel"; setOnClickListener { RecorderService.command(this@TranscriptActivity, RecorderService.ACTION_CANCEL_NOTES) }
+                })
+                return
+            }
+            notes != null && !notes.isEmpty() -> {
+                notes.sections.filter { it.second.isNotEmpty() }.forEach { (h, items) ->
+                    text(box, h, 15f, bold = true)
+                    items.forEach { text(box, "• $it", 15f) }
+                }
+                text(box, "${notes.template.label} notes by ${notes.model ?: "the AI Engine"}, on this phone. Small models make mistakes: check important details in the transcript.", 12f, alpha = 0.6f)
+            }
+            !AiClient.isInstalled(this) -> {
+                text(box, "Install the AI Engine module to get a summary, decisions and action items written on this phone.", 14f, alpha = 0.75f)
+                return
+            }
+            !AiClient.isTrusted(this) -> { text(box, "The installed AI Engine isn't signed by the same developer, so Meeting Notes won't send it your transcript.", 14f, alpha = 0.75f); return }
+        }
+        RecorderService.notesErrors[rec.id]?.let { text(box, "⚠ $it", 14f) }
+        if (rec.lines.isEmpty()) return
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        box.addView(row)
+        row.addView(MaterialButton(this).apply {
+            text = if (notes == null) "Write notes" else "Rewrite"
+            isEnabled = !busy
+            setOnClickListener { pickTemplate(notes?.template ?: VoicePrefs.template(this@TranscriptActivity)) }
+        })
+        if (busy) text(box, "Busy recording or writing other notes; try again when it's done.", 12f, alpha = 0.6f)
+    }
+
+    private fun pickTemplate(current: Template) {
+        val all = Template.entries
+        AlertDialog.Builder(this).setTitle("What kind of conversation?")
+            .setSingleChoiceItems(all.map { "${it.label}  (${it.sections.joinToString(", ")})" }.toTypedArray(), all.indexOf(current)) { d, which ->
+                d.dismiss(); val t = all[which]
+                VoicePrefs.setTemplate(this, t)
+                try { RecorderService.summarize(this, rec.id, t) } catch (e: Exception) { Toast.makeText(this, e.message, Toast.LENGTH_LONG).show() }
+                notesBox.postDelayed({ renderNotes() }, 400)
+            }.setNegativeButton("Cancel", null).show()
+    }
+
     private fun line(c: LinearLayout, l: Line, bullet: Boolean = false) {
         text(c, (if (bullet) "• " else "") + "${Notes.clock(l.startMs)}  ${l.text}", 15f).apply {
             setOnClickListener { seek(l.startMs) }
         }
     }
 
-    private fun export() = Notes.toText(rec.title, DateUtils.formatDateTime(this, rec.startedAt, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME), rec.durationMs, rec.lines)
+    private fun export() = Notes.toText(rec.title, DateUtils.formatDateTime(this, rec.startedAt, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME), rec.durationMs, rec.lines, NotesStore.load(this, rec.id))
 
     private fun share() = startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
         .putExtra(Intent.EXTRA_SUBJECT, rec.title).putExtra(Intent.EXTRA_TEXT, export()), "Share notes"))

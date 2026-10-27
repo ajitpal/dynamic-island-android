@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.1 (27 Oct 2026)
+- **New modules are ready to use straight away:** a module from the same developer as the island (signed with the same key) is switched on when you install it, its tools (e.g. **Record meeting**) are put on the first page of your island tools, and the island tells you. Modules from other developers still wait for your approval and get a "Review" glimpse.
+- **Modules screen:** an on/off switch for each module tool ("Show Record meeting in island tools"), and "Add new modules automatically" to turn this behaviour off. Removing a tool is remembered; it won't be added back.
+
+## 1.7.0 (27 Oct 2026): On-device AI
+- **AI Engine module** (new add-on app): a small language model that runs on your phone with Google's LiteRT-LM. Pick **Qwen3 0.6B** (fastest), **Qwen3 1.7B** (recommended) or **Gemma 4 E2B** (best, large). Models download once from Hugging Face (pinned versions, SHA-256 checked, resumable), then everything works offline. Optional GPU. A "Try it" box shows the speed on your phone.
+- **Meeting Notes 1.1: AI notes.** After a recording, notes are written automatically: **summary, decisions, action items, open questions**, plus a title. Templates: Meeting, Stand-up, 1:1, Call / interview, Lecture. Long meetings are summarised in parts and merged. Progress shows in the island with Cancel; "Notes ready" opens them. Rewrite with another template anytime; notes are included when you share.
+- **Smart Inbox (opt-in, off by default):** "✨ Catch me up" in the Inbox summarises unread notifications; **✨ Suggest replies** in the island's reply field offers three short replies. Text goes only to the AI Engine on your phone; OTP codes are masked first.
+- **SDK:** `AiClient` / `AiContract` for first-party apps to use the AI Engine (certificate-pinned both ways).
+- Build: Kotlin 2.4. CI: works even when `gradlew` loses its executable bit (commits from Windows); builds, tests and lints every module.
+
 ## 1.6.0 (27 Oct 2026): Meeting Notes (English)
 - **Meeting Notes module** (new add-on app): tap **Record meeting** in your island tools; the island shows a red REC timer, live captions and Pause / Stop. The English transcript is made **on the phone** by [Moonshine](https://github.com/moonshine-ai/moonshine) (MIT). Choose the **Small** (more accurate) or **Tiny** (lighter) model; it downloads once, then everything works offline.
 - Saved meetings: playback, tap any line to jump there, **possible action items** (simple rules, clearly labelled), rename, share, copy, delete. Audio is kept as small AAC files (about 14 MB per hour) in the module's private storage.

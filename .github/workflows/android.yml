@@ -16,9 +16,14 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build & lint
-        run: ./gradlew assembleDebug lintDebug --no-daemon
+      # Commits made on Windows can drop the executable bit on gradlew.
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+      - name: Build, unit tests & lint (island + SDK + all modules)
+        run: ./gradlew assembleDebug testDebugUnitTest lintDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: apks-debug
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            modules/*/build/outputs/apk/debug/*.apk

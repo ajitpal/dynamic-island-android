@@ -111,7 +111,7 @@ Limits enforced by the island: 3 cards per module, 80-character titles, 400-char
 | **Host → module** | The SDK accepts calls only from the real Dynamic Island app (package name **and** signing certificate pinned in `IslandContract.TRUSTED_HOST_CERTS`). For local development against a debug build, add `<meta-data android:name="com.ajit.dynamicisland.module.TRUST_ANY_HOST" android:value="true"/>` and **remove it before release**. |
 | **Module → host** | Each module gets its own host binder, and every call is checked against that module's UID, so one module can't post as another. |
 | **Approved developers** | The island defines `com.ajit.dynamicisland.permission.MODULE_API` with `protectionLevel="signature\|knownSigner"`. Android grants it automatically to modules signed by a certificate on the island's allow-list (`app/src/main/res/values/modules.xml`). The island also checks the same list in code. |
-| **User approval** | Every module must be approved once in **Modules**. The screen shows the developer, verification status, permissions and certificate fingerprint. |
+| **User approval** | Modules from other developers must be approved once in **Modules**. The screen shows the developer, verification status, permissions and certificate fingerprint. First-party modules (signed with the island's own key) are switched on at install, with a glimpse in the island, unless the user turned off "Add new modules automatically". A module's tools are added to the island tools the first time they appear, and each can be switched off. |
 | **Unverified modules** | Modules from developers not on the allow-list only run if the user turns on **Developer mode**, with a warning. Use this while you build. |
 | **Data** | Modules never receive notifications or Inbox data. A future, separate opt-in will allow it per module. |
 
@@ -121,9 +121,24 @@ Limits enforced by the island: 3 cards per module, 80-character titles, 400-char
 3. Open a pull request that adds the digest to `app/src/main/res/values/modules.xml`, with a link to your module's source code.
 4. Once merged and released, your module shows as **Verified · approved developer**.
 
-## 5. Reference modules in this repo
+## 5. Using the on-device AI Engine
+First-party apps (signed with the same key as the island) can use the AI Engine module through the SDK:
+
+```kotlin
+val ai = AiClient(context)
+if (AiClient.isTrusted(context)) {
+    ai.generate(system = "You write short notes.", prompt = text, maxTokens = 400,
+        onPartial = { preview(it) }, onDone = { show(it) }, onError = { code, msg -> warn(msg) })
+}
+// On a worker thread: val r = ai.generateBlocking(system, prompt, 400)
+ai.close()
+```
+The client checks the engine's signing certificate before sending anything, and the engine checks every caller's certificate. `status()` tells you whether a model is ready and roughly how much text fits in one request (`S_MAX_INPUT_CHARS`); split longer inputs, as Meeting Notes does. Third-party access will need an explicit per-app approval, planned for Phase 5.
+
+## 6. Reference modules in this repo
 - **`modules/automation`**, Automation Bridge: bridges Tasker, MacroDroid and adb into the island using a secret key. Shows queued cards, tools and reply buttons.
 - **`modules/calendar`**, Calendar: uses the `READ_CALENDAR` permission (in the module only), a countdown, a progress phase, a Join link and `peek` at T-5 minutes.
+- **`modules/ai`**, AI Engine: LiteRT-LM, pinned model downloads with checksum, a bound AIDL service with caller checks, idle unloading.
 - **`modules/voice`**, Meeting Notes: a tool that opens a translucent activity to start a `microphone` foreground service, a count-up REC card with live text and Pause/Stop buttons, on-device speech-to-text with Moonshine, and a "saved" card that opens the transcript.
 
 ## Contract stability

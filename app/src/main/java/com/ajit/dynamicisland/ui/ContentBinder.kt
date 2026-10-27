@@ -41,12 +41,20 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         fun addTicker(t: () -> Unit)
         fun submitInput(text: String)
         fun cancelInput()
+        /** Smart replies are on and the AI Engine is available. */
+        val smartReplies: Boolean
+        fun suggestReplies(input: InputState)
     }
 
     enum class MediaCmd { PREV, TOGGLE, NEXT }
 
-    class InputState(val hint: String, val onSend: (String) -> Unit) {
+    /** [replyTo] = (sender, message) when this is a reply, used for AI suggestions. */
+    class InputState(val hint: String, val onSend: (String) -> Unit, val replyTo: Pair<String, String>? = null) {
         var editText: EditText? = null
+        var chipRow: LinearLayout? = null
+        var suggestions: List<String>? = null
+        var loading = false
+        var requestId: String? = null
     }
 
     private fun dp(v: Int) = ctx.dp(v)
@@ -162,6 +170,13 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
 
         // Inline input (quick reply / note) or action buttons
         if (input != null) {
+            if (input.replyTo != null && host.smartReplies) {
+                val chips = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+                input.chipRow = chips
+                fillReplyChips(input, a.accent)
+                col.addView(android.widget.HorizontalScrollView(ctx).apply { isHorizontalScrollBarEnabled = false; addView(chips) },
+                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(36)).apply { topMargin = dp(10) })
+            }
             col.addView(inputRow(input, a.accent), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { topMargin = dp(12) })
         } else {
             val canOpen = a.contentIntent != null || a.packageName != ctx.packageName
@@ -237,6 +252,26 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         background = rounded(bg, dp(20).toFloat())
         foreground = ContextCompat.getDrawable(ctx, R.drawable.ripple_round)
         setOnClickListener { if (a != null) host.perform(a, act) else act.onClick?.invoke() }
+    }
+
+    /** "✨ Suggest" chip, then the suggested replies (tap one to put it in the text field). */
+    fun fillReplyChips(input: InputState, accent: Int) {
+        val row = input.chipRow ?: return
+        row.removeAllViews()
+        fun chip(t: String, highlight: Boolean, onClick: (() -> Unit)?) = TextView(ctx).apply {
+            text = t; setTextColor(if (highlight) Color.WHITE else pal.fg); setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            maxLines = 1; ellipsize = TextUtils.TruncateAt.END; maxWidth = dp(220)
+            gravity = Gravity.CENTER; setPadding(dp(12), 0, dp(12), 0)
+            background = rounded(if (highlight) accent else pal.surface, dp(18).toFloat())
+            onClick?.let { c -> setOnClickListener { c() } }
+        }.also { row.addView(it, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(32)).apply { marginEnd = dp(6) }) }
+        val list = input.suggestions
+        when {
+            input.loading -> chip("✨ Thinking…", false, null)
+            list == null -> chip("✨ Suggest replies", true) { host.suggestReplies(input) }
+            list.isEmpty() -> chip("✨ No ideas, try again", false) { host.suggestReplies(input) }
+            else -> list.forEach { s -> chip(s, false) { input.editText?.let { et -> et.setText(s); et.setSelection(et.text.length) } } }
+        }
     }
 
     private fun inputRow(input: InputState, accent: Int): View {

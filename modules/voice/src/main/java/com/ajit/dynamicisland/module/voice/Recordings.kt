@@ -42,3 +42,28 @@ object Recordings {
     fun rename(ctx: Context, id: String, title: String) { load(ctx, id)?.let { save(ctx, it.copy(title = title.take(80))) } }
     fun delete(ctx: Context, id: String) { dir(ctx, id).deleteRecursively() }
 }
+
+/** AI notes are kept next to the transcript: recordings/<id>/notes.json. */
+object NotesStore {
+    private fun file(ctx: Context, id: String) = File(Recordings.dir(ctx, id), "notes.json")
+
+    fun save(ctx: Context, id: String, n: AiNotes) {
+        val o = JSONObject().put("template", n.template.name).put("title", n.title).put("model", n.model).put("createdAt", n.createdAt)
+            .put("sections", JSONArray().apply { n.sections.forEach { (h, items) -> put(JSONObject().put("h", h).put("items", JSONArray(items))) } })
+        val tmp = File(Recordings.dir(ctx, id), "notes.json.tmp")
+        tmp.writeText(o.toString()); tmp.renameTo(file(ctx, id))
+    }
+
+    fun load(ctx: Context, id: String): AiNotes? = try {
+        val o = JSONObject(file(ctx, id).readText())
+        val arr = o.getJSONArray("sections")
+        AiNotes(
+            runCatching { Template.valueOf(o.getString("template")) }.getOrDefault(Template.MEETING),
+            o.optString("title").takeIf { it.isNotBlank() && it != "null" },
+            (0 until arr.length()).map { i -> arr.getJSONObject(i).let { s -> s.getString("h") to s.getJSONArray("items").let { a -> (0 until a.length()).map(a::getString) } } },
+            o.optString("model").takeIf { it.isNotBlank() && it != "null" }, o.optLong("createdAt"),
+        )
+    } catch (e: Exception) { null }
+
+    fun delete(ctx: Context, id: String) { file(ctx, id).delete() }
+}

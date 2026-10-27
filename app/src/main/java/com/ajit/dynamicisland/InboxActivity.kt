@@ -92,6 +92,12 @@ class InboxActivity : AppCompatActivity() {
             }
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         root.addView(actions)
+        val prefs = com.ajit.dynamicisland.core.Prefs(this)
+        if (prefs.smartDigest && com.ajit.dynamicisland.sdk.ai.AiClient.isTrusted(this)) {
+            root.addView(MaterialButton(this).apply {
+                text = "✨ Catch me up"; setOnClickListener { catchUp() }
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
 
         empty = TextView(this).apply {
             text = "Nothing here yet.\nNotifications you receive will be kept here until you clear them."
@@ -113,6 +119,41 @@ class InboxActivity : AppCompatActivity() {
         setContentView(root)
         lifecycleScope.launch { InboxStore.version.collect { reload() } }
     }
+
+    private var ai: com.ajit.dynamicisland.sdk.ai.AiClient? = null
+
+    /** Summarise unread (or today's) notifications with the on-device AI Engine. */
+    private fun catchUp() {
+        val out = TextView(this).apply { setPadding(dp(24), dp(12), dp(24), dp(8)); setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f); setTextIsSelectable(true) }
+        val scroll = android.widget.ScrollView(this).apply { addView(out) }
+        val dialog = MaterialAlertDialogBuilder(this).setTitle("Catch me up").setView(scroll)
+            .setPositiveButton("Done", null).show()
+        out.text = "Reading your notifications…"
+        lifecycleScope.launch {
+            val dayAgo = System.currentTimeMillis() - 24 * 3600_000L
+            val entries = withContext(Dispatchers.IO) {
+                InboxStore.query(this@InboxActivity, InboxFilter.UNREAD, null, 80).ifEmpty {
+                    InboxStore.query(this@InboxActivity, InboxFilter.ALL, null, 80).filter { it.posted >= dayAgo }
+                }
+            }
+            if (entries.isEmpty()) { out.text = "Nothing new in the last day."; return@launch }
+            val client = ai ?: com.ajit.dynamicisland.sdk.ai.AiClient(this@InboxActivity).also { ai = it }
+            out.text = "Summarising ${entries.size} notifications on this phone… (the first run loads the model, which takes a few seconds)"
+            val id = client.generate(
+                system = com.ajit.dynamicisland.core.ai.SmartInbox.DIGEST_SYSTEM,
+                prompt = com.ajit.dynamicisland.core.ai.SmartInbox.digestPrompt(entries),
+                maxTokens = com.ajit.dynamicisland.core.ai.SmartInbox.DIGEST_TOKENS, temperature = 0.2f,
+                onPartial = { if (it.isNotBlank()) out.text = pretty(it) },
+                onDone = { out.text = pretty(it) + "\n\nWritten on this phone by the AI Engine. It can make mistakes." },
+                onError = { _, msg -> out.text = "⚠ $msg" },
+            )
+            dialog.setOnDismissListener { client.cancel(id) }
+        }
+    }
+
+    private fun pretty(s: String) = s.replace(Regex("(?m)^#{1,4}\\s*"), "").replace(Regex("(?m)^\\s*[-*]\\s+"), "• ").trim()
+
+    override fun onDestroy() { ai?.close(); super.onDestroy() }
 
     private fun reload() {
         lifecycleScope.launch {

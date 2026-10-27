@@ -104,7 +104,8 @@ object ModuleRegistry {
 
     fun rescan() {
         if (!started) return
-        val found = discover()
+        var found = discover()
+        if (autoEnable(found)) found = discover()
         val wanted = found.filter { it.approved && (it.trust != Trust.UNVERIFIED || prefs.modulesDevMode) }.map { it.pkg }.toSet()
         conns.keys.filter { it !in wanted }.forEach { pkg -> conns.remove(pkg)?.let { disconnect(it) } }
         found.filter { it.pkg in wanted && it.pkg !in conns }.forEach { connect(it) }
@@ -173,6 +174,61 @@ object ModuleRegistry {
         }
     } catch (e: Exception) { emptyList() }
 
+    /**
+     * The first time a module appears: one from the same developer as this app (signed with the same
+     * key) is switched on automatically, and the user is told; any other module gets a "review" glimpse
+     * and stays off until approved. Returns true if something was approved.
+     */
+    private fun autoEnable(found: List<ModuleInfo>): Boolean {
+        val seen = prefs.seenModules()
+        val fresh = found.filter { it.pkg !in seen }
+        if (fresh.isEmpty()) return false
+        prefs.setSeenModules(seen + fresh.map { it.pkg })
+        var changed = false
+        fresh.forEach { m ->
+            val auto = prefs.modulesAuto && m.trust == Trust.SAME_DEVELOPER && !m.approved
+            if (auto) { prefs.setApprovedModules(prefs.approvedModules() + m.pkg); changed = true }
+            if (!m.approved) announce(m, auto)
+        }
+        return changed
+    }
+
+    private fun announce(m: ModuleInfo, enabled: Boolean) {
+        val open = { Launcher.start(app, Intent(app, com.ajit.dynamicisland.ModulesActivity::class.java)) }
+        IslandRepository.upsert(IslandActivity(
+            id = "sys:module:${m.pkg}", kind = Kind.SYSTEM, packageName = app.packageName,
+            title = if (enabled) "${m.label} added" else "New module: ${m.label}",
+            text = if (enabled) "Switched on. Its tools are in your island tools; turn it off in Modules." else "Review and approve it in Modules before it can show anything.",
+            icon = ContextCompat.getDrawable(app, R.drawable.ic_add), tintIcon = true, accent = if (enabled) Colors.GREEN else Colors.ORANGE,
+            compactText = if (enabled) "Added" else "Review", peek = true, peekMs = 5000,
+            onTap = open,
+            actions = listOf(IslandAction(if (enabled) "Manage" else "Review", onClick = { open() })),
+            expiresAt = System.currentTimeMillis() + 30_000, contentHash = m.pkg.hashCode(),
+        ))
+    }
+
+    /** Put a module's tools in the island tools the first time they appear (unless auto-add is off). */
+    private fun autoAddTools(tools: List<ModuleTool>) {
+        val seen = prefs.seenModuleTools()
+        val fresh = tools.filter { it.fullId !in seen }
+        if (fresh.isEmpty()) return
+        prefs.setSeenModuleTools(seen + fresh.map { it.fullId })
+        if (!prefs.modulesAuto) return
+        val layout = prefs.tools
+        val add = fresh.map { it.fullId }.filter { it !in layout }
+        // Put new module tools first, so they're on the first page of the tools panel.
+        if (add.isNotEmpty()) prefs.tools = add + layout
+    }
+
+    /** Is this module tool in the island tools panel? */
+    fun isToolShown(fullId: String) = fullId in prefs.tools
+    fun setToolShown(fullId: String, shown: Boolean) {
+        val layout = prefs.tools
+        prefs.tools = if (shown) (if (fullId in layout) layout else layout + fullId) else layout - fullId
+        prefs.setSeenModuleTools(prefs.seenModuleTools() + fullId)
+        publish()
+    }
+
     fun setApproved(pkg: String, approved: Boolean) {
         prefs.setApprovedModules(if (approved) prefs.approvedModules() + pkg else prefs.approvedModules() - pkg)
         rescan()
@@ -195,6 +251,7 @@ object ModuleRegistry {
                 val described = try { m.describe() } catch (e: Exception) { null }
                 main.post {
                     tools = parseTools(info.pkg, described)
+                    autoAddTools(tools)
                     try { m.attach(host) } catch (_: Exception) {}
                     publish()
                 }

@@ -40,6 +40,12 @@ class ModulesActivity : AppCompatActivity() {
         }
         root.addView(text("Modules", 30f, bold = true))
         root.addView(text("Add-on apps that give the island new abilities. Each module is a separate app with its own permissions: you only grant what you install, and you approve every module here before it can show anything.", 14f, secondary = true).apply { setPadding(0, dp(6), 0, dp(14)) })
+        root.addView(MaterialSwitch(this).apply {
+            text = "Add new modules automatically"
+            isChecked = prefs.modulesAuto
+            setOnCheckedChangeListener { _, on -> prefs.set(Prefs.MODULES_AUTO, on) }
+        })
+        root.addView(text("When you install a module from the same developer as this app, it's switched on and its tools are added to your island tools. Modules from other developers always wait for your approval.", 12f, secondary = true).apply { setPadding(0, 0, 0, dp(14)) })
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(list)
 
@@ -72,6 +78,7 @@ class ModulesActivity : AppCompatActivity() {
         setContentView(scroll)
         ModuleRegistry.start(this)
         lifecycleScope.launch { ModuleRegistry.modules.collect { render(it) } }
+        lifecycleScope.launch { ModuleRegistry.tools.collect { render(ModuleRegistry.modules.value) } }
     }
 
     override fun onResume() { super.onResume(); ModuleRegistry.rescan() }
@@ -117,6 +124,20 @@ class ModulesActivity : AppCompatActivity() {
                 } else if (!on && m.approved) ModuleRegistry.setApproved(m.pkg, false)
             }
         })
+        // Tools this module adds: show/hide each one in the island's tools panel.
+        val tools = ModuleRegistry.tools.value.filter { it.pkg == m.pkg }
+        if (tools.isNotEmpty()) {
+            col.addView(text("Island tools", 13f, bold = true).apply { setPadding(0, dp(8), 0, 0) })
+            tools.forEach { t ->
+                col.addView(MaterialSwitch(this).apply {
+                    text = "Show \"${t.label}\" in island tools"
+                    isChecked = ModuleRegistry.isToolShown(t.fullId)
+                    setOnCheckedChangeListener { _, on -> ModuleRegistry.setToolShown(t.fullId, on) }
+                })
+            }
+        } else if (m.approved && !m.connected) {
+            col.addView(text("Its tools appear here once it's connected.", 12f, secondary = true))
+        }
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         if (m.settings != null) row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "Settings"; setOnClickListener { ModuleRegistry.openSettings(this@ModulesActivity, m) }

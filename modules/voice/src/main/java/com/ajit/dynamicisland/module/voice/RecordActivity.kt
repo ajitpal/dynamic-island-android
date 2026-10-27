@@ -28,8 +28,18 @@ class RecordActivity : AppCompatActivity() {
                 RecorderService.command(this, RecorderService.ACTION_STOP); finish(); return
             }
             RecorderService.State.SAVING -> { finish(); return }
+            RecorderService.State.SUMMARIZING -> {
+                // A new meeting matters more than notes for the last one (they can be rewritten later).
+                RecorderService.command(this, RecorderService.ACTION_CANCEL_NOTES)
+                Toast.makeText(this, "Stopping the notes for the last meeting, then recording…", Toast.LENGTH_SHORT).show()
+                waitForIdle(0); return
+            }
             RecorderService.State.IDLE -> {}
         }
+        checkAndGo()
+    }
+
+    private fun checkAndGo() {
         if (!ModelStore.isPresent(this)) {
             Toast.makeText(this, "Download the speech model first (one time)", Toast.LENGTH_LONG).show()
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -37,6 +47,16 @@ class RecordActivity : AppCompatActivity() {
         }
         val need = neededPermissions().filterNot(::has)
         if (need.isEmpty()) go() else ask.launch(need.toTypedArray())
+    }
+
+    private fun waitForIdle(tries: Int) {
+        window.decorView.postDelayed({
+            when {
+                RecorderService.state == RecorderService.State.IDLE -> checkAndGo()
+                tries < 40 -> waitForIdle(tries + 1)
+                else -> { Toast.makeText(this, "Still finishing the notes. Try again in a moment.", Toast.LENGTH_LONG).show(); finish() }
+            }
+        }, 250)
     }
 
     private fun go() {
