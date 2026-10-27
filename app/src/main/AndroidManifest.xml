@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Optional: lets the Do Not Disturb tool toggle DND (user grants it in Settings; normal permission). -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- "No internet / back online" and hotspot glimpses (normal, install-time permissions). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -32,7 +34,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
+
+        <activity
+            android:name=".InboxActivity"
+            android:exported="false"
+            android:label="Inbox"
+            android:taskAffinity=""
+            android:excludeFromRecents="false" />
 
         <service
             android:name=".service.IslandAccessibilityService"

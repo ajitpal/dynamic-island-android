@@ -48,7 +48,9 @@ This app aims to be the clean alternative:
 | 💳 **Payments** | Confirmation glimpse for Google Wallet and UPI apps (GPay, PhonePe, Paytm, BHIM, CRED) |
 | ⚡ **System glimpses** | Charging, low battery, silent/vibrate, DND, earbuds + battery, airplane mode, offline / back online, hotspot, NFC, unlock, flashlight |
 | 🔴 **Recording** | Screen and voice recording with a red REC timer · camera/mic in-use dots |
-| 🧰 **Island tools** | Long-press the empty island: flashlight, 1/5-min timer, stopwatch, screenshot, pin a note |
+| 🧰 **Island tools** | Long-press the empty island: 25+ tools you choose and arrange (flashlight, timers, lock screen, media keys, Wi-Fi/volume panels, DND, copy OTP…) plus any app, across swipeable pages |
+| 📥 **Notification Inbox** | Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy. Swipe down on the empty island |
+| 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
 | 🎨 **Make it yours** | 7 themes (iPhone Black, Glass, Light, Rose, Ocean, Lavender, Graphite), width, height, roundness, opacity, glow outline, animation speed |
 | 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
 
@@ -58,7 +60,8 @@ Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.
 | Gesture | Action |
 |---|---|
 | Tap | Preview the full content (or open the app; set this in Behaviour) |
-| Long-press / swipe down | Expand · music controls · on the empty island: **tools** |
+| Long-press / swipe down | Expand · music controls |
+| Empty island: swipe down / long-press | **Inbox** / **your tools** (swipe sideways for more pages) |
 | Swipe up or sideways | Shrink back to the pill (the activity keeps running) |
 | Tap the side bubble | Switch between two running activities |
 | Tap the empty pill | Bring back shrunk activities |
@@ -103,6 +106,7 @@ Stack: Kotlin 2.0 · AGP 8.7 · minSdk 31 / targetSdk 35 · coroutines · Materi
 Ideas, bug reports and device reports are very welcome. The most useful thing you can send is a **Diagnostics** screenshot from the bottom of the app's screen together with your phone model. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Good first issues: real-device screenshots, translations, three simultaneous activities, a home-screen widget.
+What's next, including the add-on module platform: **[ROADMAP.md](ROADMAP.md)**.
 
 ## How it was built
 

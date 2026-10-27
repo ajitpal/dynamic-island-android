@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusAccess: TextView
     private lateinit var statusBt: TextView
     private lateinit var diag: TextView
+    private lateinit var toolsList: LinearLayout
 
     private val btPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { refreshStatus() }
 
@@ -67,6 +68,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshStatus()
+        if (::toolsList.isInitialized) renderTools()
     }
 
     // ------------------------------------------------------------------ UI
@@ -131,7 +133,47 @@ class MainActivity : AppCompatActivity() {
         chip("🔓 Unlock") { Demo.unlock(this) }
         chip("✖ Clear demos") { Demo.clear() }
         content.addView(chips)
-        hint("Gestures: tap = preview (or open the app, see Behaviour) · long-press or swipe down = expand / music controls · swipe up or sideways = shrink back to the pill (it keeps running; tap the empty pill to bring it back) · tap the side bubble = switch activity · long-press the empty island = tools (flashlight, timers, screenshot, note).")
+        hint("Gestures: tap = preview (or open the app, see Behaviour) · long-press = expand / music controls · swipe up or sideways = shrink back to the pill · tap the side bubble = switch activity · empty island: swipe down = Inbox, long-press = your tools (swipe sideways for more pages).")
+
+        // Island tools (customisable)
+        section("Island tools")
+        hint("Long-press the empty island to open your tools. Add, remove and reorder them here; swipe sideways in the island to change pages.")
+        toolsList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        card { it.addView(toolsList) }
+        renderTools()
+        val toolBtns = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        toolBtns.addView(MaterialButton(this).apply { text = "Add tool"; setOnClickListener { addToolDialog() } },
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(8) })
+        toolBtns.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = "Add app"; setOnClickListener { addAppDialog() }
+        }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(8) })
+        toolBtns.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = "Reset"; setOnClickListener { prefs.sp.edit().remove(Prefs.TOOLS).apply(); renderTools() }
+        }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        content.addView(toolBtns)
+        slider("Tools per page", Prefs.TOOLS_PER_PAGE, 3f, 8f, 6f)
+
+        // Notification inbox
+        section("Notification inbox")
+        hint("Every notification is kept here, encrypted on your phone, until you clear it. Open it by swiping down on the empty island, from the Inbox tool, or long-press the app icon → Inbox.")
+        card { switch(it, "Keep notifications in the Inbox", Prefs.INBOX_ENABLED, true) }
+        slider("Keep for (days)", Prefs.INBOX_DAYS, 1f, 30f, 7f)
+        button("Open Inbox") { startActivity(Intent(this, InboxActivity::class.java)) }
+
+        // Pop-up duplicates
+        section("Stop duplicate pop-ups")
+        hint("Android doesn't let any app hide another app's pop-up banner. Two ways to avoid seeing it twice:")
+        content.addView(text("Recommended: turn off pop-ups in system settings", 15f, bold = true).apply { setPadding(0, dp(8), 0, dp(2)) })
+        hint("Notifications still arrive, ring and stay in your shade. Only the banner is replaced by the island. On Xiaomi/POCO this is called \"Floating notifications\".")
+        button("Turn off pop-ups for an app…") { popupSettingsDialog() }
+        button("Copy ADB command (all apps, some phones)") {
+            getSystemService(android.content.ClipboardManager::class.java)?.setPrimaryClip(
+                android.content.ClipData.newPlainText("adb", "adb shell settings put global heads_up_notifications_enabled 0"))
+            toast("Copied. Run it from a computer with USB debugging on. Use 1 instead of 0 to undo.")
+        }
+        content.addView(text("Advanced: move notifications into the island", 15f, bold = true).apply { setPadding(0, dp(14), 0, dp(2)) })
+        hint("For the apps you pick, the island takes the notification out of the shade, so it only lives in the island and the Inbox. Replies and Open still work. A banner may still flash briefly, and calls and ongoing notifications are never moved.")
+        button("Choose apps to move…") { moveAppsDialog() }
 
         // 4. Pinned note
         section("4 · Pin a note to the island")
@@ -409,6 +451,113 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Save") { _, _ -> prefs.setBlocked(blocked) }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    // ------------------------------------------------------------------ tools editor
+
+    private fun renderTools() {
+        toolsList.removeAllViews()
+        val ids = prefs.tools
+        if (ids.isEmpty()) toolsList.addView(text("No tools. Tap Add tool.", 14f, secondary = true).apply { setPadding(0, dp(10), 0, dp(10)) })
+        val perPage = prefs.toolsPerPage
+        ids.forEachIndexed { i, id ->
+            if (i > 0 && i % perPage == 0) toolsList.addView(text("— page ${i / perPage + 1} —", 12f, secondary = true).apply { gravity = Gravity.CENTER; setPadding(0, dp(6), 0, dp(6)) })
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, dp(4), 0, dp(4)) }
+            val (label, icon) = toolLabelIcon(id)
+            row.addView(android.widget.ImageView(this).apply {
+                setImageDrawable(icon)
+                if (!com.ajit.dynamicisland.core.tools.ToolCatalog.isApp(id)) setColorFilter(currentTextColor())
+            }, LinearLayout.LayoutParams(dp(26), dp(26)).apply { marginEnd = dp(14) })
+            row.addView(text(label, 15f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            fun iconBtn(res: Int, desc: String, enabled: Boolean, onClick: () -> Unit) = row.addView(android.widget.ImageButton(this).apply {
+                setImageResource(res); contentDescription = desc; isEnabled = enabled; alpha = if (enabled) 1f else 0.3f
+                setColorFilter(currentTextColor()); setBackgroundColor(0)
+                setOnClickListener { onClick() }
+            }, LinearLayout.LayoutParams(dp(40), dp(40)))
+            iconBtn(R.drawable.ic_up, "Move up", i > 0) { prefs.tools = com.ajit.dynamicisland.core.tools.ToolLayout.move(ids, i, i - 1); renderTools() }
+            iconBtn(R.drawable.ic_down, "Move down", i < ids.size - 1) { prefs.tools = com.ajit.dynamicisland.core.tools.ToolLayout.move(ids, i, i + 1); renderTools() }
+            iconBtn(R.drawable.ic_close, "Remove", true) { prefs.tools = ids - id; renderTools() }
+            toolsList.addView(row)
+        }
+    }
+
+    private fun currentTextColor(): Int {
+        val tv = TypedValue(); theme.resolveAttribute(android.R.attr.textColorPrimary, tv, true)
+        return androidx.core.content.ContextCompat.getColor(this, tv.resourceId.takeIf { it != 0 } ?: android.R.color.black)
+    }
+
+    private fun toolLabelIcon(id: String): Pair<String, android.graphics.drawable.Drawable?> {
+        val cat = com.ajit.dynamicisland.core.tools.ToolCatalog
+        return if (cat.isApp(id)) {
+            val pkg = cat.appPackage(id)
+            com.ajit.dynamicisland.core.NotificationParser.appLabel(this, pkg) to com.ajit.dynamicisland.core.NotificationParser.appIcon(this, pkg)
+        } else {
+            val d = cat.def(id)
+            (d?.label ?: id) to d?.let { androidx.core.content.ContextCompat.getDrawable(this, it.icon) }
+        }
+    }
+
+    private fun addToolDialog() {
+        val current = prefs.tools.toSet()
+        val available = com.ajit.dynamicisland.core.tools.ToolCatalog.builtIn.filter { it.id !in current }
+        if (available.isEmpty()) { toast("All built-in tools are already added"); return }
+        val labels = available.map { "${it.label}  ·  ${it.category}" + if (it.need == com.ajit.dynamicisland.core.tools.ToolNeed.DND_ACCESS) " (asks for DND access)" else "" }
+        val checked = BooleanArray(available.size)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Add tools")
+            .setMultiChoiceItems(labels.toTypedArray(), checked) { _, i, on -> checked[i] = on }
+            .setPositiveButton("Add") { _, _ ->
+                prefs.tools = prefs.tools + available.filterIndexed { i, _ -> checked[i] }.map { it.id }
+                renderTools()
+            }
+            .setNegativeButton("Cancel", null).show()
+    }
+
+    private fun addAppDialog() {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = packageManager.queryIntentActivities(intent, 0)
+            .map { it.activityInfo.packageName to it.loadLabel(packageManager).toString() }
+            .filter { it.first != packageName }.distinctBy { it.first }.sortedBy { it.second.lowercase() }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Add an app shortcut")
+            .setItems(apps.map { it.second }.toTypedArray()) { _, i ->
+                prefs.tools = prefs.tools + (com.ajit.dynamicisland.core.tools.ToolCatalog.APP_PREFIX + apps[i].first)
+                renderTools()
+            }
+            .setNegativeButton("Cancel", null).show()
+    }
+
+    // ------------------------------------------------------------------ pop-up duplicates
+
+    private fun seenAppsSorted() = prefs.seenApps().toList()
+        .map { it to com.ajit.dynamicisland.core.NotificationParser.appLabel(this, it) }
+        .sortedBy { it.second.lowercase() }
+
+    private fun popupSettingsDialog() {
+        val apps = seenAppsSorted()
+        if (apps.isEmpty()) { toast("No apps yet: wait for a few notifications to arrive"); return }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Turn off pop-ups for…")
+            .setItems(apps.map { it.second }.toTypedArray()) { _, i ->
+                toast("Turn off \"Pop-up\" / \"Floating notifications\" on the next screen")
+                tryStart(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, apps[i].first),
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${apps[i].first}")))
+            }
+            .setNegativeButton("Close", null).show()
+    }
+
+    private fun moveAppsDialog() {
+        val apps = seenAppsSorted()
+        if (apps.isEmpty()) { toast("No apps yet: wait for a few notifications to arrive"); return }
+        val chosen = prefs.moveApps().toMutableSet()
+        val checked = BooleanArray(apps.size) { apps[it].first in chosen }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Move into the island")
+            .setMultiChoiceItems(apps.map { it.second }.toTypedArray(), checked) { _, i, on ->
+                if (on) chosen += apps[i].first else chosen -= apps[i].first
+            }
+            .setPositiveButton("Save") { _, _ -> prefs.setMoveApps(chosen) }
+            .setNegativeButton("Cancel", null).show()
     }
 
     private fun toast(t: String) = Toast.makeText(this, t, Toast.LENGTH_LONG).show()

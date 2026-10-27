@@ -42,13 +42,14 @@ class IslandAccessibilityService : AccessibilityService() {
             getSystemService(InputMethodManager::class.java)?.inputMethodList?.forEach { ignoredPackages += it.packageName }
         } catch (_: Exception) {}
 
-        overlay = IslandOverlay(this, prefs) { performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) }.also { it.attach() }
+        overlay = IslandOverlay(this, prefs) { performGlobalAction(it) }.also { it.attach() }
         monitor = SystemEventMonitor(this, prefs).also { it.start() }
         IslandTools.restore(this)
 
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also { s ->
             s.launch { IslandRepository.activities.collect { overlay?.refresh() } }
             s.launch { IslandRepository.peeks.collect { overlay?.onPeek(it) } }
+            s.launch { com.ajit.dynamicisland.core.inbox.InboxStore.version.collect { overlay?.onInboxChanged() } }
             s.launch {
                 combine(IslandRepository.cameraInUse, IslandRepository.micInUse, IslandRepository.torchOn) { a, b, c -> Triple(a, b, c) }
                     .collect { overlay?.refresh() }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0 (27 Oct 2026)
+- **Customisable Island tools**: 25+ built-in tools (flashlight, timers incl. custom & 25-min focus, stopwatch, screenshot, pin note, Inbox, copy latest OTP, play/pause/next/previous, volume / Wi-Fi / Bluetooth / NFC panels, ring-vibrate, Do Not Disturb, lock screen, power menu, recent apps, split screen, notification shade, quick settings) plus **any app** as a shortcut; reorder, remove, multiple pages, 3–8 per page
+- **Notification Inbox**: every notification kept on the device, **encrypted** (Android Keystore AES-GCM), until you clear it; search, filters (Unread, Messages, Payments, OTPs), swipe to clear, tap to open, long-press to copy; retention 1–30 days; mini Inbox in the island (swipe down on the empty island); launcher shortcut
+- **Duplicate pop-up controls**: per-app link to turn off system pop-ups, ADB command, opt-in "move notifications into the island"; the island never pops twice for the same message
+- First unit tests (OTP detection, tool layout, de-duplication)
+- Roadmap: modular add-on apps with approved third-party developers (see ROADMAP.md)
+
 ## 1.3.1 (26 Oct 2026)
 - Brand-aware "keep it running" setup (Xiaomi, Samsung, OnePlus, OPPO/realme, vivo/iQOO, Huawei, Motorola, Pixel) with links to dontkillmyapp.com
 - Open-source release: docs, website, CI

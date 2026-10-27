@@ -67,6 +67,20 @@ class Prefs(context: Context) {
         .remove(ISLAND_COLOR).remove(THEME).remove(HOLE_ADJUST).remove(ANIM_SPEED).remove(OPACITY).remove(OUTLINE).remove(OFFSET_X).remove(OFFSET_Y).apply()
     val peekSeconds get() = sp.getInt(PEEK_SECONDS, 5)
 
+    // Island tools
+    var tools: List<String>
+        get() = com.ajit.dynamicisland.core.tools.ToolLayout.parse(sp.getString(TOOLS, null))
+        set(v) = sp.edit().putString(TOOLS, com.ajit.dynamicisland.core.tools.ToolLayout.join(v)).apply()
+    val toolsPerPage get() = sp.getInt(TOOLS_PER_PAGE, 6)
+
+    // Notification inbox
+    val inboxEnabled get() = b(INBOX_ENABLED, true)
+    val inboxDays get() = sp.getInt(INBOX_DAYS, 7).coerceIn(1, 90)
+
+    // Pop-up duplicates: apps whose notifications are moved out of the shade into the island
+    fun moveApps(): Set<String> = sp.getStringSet(MOVE_APPS, emptySet()) ?: emptySet()
+    fun setMoveApps(pkgs: Set<String>) = sp.edit().putStringSet(MOVE_APPS, pkgs).apply()
+
     var note: String
         get() = sp.getString(NOTE, "") ?: ""
         set(v) = sp.edit().putString(NOTE, v).apply()
@@ -123,5 +137,10 @@ class Prefs(context: Context) {
         const val BLOCKED_APPS = "blocked_apps"
         const val PEEK_SECONDS = "peek_seconds"
         const val NOTE = "note"
+        const val TOOLS = "tools"
+        const val TOOLS_PER_PAGE = "tools_per_page"
+        const val INBOX_ENABLED = "inbox_enabled"
+        const val INBOX_DAYS = "inbox_days"
+        const val MOVE_APPS = "move_apps"
     }
 }

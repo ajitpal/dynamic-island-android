@@ -1,6 +1,20 @@
 package com.ajit.dynamicisland.ui
 
+import android.accessibilityservice.AccessibilityService
 import android.animation.ValueAnimator
+import android.app.NotificationManager
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.media.AudioManager
+import android.provider.Settings
+import android.view.KeyEvent
+import androidx.core.content.ContextCompat
+import com.ajit.dynamicisland.core.Colors
+import com.ajit.dynamicisland.core.NotificationParser
+import com.ajit.dynamicisland.core.inbox.InboxEntry
+import com.ajit.dynamicisland.core.inbox.InboxStore
+import com.ajit.dynamicisland.core.tools.ToolCatalog
+import com.ajit.dynamicisland.core.tools.ToolLayout
 import android.app.ActivityOptions
 import android.app.KeyguardManager
 import android.app.PendingIntent
@@ -49,7 +63,8 @@ import kotlin.math.roundToInt
 class IslandOverlay(
     base: Context,
     private val prefs: Prefs,
-    private val screenshot: () -> Unit,
+    /** Runs an AccessibilityService global action (screenshot, lock, recents…). */
+    private val globalAction: (Int) -> Boolean,
 ) : ContentBinder.Host {
 
     enum class Mode { HIDDEN, IDLE, COMPACT, EXPANDED }
@@ -61,7 +76,11 @@ class IslandOverlay(
         val compactH: Int, val compactW: Int,
     )
 
-    companion object { const val TOOLS_ID = "__tools" }
+    companion object {
+        const val TOOLS_ID = "__tools"
+        const val INBOX_ID = "__inbox"
+        fun isPanel(id: String?) = id == TOOLS_ID || id == INBOX_ID
+    }
 
     private val ctx: Context = ContextThemeWrapper(base, R.style.Theme_Island_Overlay)
     private val wm = base.getSystemService(WindowManager::class.java)
@@ -121,6 +140,9 @@ class IslandOverlay(
     private var expandedId: String? = null
     private var stickyPeekId: String? = null
     private var preferredId: String? = null
+    private var toolsPage = 0
+    @Volatile private var inboxCache: List<InboxEntry> = emptyList()
+    @Volatile private var inboxUnread = 0
     private val dismissed = HashMap<String, Int>()
     private var foregroundPkg: String? = null
     private var statusBarHidden = false
@@ -301,12 +323,12 @@ class IslandOverlay(
             if (a == null || !a.peek) { stickyPeekId = null; if (expandedId == id) expandedId = null }
         }
         val exp = expandedId
-        val expActivity = if (exp != null && exp != TOOLS_ID) visible.firstOrNull { it.id == exp } else null
-        if (exp != null && exp != TOOLS_ID && expActivity == null) expandedId = null
+        val expActivity = if (exp != null && !isPanel(exp)) visible.firstOrNull { it.id == exp } else null
+        if (exp != null && !isPanel(exp) && expActivity == null) expandedId = null
 
         val target = when {
             hiddenByEnvironment() -> Mode.HIDDEN
-            expandedId == TOOLS_ID -> Mode.EXPANDED
+            isPanel(expandedId) -> Mode.EXPANDED
             expActivity != null -> Mode.EXPANDED
             primary != null -> Mode.COMPACT
             prefs.showIdle || prefs.calibrate -> Mode.IDLE
@@ -371,7 +393,12 @@ class IslandOverlay(
                 expandedHost.removeAllViews()
                 val topPad = g.compactH + dp(2)
                 val content = if (expandedId == TOOLS_ID) {
-                    binder.buildTools(topPad, IslandRepository.torchOn.value, input)
+                    val ids = prefs.tools
+                    val pages = ToolLayout.pages(ids, prefs.toolsPerPage)
+                    toolsPage = toolsPage.coerceIn(0, pages.size - 1)
+                    binder.buildTools(topPad, pages[toolsPage].mapNotNull { toolCell(it) }, toolsPage, pages.size, input)
+                } else if (expandedId == INBOX_ID) {
+                    binder.buildInbox(topPad, inboxCache, inboxUnread, isLocked())
                 } else {
                     binder.buildExpanded(a!!, topPad, if (inputFor == a.id) input else null)
                 }
@@ -506,7 +533,7 @@ class IslandOverlay(
                 }
                 Mode.EXPANDED -> {
                     val id = expandedId
-                    val a = if (id != null && id != TOOLS_ID) IslandRepository.get(id) else null
+                    val a = if (id != null && !isPanel(id)) IslandRepository.get(id) else null
                     if (a != null && input == null) open(a) else if (input == null) collapse()
                 }
                 Mode.HIDDEN -> Unit
@@ -529,7 +556,7 @@ class IslandOverlay(
                 if (velocityY > 0) { // swipe down = expand
                     when (mode) {
                         Mode.COMPACT -> primary?.let { expand(it.id) }
-                        Mode.IDLE -> expand(TOOLS_ID)
+                        Mode.IDLE -> if (prefs.inboxEnabled) openInboxPanel() else expand(TOOLS_ID)
                         else -> Unit
                     }
                 } else { // swipe up = collapse / dismiss
@@ -541,7 +568,12 @@ class IslandOverlay(
                 }
             } else { // swipe sideways = dismiss the animation back to the pill (activity keeps running, like iOS)
                 when (mode) {
-                    Mode.EXPANDED -> if (input == null) collapse()
+                    Mode.EXPANDED -> if (expandedId == TOOLS_ID && input == null) {
+                        // Swipe between tool pages.
+                        val pages = ToolLayout.pages(prefs.tools, prefs.toolsPerPage).size
+                        if (pages > 1) { toolsPage = (toolsPage + (if (velocityX < 0) 1 else pages - 1)) % pages; haptic(); rescheduleCollapse(); lastKey = ""; refresh() }
+                        else collapse()
+                    } else if (input == null) collapse()
                     Mode.COMPACT -> primary?.let { dismissed[it.id] = it.contentHash; haptic(); refresh() }
                     else -> Unit
                 }
@@ -642,16 +674,162 @@ class IslandOverlay(
         rescheduleCollapse()
     }
 
+    /** Resolve a saved tool id into what the tools grid shows. */
+    private fun toolCell(id: String): ContentBinder.ToolCell? {
+        if (ToolCatalog.isApp(id)) {
+            val pkg = ToolCatalog.appPackage(id)
+            val icon = NotificationParser.appIcon(ctx, pkg) ?: return null
+            return ContentBinder.ToolCell(id, NotificationParser.appLabel(ctx, pkg), icon, tint = false, active = false)
+        }
+        val d = ToolCatalog.def(id) ?: return null
+        val active = when (id) {
+            "torch" -> IslandRepository.torchOn.value
+            "dnd" -> ctx.getSystemService(NotificationManager::class.java)?.currentInterruptionFilter.let { it != null && it != NotificationManager.INTERRUPTION_FILTER_ALL }
+            else -> false
+        }
+        val label = if (active && d.activeLabel != null) d.activeLabel else d.label
+        return ContentBinder.ToolCell(id, label, ContextCompat.getDrawable(ctx, d.icon), tint = true, active = active)
+    }
+
     override fun tool(id: String) {
         haptic()
-        when (id) {
-            "torch" -> { IslandTools.toggleTorch(ctx); handler.postDelayed({ collapse() }, 250) }
-            "timer1" -> { IslandTools.startTimer(ctx, 60_000); collapse() }
-            "timer5" -> { IslandTools.startTimer(ctx, 5 * 60_000); collapse() }
-            "stopwatch" -> { IslandTools.startStopwatch(ctx); collapse() }
-            "screenshot" -> { collapse(); handler.postDelayed({ screenshot() }, 450) }
-            "note" -> startInput(TOOLS_ID, "Pin a note to the island…") { IslandTools.pinNote(ctx, it) }
+        fun global(action: Int) { collapse(); handler.postDelayed({ globalAction(action) }, 350) }
+        when {
+            id == "torch" -> { IslandTools.toggleTorch(ctx); handler.postDelayed({ collapse() }, 250) }
+            id == "timer:custom" -> startInput(TOOLS_ID, "Minutes (e.g. 12)…") { txt ->
+                txt.trim().toDoubleOrNull()?.takeIf { it > 0 }?.let { IslandTools.startTimer(ctx, (it * 60_000).toLong()) }
+            }
+            id.startsWith(ToolCatalog.TIMER_PREFIX) -> {
+                id.removePrefix(ToolCatalog.TIMER_PREFIX).toLongOrNull()?.let { IslandTools.startTimer(ctx, it * 60_000) }
+                collapse()
+            }
+            id == "stopwatch" -> { IslandTools.startStopwatch(ctx); collapse() }
+            id == "screenshot" -> { collapse(); handler.postDelayed({ globalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT) }, 450) }
+            id == "note" -> startInput(TOOLS_ID, "Pin a note to the island…") { IslandTools.pinNote(ctx, it) }
+            id == "inbox" -> openInboxPanel()
+            id == "otp" -> copyLatestOtp()
+            id == "lock" -> global(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN)
+            id == "power" -> global(AccessibilityService.GLOBAL_ACTION_POWER_DIALOG)
+            id == "recents" -> global(AccessibilityService.GLOBAL_ACTION_RECENTS)
+            id == "split" -> global(AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN)
+            id == "shade" -> global(AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS)
+            id == "qs" -> global(AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS)
+            id == "play" -> mediaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+            id == "next" -> mediaKey(KeyEvent.KEYCODE_MEDIA_NEXT)
+            id == "prev" -> mediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+            id == "wifi" -> { collapse(); launchIntent(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)) }
+            id == "bt" -> { collapse(); launchIntent(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }
+            id == "nfc" -> { collapse(); launchIntent(Intent(Settings.Panel.ACTION_NFC)) }
+            id == "volume" -> { collapse(); launchIntent(Intent(Settings.Panel.ACTION_VOLUME)) }
+            id == "ringer" -> cycleRinger()
+            id == "dnd" -> toggleDnd()
+            ToolCatalog.isApp(id) -> {
+                collapse()
+                ctx.packageManager.getLaunchIntentForPackage(ToolCatalog.appPackage(id))?.let { launchIntent(it) }
+            }
         }
+    }
+
+    private fun mediaKey(code: Int) {
+        val am = ctx.getSystemService(AudioManager::class.java) ?: return
+        am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, code))
+        am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
+        rescheduleCollapse(3000)
+    }
+
+    private fun cycleRinger() {
+        val am = ctx.getSystemService(AudioManager::class.java) ?: return
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        val next = when (am.ringerMode) {
+            AudioManager.RINGER_MODE_NORMAL -> AudioManager.RINGER_MODE_VIBRATE
+            AudioManager.RINGER_MODE_VIBRATE -> if (nm?.isNotificationPolicyAccessGranted == true) AudioManager.RINGER_MODE_SILENT else AudioManager.RINGER_MODE_NORMAL
+            else -> AudioManager.RINGER_MODE_NORMAL
+        }
+        try { am.ringerMode = next } catch (_: Exception) {}
+        collapse()
+    }
+
+    private fun toggleDnd() {
+        val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+        collapse()
+        if (!nm.isNotificationPolicyAccessGranted) {
+            flash("Allow Do Not Disturb access", "Find Dynamic Island in the list and switch it on")
+            launchIntent(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+            return
+        }
+        val on = nm.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL
+        nm.setInterruptionFilter(if (on) NotificationManager.INTERRUPTION_FILTER_ALL else NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+    }
+
+    private fun copyLatestOtp() {
+        Thread {
+            val otp = InboxStore.latestOtp(ctx)
+            handler.post {
+                collapse()
+                if (otp != null) {
+                    ctx.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("OTP", otp))
+                    flash("OTP $otp copied", "Paste it where you need it")
+                } else flash("No recent OTP", "Nothing in the last 15 minutes")
+            }
+        }.start()
+    }
+
+    /** A short system-style glimpse in the island. */
+    private fun flash(title: String, text: String) {
+        val now = System.currentTimeMillis()
+        IslandRepository.upsert(
+            IslandActivity(
+                id = "sys", kind = Kind.SYSTEM, packageName = ctx.packageName, title = title, text = text,
+                icon = ContextCompat.getDrawable(ctx, R.drawable.ic_key), tintIcon = true, accent = Colors.GREEN,
+                compactText = title, expiresAt = now + 2600, contentHash = now.toInt(),
+            )
+        )
+    }
+
+    // ------------------------------------------------------------------ inbox panel
+
+    private fun openInboxPanel() {
+        loadInbox()
+        expand(INBOX_ID)
+    }
+
+    private fun loadInbox() {
+        Thread {
+            val list = InboxStore.query(ctx, limit = 60).distinctBy { it.pkg + "|" + it.title }.take(5)
+            val unread = InboxStore.unreadCount(ctx)
+            handler.post {
+                inboxCache = list; inboxUnread = unread
+                if (expandedId == INBOX_ID) { lastKey = ""; refresh() }
+            }
+        }.start()
+    }
+
+    /** Called when the inbox changes (new notification, cleared…). */
+    fun onInboxChanged() { if (expandedId == INBOX_ID && input == null) loadInbox() }
+
+    override fun openInbox(e: InboxEntry) {
+        haptic()
+        InboxStore.markRead(ctx, e.id)
+        collapse()
+        val pi = InboxStore.liveIntents[e.key]
+        if (pi != null) launch(pi, e.pkg) else ctx.packageManager.getLaunchIntentForPackage(e.pkg)?.let { launchIntent(it) }
+    }
+
+    override fun inboxAction(action: String) {
+        haptic()
+        when (action) {
+            "clear" -> { InboxStore.clearAll(ctx); inboxCache = emptyList(); inboxUnread = 0; lastKey = ""; refresh(force = true) }
+            "all" -> { collapse(); launchIntent(Intent(ctx, com.ajit.dynamicisland.InboxActivity::class.java)) }
+        }
+    }
+
+    private fun isLocked() = prefs.privacyLock && ctx.getSystemService(KeyguardManager::class.java)?.isKeyguardLocked == true
+
+    /** Start an activity from the overlay (works with Android 14+ background-start rules). */
+    private fun launchIntent(intent: Intent) {
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val pi = PendingIntent.getActivity(ctx, intent.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        if (!sendPending(pi)) try { ctx.startActivity(intent) } catch (_: Exception) {}
     }
 
     override fun addTicker(t: () -> Unit) { tickers += t }

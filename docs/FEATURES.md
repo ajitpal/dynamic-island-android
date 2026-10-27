@@ -22,7 +22,9 @@ How this app compares with Apple's Dynamic Island (iPhone 14 Pro and later) and 
 | Screen & voice recording indicator | ✅ | – | ✅ red REC + timer |
 | Camera / mic in-use dots | ✅ | ✅ | ✅ |
 | Flashlight on | ✅ | – | ✅ tap to turn off |
-| Island tools: flashlight, timers, stopwatch, screenshot, **pinned note** | – | – | ✅ |
+| Island tools: 25+ customisable tools + any app, paged | – | – | ✅ |
+| **Notification Inbox** (encrypted, until cleared, search, OTP copy) | – | – | ✅ |
+| Stop duplicate pop-ups (pop-up guide, move-to-island, no double peeks) | – | – | ✅ |
 | Themes, size, roundness, opacity, outline, animation speed | – | – | ✅ |
 | Per-app on/off, hide content on lock screen, hide in the app's own screen | partial | partial | ✅ |
 | Works offline, no tracking | ✅ | ✅ | ✅ (no internet permission) |

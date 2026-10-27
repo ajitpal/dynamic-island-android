@@ -36,6 +36,8 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         fun perform(a: IslandActivity, act: IslandAction)
         fun media(a: IslandActivity, cmd: MediaCmd)
         fun tool(id: String)
+        fun openInbox(e: com.ajit.dynamicisland.core.inbox.InboxEntry)
+        fun inboxAction(action: String)
         fun addTicker(t: () -> Unit)
         fun submitInput(text: String)
         fun cancelInput()
@@ -220,7 +222,7 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         return box
     }
 
-    private fun actionButton(act: IslandAction, a: IslandActivity): View = TextView(ctx).apply {
+    private fun actionButton(act: IslandAction, a: IslandActivity?): View = TextView(ctx).apply {
         text = act.title
         setTextColor(if (act.style == ActionStyle.NORMAL) pal.fg else Color.WHITE)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
@@ -234,7 +236,7 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         }
         background = rounded(bg, dp(20).toFloat())
         foreground = ContextCompat.getDrawable(ctx, R.drawable.ripple_round)
-        setOnClickListener { host.perform(a, act) }
+        setOnClickListener { if (a != null) host.perform(a, act) else act.onClick?.invoke() }
     }
 
     private fun inputRow(input: InputState, accent: Int): View {
@@ -273,10 +275,13 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
 
     // ------------------------------------------------------------------ tools panel
 
-    fun buildTools(topPad: Int, torchOn: Boolean, input: InputState?): View {
+    /** A tool cell as the overlay resolved it (built-in, app shortcut, or — later — a module tool). */
+    class ToolCell(val id: String, val label: String, val icon: Drawable?, val tint: Boolean, val active: Boolean)
+
+    fun buildTools(topPad: Int, cells: List<ToolCell>, page: Int, pages: Int, input: InputState?): View {
         val col = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), topPad, dp(14), dp(16))
+            setPadding(dp(14), topPad, dp(14), dp(14))
         }
         col.addView(label("Island tools", pal.fg3, 12f).apply { gravity = Gravity.CENTER },
             LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
@@ -284,40 +289,84 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
             col.addView(inputRow(input, Colors.YELLOW), LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { topMargin = dp(12) })
             return col
         }
-        val tools = listOf(
-            Triple(R.drawable.ic_torch, if (torchOn) "Light off" else "Flashlight", "torch"),
-            Triple(R.drawable.ic_timer, "Timer 1m", "timer1"),
-            Triple(R.drawable.ic_timer, "Timer 5m", "timer5"),
-            Triple(R.drawable.ic_stopwatch, "Stopwatch", "stopwatch"),
-            Triple(R.drawable.ic_screenshot, "Screenshot", "screenshot"),
-            Triple(R.drawable.ic_note, "Pin note", "note"),
-        )
-        tools.chunked(3).forEach { chunk ->
+        if (cells.isEmpty()) {
+            col.addView(label("No tools yet — add some in the app under Island tools", pal.fg2, 13f, maxLines = 2).apply { gravity = Gravity.CENTER },
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(16) })
+            return col
+        }
+        val cols = if (cells.size > 6) 4 else 3
+        cells.chunked(cols).forEach { chunk ->
             val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-            chunk.forEach { (icon, name, id) ->
-                val active = id == "torch" && torchOn
-                row.addView(toolButton(icon, name, active) { host.tool(id) },
-                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            }
+            chunk.forEach { c -> row.addView(toolButton(c) { host.tool(c.id) }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)) }
+            repeat(cols - chunk.size) { row.addView(View(ctx), LinearLayout.LayoutParams(0, 1, 1f)) }
             col.addView(row, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+        }
+        if (pages > 1) {
+            val dots = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+            repeat(pages) { i ->
+                dots.addView(View(ctx).apply { background = circle(if (i == page) pal.fg else pal.fg3); alpha = if (i == page) 1f else 0.5f },
+                    LinearLayout.LayoutParams(dp(7), dp(7)).apply { marginStart = dp(4); marginEnd = dp(4) })
+            }
+            col.addView(dots, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) })
         }
         return col
     }
 
-    private fun toolButton(icon: Int, name: String, active: Boolean, onClick: () -> Unit): View {
+    /** Mini inbox in the expanded island: latest conversations, then "Clear all" / "See all". */
+    fun buildInbox(topPad: Int, entries: List<com.ajit.dynamicisland.core.inbox.InboxEntry>, unread: Int, locked: Boolean): View {
+        val col = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), topPad, dp(18), dp(14))
+        }
+        col.addView(label(if (unread > 0) "Inbox · $unread unread" else "Inbox", pal.fg3, 12f).apply { gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        when {
+            locked -> col.addView(label("Unlock to see your notifications", pal.fg2, 14f).apply { gravity = Gravity.CENTER },
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) })
+            entries.isEmpty() -> col.addView(label("You're all caught up", pal.fg2, 14f).apply { gravity = Gravity.CENTER },
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) })
+            else -> entries.forEach { e ->
+                val row = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                    setPadding(0, dp(7), 0, dp(7))
+                    setOnClickListener { host.openInbox(e) }
+                }
+                val iv = ImageView(ctx).apply { setImageDrawable(com.ajit.dynamicisland.core.NotificationParser.appIcon(ctx, e.pkg)); clipRound(-1f) }
+                row.addView(iv, LinearLayout.LayoutParams(dp(30), dp(30)))
+                val texts = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+                texts.addView(label(e.title.ifBlank { e.app }, pal.fg, 14.5f, bold = !e.read))
+                texts.addView(label(e.otp?.let { "OTP $it · ${e.text}" } ?: e.text, pal.fg2, 13f))
+                row.addView(texts, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(12); marginEnd = dp(8) })
+                row.addView(label(android.text.format.DateUtils.getRelativeTimeSpanString(e.posted, System.currentTimeMillis(),
+                    android.text.format.DateUtils.MINUTE_IN_MILLIS, android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE), pal.fg3, 11.5f))
+                col.addView(row)
+            }
+        }
+        val acts = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
+        if (!locked && entries.isNotEmpty()) {
+            acts.addView(actionButton(IslandAction("Clear all", style = ActionStyle.NORMAL, onClick = { host.inboxAction("clear") }), null),
+                LinearLayout.LayoutParams(0, dp(40), 1f).apply { marginEnd = dp(8) })
+        }
+        acts.addView(actionButton(IslandAction("See all", onClick = { host.inboxAction("all") }), null), LinearLayout.LayoutParams(0, dp(40), 1f))
+        col.addView(acts, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+        return col
+    }
+
+    private fun toolButton(c: ToolCell, onClick: () -> Unit): View {
         val box = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
             setOnClickListener { onClick() }
-            contentDescription = name
+            contentDescription = c.label
         }
         val iv = ImageView(ctx).apply {
-            setImageResource(icon)
-            setColorFilter(if (active) Color.BLACK else pal.fg)
-            background = circle(if (active) Colors.YELLOW else pal.surface)
-            setPadding(dp(14), dp(14), dp(14), dp(14))
+            setImageDrawable(c.icon)
+            if (c.tint) setColorFilter(if (c.active) Color.BLACK else pal.fg)
+            background = circle(if (c.active) Colors.YELLOW else pal.surface)
+            val pad = if (c.tint) dp(14) else dp(10)
+            setPadding(pad, pad, pad, pad)
         }
         box.addView(iv, LinearLayout.LayoutParams(dp(52), dp(52)))
-        box.addView(label(name, pal.fg2, 11f), LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) })
+        box.addView(label(c.label, pal.fg2, 11f), LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) })
         return box
     }
 

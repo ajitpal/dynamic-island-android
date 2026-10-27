@@ -35,11 +35,27 @@ object IslandRepository {
             changed = old == null || old.contentHash != a.contentHash
             cur + (a.id to a)
         }
-        if (a.peek && changed) _peeks.tryEmit(a.id)
+        if (a.peek && changed && !recentlyPeeked(a)) _peeks.tryEmit(a.id)
         if (a.expiresAt > 0) {
             val delay = (a.expiresAt - System.currentTimeMillis()).coerceAtLeast(0) + 30
             handler.postDelayed({ expire(a.id) }, delay)
         }
+    }
+
+    private val peekedAt = HashMap<String, Long>()
+
+    /**
+     * Same app + same title + same text popped within the last few seconds (e.g. a group
+     * summary and its child, or an app re-posting the same message): don't pop the island twice.
+     */
+    @Synchronized
+    private fun recentlyPeeked(a: IslandActivity): Boolean {
+        val sig = PeekDedupe.signature(a.packageName, a.title, a.text)
+        val now = System.currentTimeMillis()
+        peekedAt.entries.removeAll { now - it.value > PeekDedupe.WINDOW_MS }
+        val dup = peekedAt.containsKey(sig)
+        peekedAt[sig] = now
+        return dup
     }
 
     private fun expire(id: String) {
@@ -53,4 +69,11 @@ object IslandRepository {
         _activities.update { cur -> cur.filterValues { !predicate(it) } }
 
     fun get(id: String): IslandActivity? = _activities.value[id]
+}
+
+/** Pure helper (unit-tested). */
+object PeekDedupe {
+    const val WINDOW_MS = 10_000L
+    fun signature(pkg: String, title: CharSequence?, text: CharSequence?): String =
+        pkg + "|" + title?.toString()?.trim()?.lowercase() + "|" + text?.toString()?.trim()?.lowercase()
 }
