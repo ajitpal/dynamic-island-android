@@ -114,6 +114,7 @@ What's next, including the add-on module platform: **[ROADMAP.md](ROADMAP.md)**.
 
 This app was designed and built by [Ajit Kumar Pal](https://github.com/ajitpal) in a few short iterations with an AI pair-programmer (Claude), and tested on a real POCO M8. The story, including what went wrong and how each problem was fixed, is in the accompanying blog post.
 
+Blog : [I Built an Open-Source “Dynamic Island” for Android in a Day, Pair-Programming with Claude](https://medium.com/@ajitonmail/i-built-an-open-source-dynamic-island-for-android-in-a-day-pair-programming-with-claude-34b1b2a9a960?sharedUserId=ajitonmail)
 ## License
 
 [MIT](LICENSE) © 2026 Ajit Kumar Pal. "Dynamic Island" is used descriptively; this project is not affiliated with Apple, Google or any phone maker.
