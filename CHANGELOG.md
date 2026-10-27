@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0 (27 Oct 2026): Meeting Notes (English)
+- **Meeting Notes module** (new add-on app): tap **Record meeting** in your island tools; the island shows a red REC timer, live captions and Pause / Stop. The English transcript is made **on the phone** by [Moonshine](https://github.com/moonshine-ai/moonshine) (MIT). Choose the **Small** (more accurate) or **Tiny** (lighter) model; it downloads once, then everything works offline.
+- Saved meetings: playback, tap any line to jump there, **possible action items** (simple rules, clearly labelled), rename, share, copy, delete. Audio is kept as small AAC files (about 14 MB per hour) in the module's private storage.
+- **SDK:** a tool, a card tap or a card button can now open one of the module's screens (`ModuleTool(activity = …)`, `tapActivity`, `activityAction`). Android only lets the microphone start from a visible screen, so this is how a module starts recording from the island.
+- **SDK:** new `com.ajit.dynamicisland.permission.HOST` signature permission, held only by the genuine island app. Modules protect the screens the island opens with it, so no other app can, for example, switch the microphone on.
+- Island app 1.6.0 (needed for the above).
+
 ## 1.5.0 (27 Oct 2026): Modules
 - **Module platform:** add-on apps extend the island through a small SDK (`:module-sdk`, AIDL + Bundle contract). Modules send cards (title, text, icon, countdown, progress, up to 3 buttons, reply field) and add tools; the island draws everything in your theme.
 - **Modules screen:** see each module's developer, verification status, permissions and certificate; approve, disable, open settings, uninstall.

@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.Module" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.Module.Translucent" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>

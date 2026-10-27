@@ -52,7 +52,8 @@ This app aims to be the clean alternative:
 | 📥 **Notification Inbox** | Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy. Swipe down on the empty island |
 | 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
 | 🎨 **Make it yours** | 7 themes (iPhone Black, Glass, Light, Rose, Ocean, Lavender, Graphite), width, height, roundness, opacity, glow outline, animation speed |
-| 🧩 **Modules** | Optional add-on apps with their own permissions: **Automation Bridge** (Tasker/MacroDroid/adb → island) and **Calendar** (next meeting, one-tap Join). [Build your own](docs/MODULES.md) |
+| 🎙 **Meeting Notes** (module) | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, possible action items. Nothing leaves the phone |
+| 🧩 **Modules** | Optional add-on apps with their own permissions: **Automation Bridge** (Tasker/MacroDroid/adb → island), **Calendar** (next meeting, one-tap Join) and **Meeting Notes**. [Build your own](docs/MODULES.md) |
 | 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
 
 Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.md)**.
@@ -87,6 +88,8 @@ Step-by-step guides per brand, plus an ADB alternative: **[docs/INSTALL.md](docs
 | Vibrate, network state, Wi-Fi state | Haptics; "offline / back online" and hotspot glimpses |
 | **Internet** | **Not requested.** The app can't send anything anywhere. |
 
+Modules ask for their own permissions, only if you install them. For example, Meeting Notes asks for the microphone, and for internet only to download its speech model once.
+
 See [PRIVACY.md](PRIVACY.md).
 
 ## Build from source
@@ -114,7 +117,6 @@ What's next, including the add-on module platform: **[ROADMAP.md](ROADMAP.md)**.
 
 This app was designed and built by [Ajit Kumar Pal](https://github.com/ajitpal) in a few short iterations with an AI pair-programmer (Claude), and tested on a real POCO M8. The story, including what went wrong and how each problem was fixed, is in the accompanying blog post.
 
-Blog : [I Built an Open-Source “Dynamic Island” for Android in a Day, Pair-Programming with Claude](https://medium.com/@ajitonmail/i-built-an-open-source-dynamic-island-for-android-in-a-day-pair-programming-with-claude-34b1b2a9a960?sharedUserId=ajitonmail)
 ## License
 
 [MIT](LICENSE) © 2026 Ajit Kumar Pal. "Dynamic Island" is used descriptively; this project is not affiliated with Apple, Google or any phone maker.

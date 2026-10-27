@@ -36,3 +36,9 @@ How this app compares with Apple's Dynamic Island (iPhone 14 Pro and later) and 
 <img src="screenshots/10-themes.webp" width="24%"/>
 
 <sub>Illustrations of the real layouts.</sub>
+
+## Add-on modules
+Optional apps that add abilities to the island, each with its own permissions (see [MODULES.md](MODULES.md)):
+- **Meeting Notes**: "Record meeting" island tool, red REC timer with live captions, Pause / Stop in the island, on-device English transcript (Moonshine Small or Tiny), playback with tap-to-jump, possible action items, share / copy.
+- **Calendar**: next-meeting countdown, pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs.
+- **Automation Bridge**: Tasker, MacroDroid or adb can show cards and tools in the island.

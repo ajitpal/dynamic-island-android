@@ -53,7 +53,7 @@ data class ModuleInfo(
     val permissions: List<Pair<String, Boolean>>,
 )
 
-data class ModuleTool(val fullId: String, val pkg: String, val toolId: String, val label: String, val icon: Drawable?)
+data class ModuleTool(val fullId: String, val pkg: String, val toolId: String, val label: String, val icon: Drawable?, val activity: String? = null)
 
 /**
  * Finds installed modules, checks who signed them, connects to the ones the user approved,
@@ -276,18 +276,29 @@ object ModuleRegistry {
         val progress = if (b.containsKey(C.K_PROGRESS)) b.getFloat(C.K_PROGRESS).coerceIn(0f, 1f) else -1f
         val tapUrl = b.getString(C.K_TAP_URL)
         val tapCallback = b.getBoolean(C.K_TAP_CALLBACK, false)
+        val tapActivity = b.getString(C.K_TAP_ACTIVITY)
+        val tapArg = b.getString(C.K_TAP_ARG)
         @Suppress("DEPRECATION") val actions = (b.getParcelableArrayList<Bundle>(C.K_ACTIONS) ?: arrayListOf()).take(3).mapNotNull { ab ->
             val aid = ab.getString(C.A_ID) ?: return@mapNotNull null
             val at = ab.getString(C.A_TITLE)?.take(20) ?: return@mapNotNull null
             val st = when (ab.getInt(C.A_STYLE, 0)) { 1 -> ActionStyle.POSITIVE; 2 -> ActionStyle.NEGATIVE; else -> ActionStyle.NORMAL }
             val url = ab.getString(C.A_URL)
+            val act = ab.getString(C.A_ACTIVITY)
+            val arg = ab.getString(C.A_ARG)
             if (ab.getBoolean(C.A_INPUT, false)) {
                 IslandAction(at, style = st, inputHint = ab.getString(C.A_HINT) ?: "Type…", onInput = { txt -> sendAction(pkg, cardId, aid, txt) })
             } else {
-                IslandAction(at, style = st, onClick = { if (url != null) Launcher.openUrl(app, url) else sendAction(pkg, cardId, aid, null) })
+                IslandAction(at, style = st, onClick = {
+                    when {
+                        act != null -> openModuleActivity(pkg, act, arg)
+                        url != null -> Launcher.openUrl(app, url)
+                        else -> sendAction(pkg, cardId, aid, null)
+                    }
+                })
             }
         }
         val onTap: (() -> Unit)? = when {
+            tapActivity != null -> { { openModuleActivity(pkg, tapActivity, tapArg) } }
             tapUrl != null -> { { Launcher.openUrl(app, tapUrl) } }
             tapCallback -> { { sendAction(pkg, cardId, C.ACTION_TAP, null) } }
             else -> null
@@ -328,7 +339,7 @@ object ModuleRegistry {
             val id = t.getString(C.K_TOOL_ID) ?: return@mapNotNull null
             val label = t.getString(C.K_TOOL_LABEL)?.take(18) ?: return@mapNotNull null
             @Suppress("DEPRECATION") val icon = (t.getParcelable(C.K_TOOL_ICON) as? Icon)?.let { try { it.loadDrawable(app) } catch (e: Exception) { null } }
-            ModuleTool("$TOOL_PREFIX$pkg/$id", pkg, id, label, icon)
+            ModuleTool("$TOOL_PREFIX$pkg/$id", pkg, id, label, icon, t.getString(C.K_TOOL_ACTIVITY))
         }
     }
 
@@ -336,7 +347,15 @@ object ModuleRegistry {
 
     fun toolTapped(fullId: String) {
         val t = tool(fullId) ?: return
+        if (t.activity != null) { openModuleActivity(t.pkg, t.activity, null); return }
         try { conns[t.pkg]?.module?.onToolTapped(t.toolId) } catch (_: Exception) {}
+    }
+
+    /** Open an exported activity that belongs to the module itself (never another app). */
+    private fun openModuleActivity(pkg: String, cls: String, arg: String?) {
+        val intent = Intent().setComponent(ComponentName(pkg, if (cls.startsWith(".")) pkg + cls else cls))
+        arg?.let { intent.putExtra(C.EXTRA_ARG, it.take(200)) }
+        Launcher.start(app, intent)
     }
 
     fun openSettings(ctx: Context, info: ModuleInfo) {

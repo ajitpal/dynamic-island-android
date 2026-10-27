@@ -64,6 +64,7 @@ abstract class IslandModuleService : Service() {
                 Bundle().apply {
                     putString(C.K_TOOL_ID, it.id); putString(C.K_TOOL_LABEL, it.label)
                     putParcelable(C.K_TOOL_ICON, Icon.createWithResource(this@IslandModuleService, it.iconRes))
+                    it.activity?.let { a -> putString(C.K_TOOL_ACTIVITY, a.name) }
                 }
             })
             return Bundle().apply { putParcelableArrayList(C.K_TOOLS, list) }

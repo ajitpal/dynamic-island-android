@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Microphone: only this module asks for it. The Dynamic Island app never can. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Only used to download the speech model once (Moonshine CDN). Audio and transcripts never leave the phone. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Island · Meeting Notes"
+        android:theme="@style/Theme.Module">
+
+        <service
+            android:name=".VoiceModule"
+            android:exported="true"
+            android:label="Meeting Notes">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.MODULE" />
+            </intent-filter>
+            <meta-data android:name="com.ajit.dynamicisland.module.DESCRIPTION"
+                android:value="Record meetings from the island and get a live, on-device English transcript with timestamps and possible action items. Audio and transcripts stay on your phone." />
+            <meta-data android:name="com.ajit.dynamicisland.module.SETTINGS_ACTIVITY" android:value=".MainActivity" />
+            <meta-data android:name="com.ajit.dynamicisland.module.DEVELOPER" android:value="Ajit Kumar Pal" />
+        </service>
+
+        <service
+            android:name=".RecorderService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <activity android:name=".MainActivity" android:exported="true" android:label="Meeting Notes">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Opened by the island's "Record" tool: a visible screen is what lets Android start the mic. -->
+        <activity
+            android:name=".RecordActivity"
+            android:exported="true"
+            android:permission="com.ajit.dynamicisland.permission.HOST"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Module.Translucent" />
+
+        <!-- Only the island (and this app) can open these: no other app can switch the mic on or open a transcript. -->
+        <activity android:name=".TranscriptActivity" android:exported="true" android:label="Transcript"
+            android:permission="com.ajit.dynamicisland.permission.HOST" />
+    </application>
+</manifest>

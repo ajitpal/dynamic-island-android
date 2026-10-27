@@ -5,8 +5,8 @@ import android.graphics.drawable.Icon
 import android.os.Bundle
 import com.ajit.dynamicisland.sdk.IslandContract as C
 
-/** A tool a module adds to the island's tools panel. */
-data class ModuleTool(val id: String, val label: String, val iconRes: Int)
+/** A tool a module adds to the island's tools panel. [activity]: open this exported activity of your module instead of calling onToolTapped (e.g. to start the mic). */
+data class ModuleTool(val id: String, val label: String, val iconRes: Int, val activity: Class<*>? = null)
 
 enum class ActionStyle(val code: Int) { NORMAL(0), POSITIVE(1), NEGATIVE(2) }
 
@@ -47,11 +47,23 @@ class IslandCard private constructor(val bundle: Bundle) {
         fun version(v: Int) = apply { b.putInt(C.K_VERSION, v) }
         fun tapUrl(url: String) = apply { b.putString(C.K_TAP_URL, url) }
         fun tapCallback() = apply { b.putBoolean(C.K_TAP_CALLBACK, true) }
+        /** Open one of your module's exported activities on tap (arg arrives as IslandContract.EXTRA_ARG). */
+        fun tapActivity(activity: Class<*>, arg: String? = null) = apply {
+            b.putString(C.K_TAP_ACTIVITY, activity.name); arg?.let { b.putString(C.K_TAP_ARG, it) }
+        }
 
         fun action(id: String, title: String, style: ActionStyle = ActionStyle.NORMAL, url: String? = null) = apply {
             actions += Bundle().apply {
                 putString(C.A_ID, id); putString(C.A_TITLE, title); putInt(C.A_STYLE, style.code)
                 url?.let { putString(C.A_URL, it) }
+            }
+        }
+
+        /** A button that opens one of your module's exported activities. */
+        fun activityAction(id: String, title: String, activity: Class<*>, arg: String? = null, style: ActionStyle = ActionStyle.NORMAL) = apply {
+            actions += Bundle().apply {
+                putString(C.A_ID, id); putString(C.A_TITLE, title); putInt(C.A_STYLE, style.code)
+                putString(C.A_ACTIVITY, activity.name); arg?.let { putString(C.A_ARG, it) }
             }
         }
 

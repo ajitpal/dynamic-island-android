@@ -2,4 +2,6 @@
     <string name="app_name">Dynamic Island</string>
     <string name="accessibility_desc">Draws the Dynamic Island around your front camera and shows live activities (music, calls, timers, messages, downloads). It only listens for which app is on screen so it can hide that app\'s own activity. It does not read or collect screen content.</string>
     <string name="shortcut_inbox">Inbox</string>
+    <string name="perm_host_label">Dynamic Island app</string>
+    <string name="perm_host_desc">Identifies the genuine Dynamic Island app to its add-on modules.</string>
 </resources>

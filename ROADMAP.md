@@ -6,8 +6,9 @@ Dynamic Island grows as a **small core app plus optional add-on modules**. Each 
 |---|---|---|---|
 | 1. Foundation & Inbox | 1.4 | Customisable, paged **Island tools** (25+ built-in tools + any app); **Notification Inbox** (encrypted, kept until cleared, search/filters/OTP copy); **duplicate pop-up controls** (system pop-up guide, opt-in "move to island", peek de-duplication); unit tests | ✅ shipped |
 | 2. Module platform | 1.5 | Module SDK (AIDL + declarative island cards), discovery, **Modules** screen with per-module approval, signature verification supporting **approved third-party developers** (`signature\|knownSigner` allow-list + certificate pinning + developer mode), first modules: **Automation Bridge** (Tasker/MacroDroid/adb) and **Calendar** | ✅ shipped |
-| 3. Voice | 1.6 | **AI Engine** module (on-device speech-to-text: Moonshine v2 streaming for live English, Whisper for Hindi/Hinglish; model download or file import) + **Meeting Recorder** module (mic, background recording, island REC + live captions) | next |
-| 4. Intelligence | 1.7 | On-device notes (Gemini Nano via ML Kit where supported, Gemma 3n E2B fallback): summary, decisions, action items; templates; export; **Smart Inbox** digest & quick replies (opt-in data sharing) | planned |
+| 3. Voice (English) | 1.6 | **Meeting Notes** module: record from the island, live on-device English transcript (Moonshine streaming, Small or Tiny model, one-time download), island REC timer with live captions + Pause/Stop, timestamped transcript with playback, rule-based "possible action items", share/copy. SDK: tools and card buttons can open a module screen (needed to start the mic) | ✅ shipped |
+| 3b. Voice (Hindi / Hinglish) | 1.6.x | Second model option for Hindi and code-mixed speech; import a transcript or audio file | next |
+| 4. Intelligence | 1.7 | Shared **AI Engine** module (one place for models, used by Meeting Notes and others). On-device notes (Gemini Nano via ML Kit where supported, Gemma 3n E2B fallback): summary, decisions, action items; templates; export; **Smart Inbox** digest & quick replies (opt-in data sharing) | planned |
 | 5. Ecosystem | 2.0 | Public SDK docs, third-party module catalogue, Scanner / Weather & AQI / Screen Recorder modules, three activities at once, IzzyOnDroid listings | planned |
 
 ## Module security model (Phase 2, designed for third parties)
@@ -16,5 +17,7 @@ Dynamic Island grows as a **small core app plus optional add-on modules**. Each 
 - The core also verifies each module's signing certificate at bind time and asks the user to **approve every module once**. Approval can be revoked anytime.
 - Modules render through **structured templates** (no arbitrary views), so a module can't break or spoof the island.
 - Notification data is **never** shared with a module unless the user explicitly allows it for that module.
+
+**Why one Meeting Notes module instead of a separate "AI Engine" + "Recorder" pair (as first planned)?** Streaming raw microphone audio between two apps adds latency, battery cost and a privacy surface for no gain while there is only one model. The shared AI Engine arrives in Phase 4, when a language model for summaries makes sharing worthwhile.
 
 Want to build a module? Read **[docs/MODULES.md](docs/MODULES.md)**.

@@ -21,6 +21,14 @@
         android:knownCerts="@array/approved_module_certs"
         android:label="@string/perm_module_label"
         android:protectionLevel="signature|knownSigner" />
+    <!-- Held only by the genuine Dynamic Island app. Modules put it on activities the island opens
+         (android:permission), so no other app can start them, e.g. to switch the microphone on. -->
+    <permission
+        android:name="com.ajit.dynamicisland.permission.HOST"
+        android:label="@string/perm_host_label"
+        android:description="@string/perm_host_desc"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.ajit.dynamicisland.permission.HOST" />
 
     <queries>
         <intent>

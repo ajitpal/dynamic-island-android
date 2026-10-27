@@ -13,6 +13,9 @@ object IslandContract {
     const val ACTION_MODULE = "com.ajit.dynamicisland.action.MODULE"
     /** Permission the host defines with protectionLevel="signature|knownSigner" (approved developers). */
     const val PERMISSION_MODULE_API = "com.ajit.dynamicisland.permission.MODULE_API"
+    /** Signature permission only the genuine Dynamic Island app holds. Put it on any activity the island opens
+     *  for you (`android:permission="com.ajit.dynamicisland.permission.HOST"`) so other apps can't start it. */
+    const val PERMISSION_HOST = "com.ajit.dynamicisland.permission.HOST"
 
     /** Optional <meta-data> on the module service. */
     const val META_DESCRIPTION = "com.ajit.dynamicisland.module.DESCRIPTION"
@@ -34,6 +37,9 @@ object IslandContract {
     const val K_TOOL_ID = "id"
     const val K_TOOL_LABEL = "label"
     const val K_TOOL_ICON = "icon"          // android.graphics.drawable.Icon
+    /** Optional: fully-qualified class of an exported activity in the module that the island opens on tap
+     *  (instead of calling onToolTapped). Needed for anything that must start from a visible screen, e.g. the microphone. */
+    const val K_TOOL_ACTIVITY = "activity"
 
     // ---- card ----
     const val K_ID = "id"                   // String, unique within the module
@@ -53,6 +59,8 @@ object IslandContract {
     const val K_VERSION = "version"         // Int: bump to signal "new content" (re-peek)
     const val K_TAP_URL = "tapUrl"          // String: open this URL / content URI on tap
     const val K_TAP_CALLBACK = "tapCallback" // Boolean: send onAction(cardId, ACTION_TAP) on tap
+    const val K_TAP_ACTIVITY = "tapActivity" // String: class of an exported activity in the module to open on tap
+    const val K_TAP_ARG = "tapArg"          // String passed to that activity as EXTRA_ARG
     const val K_ACTIONS = "actions"         // ArrayList<Bundle>, max 3
 
     const val STYLE_LIVE = "live"
@@ -67,6 +75,11 @@ object IslandContract {
     const val A_URL = "url"                 // String: host opens it
     const val A_INPUT = "input"             // Boolean: show a text field; text arrives in onAction
     const val A_HINT = "hint"
+    const val A_ACTIVITY = "activity"       // String: class of an exported activity in the module to open
+    const val A_ARG = "arg"                 // String passed to that activity as EXTRA_ARG
+
+    /** Extra the island puts on module activities it opens. */
+    const val EXTRA_ARG = "com.ajit.dynamicisland.ARG"
 
     const val ACTION_TAP = "__tap"
 

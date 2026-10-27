@@ -68,6 +68,22 @@ class WeatherModule : IslandModuleService() {
 }
 ```
 
+### Opening your own screens (and starting the microphone)
+Some things Android only allows from a **visible screen**: starting a microphone or camera foreground service, asking for a runtime permission. For those, let the island open one of your activities instead of calling you in the background:
+
+```kotlin
+override val tools = listOf(ModuleTool("record", "Record meeting", R.drawable.ic_mic, activity = RecordActivity::class.java))
+```
+
+```xml
+<!-- Only the genuine island app holds this permission, so no other app can start this screen. -->
+<activity android:name=".RecordActivity" android:exported="true"
+    android:permission="com.ajit.dynamicisland.permission.HOST"
+    android:theme="@style/Theme.Translucent" android:excludeFromRecents="true" android:taskAffinity="" />
+```
+
+A translucent activity can do its job (start the service, ask for the permission) and `finish()` straight away. `tapActivity(...)` and `activityAction(...)` work the same way for cards. Note: `HOST` is a `signature` permission, so a debug build of the island can't open these screens of a release-signed module; build both the same way while testing.
+
 ### Card cheat-sheet
 | Builder call | Effect |
 |---|---|
@@ -82,6 +98,8 @@ class WeatherModule : IslandModuleService() {
 | `peek(ms)` | Pop the island open (re-pops only when `version` changes) |
 | `expiresIn(ms)` | Remove automatically |
 | `tapUrl(url)` / `tapCallback()` | What tapping the card does |
+| `tapActivity(Class, arg)` | Tapping opens one of your exported activities (`arg` arrives as `IslandContract.EXTRA_ARG`) |
+| `activityAction(id, title, Class, arg, style)` | A button that opens one of your activities |
 | `version(n)` | Bump to mark content as new |
 
 Limits enforced by the island: 3 cards per module, 80-character titles, 400-character text, and only `https`, `http`, `content`, `tel`, `geo` and `mailto` links. Module cards never outrank calls.
@@ -106,6 +124,7 @@ Limits enforced by the island: 3 cards per module, 80-character titles, 400-char
 ## 5. Reference modules in this repo
 - **`modules/automation`**, Automation Bridge: bridges Tasker, MacroDroid and adb into the island using a secret key. Shows queued cards, tools and reply buttons.
 - **`modules/calendar`**, Calendar: uses the `READ_CALENDAR` permission (in the module only), a countdown, a progress phase, a Join link and `peek` at T-5 minutes.
+- **`modules/voice`**, Meeting Notes: a tool that opens a translucent activity to start a `microphone` foreground service, a count-up REC card with live text and Pause/Stop buttons, on-device speech-to-text with Moonshine, and a "saved" card that opens the transcript.
 
 ## Contract stability
 `IslandContract.API_VERSION = 1`. Everything travels as `Bundle`s: new keys are optional, and unknown keys are ignored. Breaking changes will bump the API version, and the island will keep supporting older versions.
