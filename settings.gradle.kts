@@ -7,3 +7,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "DynamicIsland"
 include(":app")
+include(":module-sdk")
+include(":modules:automation")
+include(":modules:calendar")

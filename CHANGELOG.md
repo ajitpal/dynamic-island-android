@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0 (27 Oct 2026): Modules
+- **Module platform:** add-on apps extend the island through a small SDK (`:module-sdk`, AIDL + Bundle contract). Modules send cards (title, text, icon, countdown, progress, up to 3 buttons, reply field) and add tools; the island draws everything in your theme.
+- **Modules screen:** see each module's developer, verification status, permissions and certificate; approve, disable, open settings, uninstall.
+- **Trust model:** modules pin the island's certificate; the island checks each module's certificate and caller UID; approved third-party developers via `signature|knownSigner` allow-list; Developer mode for unverified modules.
+- **Automation Bridge module:** Tasker / MacroDroid / adb → island cards (secret-key protected); two island tools that trigger automations; reply and button events back.
+- **Calendar module:** next-meeting countdown, pop-up at T-5 min with one-tap Join (Meet, Zoom, Teams, Webex), progress during the meeting. Calendar access stays in the module.
+- Developer guide: [docs/MODULES.md](docs/MODULES.md)
+
 ## 1.4.0 (27 Oct 2026)
 - **Customisable Island tools**: 25+ built-in tools (flashlight, timers incl. custom & 25-min focus, stopwatch, screenshot, pin note, Inbox, copy latest OTP, play/pause/next/previous, volume / Wi-Fi / Bluetooth / NFC panels, ring-vibrate, Do Not Disturb, lock screen, power menu, recent apps, split screen, notification shade, quick settings) plus **any app** as a shortcut; reorder, remove, multiple pages, 3–8 per page
 - **Notification Inbox**: every notification kept on the device, **encrypted** (Android Keystore AES-GCM), until you clear it; search, filters (Unread, Messages, Payments, OTPs), swipe to clear, tap to open, long-press to copy; retention 1–30 days; mini Inbox in the island (swipe down on the empty island); launcher shortcut

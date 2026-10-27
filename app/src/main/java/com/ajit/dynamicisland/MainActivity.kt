@@ -153,6 +153,11 @@ class MainActivity : AppCompatActivity() {
         content.addView(toolBtns)
         slider("Tools per page", Prefs.TOOLS_PER_PAGE, 3f, 8f, 6f)
 
+        // Modules
+        section("Modules")
+        hint("Add-on apps that give the island new abilities (automation, calendar, and later meeting notes and AI), each with its own permissions. You approve every module before it can show anything.")
+        button("Manage modules") { startActivity(Intent(this, ModulesActivity::class.java)) }
+
         // Notification inbox
         section("Notification inbox")
         hint("Every notification is kept here, encrypted on your phone, until you clear it. Open it by swiping down on the empty island, from the Inbox tool, or long-press the app icon → Inbox.")
@@ -367,6 +372,7 @@ class MainActivity : AppCompatActivity() {
             appendLine("Last peek             : ${d.lastPeek}")
             appendLine("Last notification     : ${d.lastNotification}")
             appendLine("Geometry              : ${d.geometry}")
+            appendLine("Modules               : ${com.ajit.dynamicisland.core.modules.ModuleRegistry.summary()}")
             append("Activities (${acts.size}) : ${acts.joinToString { it.kind.name + ":" + it.title }}")
         }
         mark(statusBt, ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED, "Allowed")
@@ -488,6 +494,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun toolLabelIcon(id: String): Pair<String, android.graphics.drawable.Drawable?> {
         val cat = com.ajit.dynamicisland.core.tools.ToolCatalog
+        if (id.startsWith(com.ajit.dynamicisland.core.modules.ModuleRegistry.TOOL_PREFIX)) {
+            val t = com.ajit.dynamicisland.core.modules.ModuleRegistry.tool(id)
+            return (t?.label ?: "Module tool (not connected)") to t?.icon
+        }
         return if (cat.isApp(id)) {
             val pkg = cat.appPackage(id)
             com.ajit.dynamicisland.core.NotificationParser.appLabel(this, pkg) to com.ajit.dynamicisland.core.NotificationParser.appIcon(this, pkg)
@@ -499,15 +509,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun addToolDialog() {
         val current = prefs.tools.toSet()
-        val available = com.ajit.dynamicisland.core.tools.ToolCatalog.builtIn.filter { it.id !in current }
-        if (available.isEmpty()) { toast("All built-in tools are already added"); return }
-        val labels = available.map { "${it.label}  ·  ${it.category}" + if (it.need == com.ajit.dynamicisland.core.tools.ToolNeed.DND_ACCESS) " (asks for DND access)" else "" }
+        com.ajit.dynamicisland.core.modules.ModuleRegistry.start(this)
+        val builtIn = com.ajit.dynamicisland.core.tools.ToolCatalog.builtIn.filter { it.id !in current }
+            .map { it.id to "${it.label}  ·  ${it.category}" + if (it.need == com.ajit.dynamicisland.core.tools.ToolNeed.DND_ACCESS) " (asks for DND access)" else "" }
+        val fromModules = com.ajit.dynamicisland.core.modules.ModuleRegistry.tools.value.filter { it.fullId !in current }
+            .map { t -> t.fullId to "${t.label}  ·  module: ${com.ajit.dynamicisland.core.NotificationParser.appLabel(this, t.pkg)}" }
+        val available = builtIn + fromModules
+        if (available.isEmpty()) { toast("All tools are already added"); return }
+        val labels = available.map { it.second }
         val checked = BooleanArray(available.size)
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("Add tools")
             .setMultiChoiceItems(labels.toTypedArray(), checked) { _, i, on -> checked[i] = on }
             .setPositiveButton("Add") { _, _ ->
-                prefs.tools = prefs.tools + available.filterIndexed { i, _ -> checked[i] }.map { it.id }
+                prefs.tools = prefs.tools + available.filterIndexed { i, _ -> checked[i] }.map { it.first }
                 renderTools()
             }
             .setNegativeButton("Cancel", null).show()

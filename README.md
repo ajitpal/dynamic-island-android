@@ -52,6 +52,7 @@ This app aims to be the clean alternative:
 | 📥 **Notification Inbox** | Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy. Swipe down on the empty island |
 | 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
 | 🎨 **Make it yours** | 7 themes (iPhone Black, Glass, Light, Rose, Ocean, Lavender, Graphite), width, height, roundness, opacity, glow outline, animation speed |
+| 🧩 **Modules** | Optional add-on apps with their own permissions: **Automation Bridge** (Tasker/MacroDroid/adb → island) and **Calendar** (next meeting, one-tap Join). [Build your own](docs/MODULES.md) |
 | 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
 
 Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.md)**.
@@ -68,7 +69,7 @@ Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.
 
 ## Install (2 minutes)
 
-1. Download the latest **APK** from [Releases](https://github.com/ajitpal/dynamic-island-android/releases/latest) and open it. If Play Protect warns about an unknown developer, tap *More details → Install anyway*.
+1. Download the latest **APK** (and any modules you want) from [Releases](https://github.com/ajitpal/dynamic-island-android/releases/latest) and open it. If Play Protect warns about an unknown developer, tap *More details → Install anyway*.
 2. **Android 13+:** Android blocks notification and accessibility access for apps installed from a file. Try the toggle once, then go to *App info → ⋮ → Allow restricted settings*.
 3. In the app, turn on **Notification access** and the **Accessibility service**.
 4. Follow **"Keep it running"** for your phone brand (the app detects it).
@@ -93,8 +94,9 @@ See [PRIVACY.md](PRIVACY.md).
 ```bash
 git clone https://github.com/ajitpal/dynamic-island-android.git
 cd dynamic-island-android
-./gradlew assembleDebug            # → app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleDebug            # → app/, modules/automation/, modules/calendar/ … build/outputs/apk/debug/
 ```
+Project layout: `app/` (the island), `module-sdk/` (library for module developers), `modules/*` (first-party add-on apps).
 Requires JDK 17+ and the Android SDK (or just open the folder in Android Studio).
 Release signing is optional: create `keystore.properties` (git-ignored) with `storeFile`, `storePassword`, `keyAlias` and `keyPassword`.
 Without it, release builds fall back to the debug key.

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The only permission this module needs. The Dynamic Island app itself never gets it. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Island · Calendar"
+        android:theme="@style/Theme.Module">
+
+        <service
+            android:name=".CalendarModule"
+            android:exported="true"
+            android:label="Calendar">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.MODULE" />
+            </intent-filter>
+            <meta-data android:name="com.ajit.dynamicisland.module.DESCRIPTION"
+                android:value="Counts down to your next meeting, pops up a few minutes before with a one-tap Join for Google Meet, Zoom, Teams and Webex links, and shows progress while the meeting runs." />
+            <meta-data android:name="com.ajit.dynamicisland.module.SETTINGS_ACTIVITY" android:value=".SettingsActivity" />
+            <meta-data android:name="com.ajit.dynamicisland.module.DEVELOPER" android:value="Ajit Kumar Pal" />
+        </service>
+
+        <activity android:name=".SettingsActivity" android:exported="true" android:label="Island Calendar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

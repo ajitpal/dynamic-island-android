@@ -14,6 +14,7 @@ import com.ajit.dynamicisland.core.NotificationParser
 import com.ajit.dynamicisland.core.inbox.InboxEntry
 import com.ajit.dynamicisland.core.inbox.InboxStore
 import com.ajit.dynamicisland.core.tools.ToolCatalog
+import com.ajit.dynamicisland.core.modules.ModuleRegistry
 import com.ajit.dynamicisland.core.tools.ToolLayout
 import android.app.ActivityOptions
 import android.app.KeyguardManager
@@ -644,7 +645,7 @@ class IslandOverlay(
         haptic()
         when {
             a.onTap != null -> a.onTap.invoke()
-            a.contentIntent == null && a.packageName == ctx.packageName -> { expand(a.id); return }
+            a.contentIntent == null && (a.packageName == ctx.packageName || a.id.startsWith("mod:")) -> { expand(a.id); return }
             else -> launch(a.contentIntent, a.packageName)
         }
         if (mode == Mode.EXPANDED) collapse()
@@ -676,6 +677,10 @@ class IslandOverlay(
 
     /** Resolve a saved tool id into what the tools grid shows. */
     private fun toolCell(id: String): ContentBinder.ToolCell? {
+        if (id.startsWith(ModuleRegistry.TOOL_PREFIX)) {
+            val t = ModuleRegistry.tool(id) ?: return null // module not installed / approved / connected
+            return ContentBinder.ToolCell(id, t.label, t.icon?.constantState?.newDrawable()?.mutate() ?: t.icon, tint = true, active = false)
+        }
         if (ToolCatalog.isApp(id)) {
             val pkg = ToolCatalog.appPackage(id)
             val icon = NotificationParser.appIcon(ctx, pkg) ?: return null
@@ -723,6 +728,7 @@ class IslandOverlay(
             id == "volume" -> { collapse(); launchIntent(Intent(Settings.Panel.ACTION_VOLUME)) }
             id == "ringer" -> cycleRinger()
             id == "dnd" -> toggleDnd()
+            id.startsWith(ModuleRegistry.TOOL_PREFIX) -> { collapse(); ModuleRegistry.toolTapped(id) }
             ToolCatalog.isApp(id) -> {
                 collapse()
                 ctx.packageManager.getLaunchIntentForPackage(ToolCatalog.appPackage(id))?.let { launchIntent(it) }

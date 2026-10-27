@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Island · Automation Bridge"
+        android:theme="@style/Theme.Module">
+
+        <!-- The module: the Dynamic Island app binds to this (only a genuine, signed island app is accepted). -->
+        <service
+            android:name=".AutomationModule"
+            android:exported="true"
+            android:label="Automation Bridge">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.MODULE" />
+            </intent-filter>
+            <meta-data android:name="com.ajit.dynamicisland.module.DESCRIPTION"
+                android:value="Lets Tasker, MacroDroid, Automate or any app with your secret key show cards in the island, and adds two tools that trigger your automations." />
+            <meta-data android:name="com.ajit.dynamicisland.module.SETTINGS_ACTIVITY" android:value=".SettingsActivity" />
+            <meta-data android:name="com.ajit.dynamicisland.module.DEVELOPER" android:value="Ajit Kumar Pal" />
+        </service>
+
+        <!-- Automation apps send intents here. Protected by a per-install secret key. -->
+        <receiver android:name=".CommandReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.automation.SHOW" />
+                <action android:name="com.ajit.dynamicisland.automation.REMOVE" />
+            </intent-filter>
+        </receiver>
+
+        <activity android:name=".SettingsActivity" android:exported="true" android:label="Automation Bridge">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

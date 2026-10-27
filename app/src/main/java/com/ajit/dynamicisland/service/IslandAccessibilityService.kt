@@ -45,11 +45,13 @@ class IslandAccessibilityService : AccessibilityService() {
         overlay = IslandOverlay(this, prefs) { performGlobalAction(it) }.also { it.attach() }
         monitor = SystemEventMonitor(this, prefs).also { it.start() }
         IslandTools.restore(this)
+        com.ajit.dynamicisland.core.modules.ModuleRegistry.start(this)
 
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also { s ->
             s.launch { IslandRepository.activities.collect { overlay?.refresh() } }
             s.launch { IslandRepository.peeks.collect { overlay?.onPeek(it) } }
             s.launch { com.ajit.dynamicisland.core.inbox.InboxStore.version.collect { overlay?.onInboxChanged() } }
+            s.launch { com.ajit.dynamicisland.core.modules.ModuleRegistry.tools.collect { overlay?.onSettingsChanged() } }
             s.launch {
                 combine(IslandRepository.cameraInUse, IslandRepository.micInUse, IslandRepository.torchOn) { a, b, c -> Triple(a, b, c) }
                     .collect { overlay?.refresh() }
@@ -81,6 +83,7 @@ class IslandAccessibilityService : AccessibilityService() {
         running = false
         try { prefs.sp.unregisterOnSharedPreferenceChangeListener(prefListener) } catch (_: Exception) {}
         scope?.cancel(); scope = null
+        com.ajit.dynamicisland.core.modules.ModuleRegistry.stop()
         monitor?.stop(); monitor = null
         overlay?.detach(); overlay = null
     }

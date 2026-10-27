@@ -81,6 +81,11 @@ class Prefs(context: Context) {
     fun moveApps(): Set<String> = sp.getStringSet(MOVE_APPS, emptySet()) ?: emptySet()
     fun setMoveApps(pkgs: Set<String>) = sp.edit().putStringSet(MOVE_APPS, pkgs).apply()
 
+    // Modules
+    fun approvedModules(): Set<String> = sp.getStringSet(APPROVED_MODULES, emptySet()) ?: emptySet()
+    fun setApprovedModules(pkgs: Set<String>) = sp.edit().putStringSet(APPROVED_MODULES, pkgs).apply()
+    val modulesDevMode get() = b(MODULES_DEV_MODE, false)
+
     var note: String
         get() = sp.getString(NOTE, "") ?: ""
         set(v) = sp.edit().putString(NOTE, v).apply()
@@ -142,5 +147,7 @@ class Prefs(context: Context) {
         const val INBOX_ENABLED = "inbox_enabled"
         const val INBOX_DAYS = "inbox_days"
         const val MOVE_APPS = "move_apps"
+        const val APPROVED_MODULES = "approved_modules"
+        const val MODULES_DEV_MODE = "modules_dev_mode"
     }
 }

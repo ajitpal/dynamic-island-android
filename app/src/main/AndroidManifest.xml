@@ -12,7 +12,20 @@
 
     <!-- Narrow package visibility (instead of QUERY_ALL_PACKAGES): only launchable apps,
          so we can show their icon/name in the island and open them on tap. -->
+    <!-- Approved module developers: modules signed by these certificates are granted MODULE_API
+         automatically (Android 12+ knownSigner). Add a developer's SHA-256 cert digest to
+         res/values/modules.xml to approve them. -->
+    <permission
+        android:name="com.ajit.dynamicisland.permission.MODULE_API"
+        android:description="@string/perm_module_desc"
+        android:knownCerts="@array/approved_module_certs"
+        android:label="@string/perm_module_label"
+        android:protectionLevel="signature|knownSigner" />
+
     <queries>
+        <intent>
+            <action android:name="com.ajit.dynamicisland.action.MODULE" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -36,6 +49,11 @@
             </intent-filter>
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
+
+        <activity
+            android:name=".ModulesActivity"
+            android:exported="true"
+            android:label="Modules" />
 
         <activity
             android:name=".InboxActivity"

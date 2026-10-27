@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Lets a module see the Dynamic Island app (to verify it). -->
+    <queries>
+        <package android:name="com.ajit.dynamicisland" />
+    </queries>
+    <!-- Lets the Dynamic Island app recognise this module as coming from an approved developer
+         (granted automatically when the module's signing certificate is on the app's allow-list). -->
+    <uses-permission android:name="com.ajit.dynamicisland.permission.MODULE_API" />
+</manifest>

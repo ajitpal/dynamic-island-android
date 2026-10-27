@@ -5,8 +5,8 @@ Dynamic Island grows as a **small core app plus optional add-on modules**. Each 
 | Phase | Version | Scope | Status |
 |---|---|---|---|
 | 1. Foundation & Inbox | 1.4 | Customisable, paged **Island tools** (25+ built-in tools + any app); **Notification Inbox** (encrypted, kept until cleared, search/filters/OTP copy); **duplicate pop-up controls** (system pop-up guide, opt-in "move to island", peek de-duplication); unit tests | ✅ shipped |
-| 2. Module platform | 1.5 | Module SDK (AIDL + declarative island templates), discovery, **Modules** screen with per-module approval, signature verification that supports **approved third-party developers from day one** (`signature\|knownSigner` allow-list + cert pinning), sample modules: **Automation Bridge** (Tasker/MacroDroid) and **Calendar** | next |
-| 3. Voice | 1.6 | **AI Engine** module (on-device speech-to-text: Moonshine v2 streaming for live English, Whisper for Hindi/Hinglish; model download or file import) + **Meeting Recorder** module (mic, background recording, island REC + live captions) | planned |
+| 2. Module platform | 1.5 | Module SDK (AIDL + declarative island cards), discovery, **Modules** screen with per-module approval, signature verification supporting **approved third-party developers** (`signature\|knownSigner` allow-list + certificate pinning + developer mode), first modules: **Automation Bridge** (Tasker/MacroDroid/adb) and **Calendar** | ✅ shipped |
+| 3. Voice | 1.6 | **AI Engine** module (on-device speech-to-text: Moonshine v2 streaming for live English, Whisper for Hindi/Hinglish; model download or file import) + **Meeting Recorder** module (mic, background recording, island REC + live captions) | next |
 | 4. Intelligence | 1.7 | On-device notes (Gemini Nano via ML Kit where supported, Gemma 3n E2B fallback): summary, decisions, action items; templates; export; **Smart Inbox** digest & quick replies (opt-in data sharing) | planned |
 | 5. Ecosystem | 2.0 | Public SDK docs, third-party module catalogue, Scanner / Weather & AQI / Screen Recorder modules, three activities at once, IzzyOnDroid listings | planned |
 
@@ -17,4 +17,4 @@ Dynamic Island grows as a **small core app plus optional add-on modules**. Each 
 - Modules render through **structured templates** (no arbitrary views), so a module can't break or spoof the island.
 - Notification data is **never** shared with a module unless the user explicitly allows it for that module.
 
-Want to build a module? Watch this repo. The SDK lands in v1.5.
+Want to build a module? Read **[docs/MODULES.md](docs/MODULES.md)**.
