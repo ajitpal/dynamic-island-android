@@ -21,6 +21,8 @@ import java.security.SecureRandom
  */
 class AutomationModule : IslandModuleService() {
 
+    override val mainActivity: Class<*> get() = SettingsActivity::class.java
+
     override val tools: List<ModuleTool>
         get() = listOf(
             ModuleTool("a", Store.label(this, "a"), R.drawable.ic_bolt),

@@ -28,6 +28,7 @@ import java.util.UUID
 
 /** Pick, download and try the on-device model. */
 class MainActivity : AppCompatActivity() {
+    companion object { const val EXTRA_FOCUS_TRY = "focusTry" }
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private lateinit var status: TextView
     private lateinit var info: TextView
@@ -75,7 +76,7 @@ class MainActivity : AppCompatActivity() {
             })
         }
         group.check(200 + Models.selected(this).ordinal)
-        group.setOnCheckedChangeListener { _, id -> Models.select(this, Model.entries[id - 200]); LlmEngine.releaseAsync(); refresh() }
+        group.setOnCheckedChangeListener { _, id -> Models.select(this, Model.entries[id - 200]); LlmEngine.releaseAsync(); AiModule.refreshTile(); refresh() }
         c.addView(group)
         info = t("", 14f, alpha = 0.8f)
         progress = LinearProgressIndicator(this).apply { max = 1000; visibility = View.GONE }
@@ -85,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         cancelDl = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply { text = "Cancel download"; setOnClickListener { DownloadService.cancel() } }
         c.addView(cancelDl)
         delete = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = "Delete this model"; setOnClickListener { LlmEngine.releaseAsync(); Models.delete(this@MainActivity, Models.selected(this@MainActivity)); refresh() }
+            text = "Delete this model"; setOnClickListener { LlmEngine.releaseAsync(); Models.delete(this@MainActivity, Models.selected(this@MainActivity)); AiModule.refreshTile(); refresh() }
         }
         c.addView(delete)
         c.addView(MaterialSwitch(this).apply {
@@ -123,6 +124,8 @@ class MainActivity : AppCompatActivity() {
             text = "Open Dynamic Island → Modules"; setOnClickListener { HostVerifier.openHostModules(this@MainActivity) }
         })
         setContentView(scroll)
+        if (intent.getBooleanExtra(EXTRA_FOCUS_TRY, false) || intent.getStringExtra(com.ajit.dynamicisland.sdk.IslandContract.EXTRA_ARG) == AiModule.ARG_TRY)
+            scroll.post { scroll.smoothScrollTo(0, (lastInput.parent as android.view.View).top + lastInput.top - dp(80)); lastInput.requestFocus() }
     }
 
     override fun onResume() { super.onResume(); DownloadService.listeners += onChange; refresh() }

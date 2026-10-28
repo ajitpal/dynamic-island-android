@@ -1,7 +1,16 @@
 <resources>
     <style name="Theme.Island" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">#0A84FF</item>
+        <item name="colorPrimary">@color/hig_blue_fill</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorAccent">@color/hig_blue_fill</item>
+        <item name="android:colorBackground">@color/hig_bg</item>
+        <item name="android:windowBackground">@color/hig_bg</item>
+        <item name="android:textColorPrimary">@color/hig_label</item>
+        <item name="android:textColorSecondary">@color/hig_secondary</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/light_bars</item>
     </style>
     <!-- Used for views inside the overlay window (always dark). -->
     <style name="Theme.Island.Overlay" parent="Theme.Material3.Dark.NoActionBar">

@@ -133,6 +133,7 @@ class DownloadService : Service() {
 
     private fun finish(m: Model, err: String?) {
         current = null; lastError = err
+        AiModule.refreshTile()
         IslandModuleService.current?.island?.let { island ->
             island.remove(CARD)
             if (err == null && !cancel) island.post(IslandCard.Builder(this, "ready").title("AI model ready").text("${m.label} works offline now")

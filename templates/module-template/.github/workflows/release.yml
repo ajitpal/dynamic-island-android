@@ -1,0 +1,39 @@
+name: Release
+# Push a tag like v1.0.0. Builds the APK, signs it with YOUR key from repository secrets, prints the
+# certificate SHA-256 (put it in your catalog entry) and attaches the APK to a GitHub release.
+# Secrets: KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+on:
+  push:
+    tags: [ 'v*' ]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Restore the signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          [ -n "$KEYSTORE_BASE64" ] || { echo "::error::Add the signing secrets first (see AGENTS.md, step Sign)"; exit 1; }
+          echo "$KEYSTORE_BASE64" | base64 -d > release.jks
+          printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
+      - run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+      - name: Certificate digest for the catalog entry
+        run: |
+          APK=module/build/outputs/apk/release/module-release.apk
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | tail -1)
+          $APKSIGNER verify --print-certs "$APK" | tee cert.txt
+          echo "### certSha256: \`$(grep -m1 'SHA-256 digest' cert.txt | awk '{print $NF}')\`" >> "$GITHUB_STEP_SUMMARY"
+          cp "$APK" "${{ github.event.repository.name }}-${GITHUB_REF_NAME}.apk"
+      - env: { GH_TOKEN: '${{ github.token }}' }
+        run: gh release create "$GITHUB_REF_NAME" *.apk --title "$GITHUB_REF_NAME" --generate-notes
+      - if: always()
+        run: rm -f release.jks keystore.properties

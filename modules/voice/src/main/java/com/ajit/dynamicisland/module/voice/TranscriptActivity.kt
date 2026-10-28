@@ -33,14 +33,18 @@ class TranscriptActivity : AppCompatActivity() {
     private lateinit var notesBox: LinearLayout
     private lateinit var askBox: LinearLayout
     private var asking = false
+    private var focusAsk = false
     @Volatile private var askCancelled = false
     private lateinit var titleView: TextView
     private val onChange: () -> Unit = { if (::notesBox.isInitialized) { reloadTitle(); renderNotes() } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val id = intent.getStringExtra(EXTRA_ID) ?: intent.getStringExtra(IslandContract.EXTRA_ARG)
-        rec = id?.let { Recordings.load(this, it) } ?: run { Toast.makeText(this, "Recording not found", Toast.LENGTH_SHORT).show(); finish(); return }
+        val arg = intent.getStringExtra(IslandContract.EXTRA_ARG)
+        // "Ask last meeting" shortcut: open the newest recording with the question box focused.
+        focusAsk = arg == VoiceModule.ARG_LAST_ASK || (arg == null && intent.getStringExtra(EXTRA_ID) == null)
+        val id = intent.getStringExtra(EXTRA_ID) ?: arg?.takeIf { !focusAsk } ?: Recordings.all(this).firstOrNull()?.id
+        rec = id?.let { Recordings.load(this, it) } ?: run { Toast.makeText(this, "No meetings recorded yet", Toast.LENGTH_SHORT).show(); finish(); return }
 
         val scroll = ScrollView(this)
         val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(20), dp(20), dp(40)) }
@@ -148,6 +152,7 @@ class TranscriptActivity : AppCompatActivity() {
         if (rec.lines.isEmpty() || !Brain.anyInstalled(this)) return
         text(box, "💬 Ask about this meeting", 18f, bold = true)
         val input = EditText(this).apply { hint = "e.g. What did we decide about the budget?"; minLines = 1; maxLines = 3 }
+        if (focusAsk) { focusAsk = false; input.post { input.requestFocus(); (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).showSoftInput(input, 0) } }
         box.addView(input)
         val live = TextView(this).apply { setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f); setPadding(0, dp(6), 0, dp(6)) }
         val btn = MaterialButton(this).apply { text = if (asking) "Stop" else "Ask" }

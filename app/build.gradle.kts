@@ -20,8 +20,8 @@ android {
         applicationId = "com.ajit.dynamicisland"
         minSdk = 31          // Android 12+ (Poco M8 ships with Android 15 / HyperOS)
         targetSdk = 35
-        versionCode = 13
-        versionName = "1.8.0"
+        versionCode = 14
+        versionName = "1.9.0"
     }
 
     signingConfigs {
@@ -43,6 +43,20 @@ android {
             signingConfig = if (keystoreProps.isNotEmpty()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
+    // Screenshot tests (Robolectric + Roborazzi) render real screens on the JVM, no emulator needed.
+    // ./gradlew :app:testDebugUnitTest -Pscreenshots=record   → writes docs/screenshots/app/*.png
+    // ./gradlew :app:testDebugUnitTest -Pscreenshots=verify   → fails if a screen changed but its picture wasn't updated
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { t ->
+            t.systemProperty("screenshots.dir", rootProject.file("docs/screenshots/app").absolutePath)
+            when (project.findProperty("screenshots")) {
+                "record" -> t.systemProperty("roborazzi.test.record", "true")
+                "verify" -> t.systemProperty("roborazzi.test.verify", "true")
+                else -> t.exclude("**/ScreenshotTest*")
+            }
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -58,6 +72,10 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.77.0")
+    testImplementation("androidx.test:core-ktx:1.6.1")
+    testImplementation("androidx.test.ext:junit:1.2.1")
 }
 
 kotlin {

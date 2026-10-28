@@ -6,7 +6,7 @@ package com.ajit.dynamicisland.sdk
  * new keys are optional, unknown keys are ignored.
  */
 object IslandContract {
-    const val API_VERSION = 1
+    const val API_VERSION = 2
 
     const val HOST_PACKAGE = "com.ajit.dynamicisland"
     /** Intent action a module's service must declare. */
@@ -40,6 +40,29 @@ object IslandContract {
     /** Optional: fully-qualified class of an exported activity in the module that the island opens on tap
      *  (instead of calling onToolTapped). Needed for anything that must start from a visible screen, e.g. the microphone. */
     const val K_TOOL_ACTIVITY = "activity"
+    /** API 2: the module can hide its own app-drawer icon (it has an activity-alias named [LAUNCHER_ALIAS]). */
+    const val K_LAUNCHER_TOGGLE = "launcherToggle"
+    /** API 2: whether that icon is currently shown. */
+    const val K_LAUNCHER_VISIBLE = "launcherVisible"
+    /** API 2: the module's main screen (opened by "Open" on the Modules tab). */
+    const val K_MAIN_ACTIVITY = "mainActivity"
+
+    /** Name (relative to the package) of the activity-alias that puts a module in the app drawer. */
+    const val LAUNCHER_ALIAS = ".Launcher"
+
+    // ---- tile (API 2): a small live card on the app's Island tab ----
+    const val T_TITLE = "title"             // CharSequence (required)
+    const val T_TEXT = "text"               // CharSequence: one line
+    const val T_ICON = "icon"               // Icon
+    const val T_TAP_ACTIVITY = "tapActivity" // String: exported activity in the module
+    const val T_TAP_ARG = "tapArg"
+    const val T_ACTIONS = "actions"         // ArrayList<Bundle> (A_* keys), max 2
+    /** cardId used for tile buttons that call back into onAction. */
+    const val TILE_ID = "__tile"
+    /** cardId the island uses for module-level commands (e.g. show/hide the drawer icon). */
+    const val MODULE_ID = "__module"
+    const val CMD_LAUNCHER_ON = "launcher:on"
+    const val CMD_LAUNCHER_OFF = "launcher:off"
 
     // ---- card ----
     const val K_ID = "id"                   // String, unique within the module

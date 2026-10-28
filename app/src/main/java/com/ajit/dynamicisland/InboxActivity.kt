@@ -42,6 +42,7 @@ import java.util.Calendar
 
 /** Every notification you received, until you clear it. Search, filter, swipe to clear, tap to open. */
 class InboxActivity : AppCompatActivity() {
+    companion object { const val EXTRA_CATCH_UP = "catchUp" }
 
     private var filter = InboxFilter.ALL
     private var search = ""
@@ -117,6 +118,8 @@ class InboxActivity : AppCompatActivity() {
         }).attachToRecyclerView(list)
 
         setContentView(root)
+        if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_CATCH_UP, false) &&
+            com.ajit.dynamicisland.core.Prefs(this).smartDigest && com.ajit.dynamicisland.sdk.ai.AiClient.isTrusted(this)) root.post { catchUp() }
         lifecycleScope.launch { InboxStore.version.collect { reload() } }
     }
 

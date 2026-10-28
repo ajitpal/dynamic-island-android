@@ -7,6 +7,9 @@ Works on **Android 12 or newer** phones. It looks best on phones with a centred 
 2. Open it. Allow your browser or file manager to "install unknown apps" if asked.
 3. **Play Protect** may warn that the developer is unknown, because the app isn't on the Play Store. Tap **More details → Install anyway**. The full source is in this repo.
 
+## First launch
+The app opens with a 3-step **welcome**: what the island does, the two permissions (with live checkmarks, and a button for restricted settings) and **Keep it running** for your phone's brand. You can reopen the last two anytime from **Settings → Help**. After that the app has three tabs: **Island**, **Modules** and **Settings**.
+
 ## 2. Unlock "restricted settings" (Android 13+)
 Android blocks *Notification access* and *Accessibility* for apps installed from a file until you allow them. This is a system safety feature and no app can bypass it.
 
@@ -39,7 +42,7 @@ Phone makers stop background apps to save battery, and when that happens the isl
 | **Huawei / Honor** | App launch → Dynamic Island → *Manage manually* → enable all three toggles |
 
 ## 4. Fit it to your camera
-In **7 · Look & fit**:
+In **Settings → Look and fit**:
 1. Turn on **Calibrate**. The resting island turns red.
 2. Adjust **Camera hole size fine-tune**, **Horizontal offset** and **Vertical offset** until the red circle just covers the camera.
 3. Turn **Calibrate** off. At rest the island is now invisible.

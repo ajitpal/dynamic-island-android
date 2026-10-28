@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.9.0 (28 Oct 2026): A new home for the island, module shortcuts, and modules from other developers
+- **Redesigned app, following Apple's Human Interface Guidelines:** three tabs, **Island** (status, your Inbox, module tiles, your tools, the pinned note, "Try it"), **Modules** and **Settings**, with inset grouped lists, larger touch targets, text that follows your font size, and full light and dark themes. A 3-step **welcome** walks new users through permissions and keeping the island running.
+- **Module shortcuts:** every module card on the Modules tab shows that module's direct links. For example, Meeting Notes has **Record**, **Recordings** and **Ask last meeting**, and AI Engine has **AI Engine** and **Try AI**. A ⋯ menu offers Settings, Permissions, Hide/Show app-drawer icon, Add/Remove tools, Turn off and Uninstall.
+- **Module tiles on the Island tab:** modules can show one line of status with up to two buttons ("Weekly sync · notes ready · Record · Recordings", "Qwen3 1.7B ready").
+- **Long-press a module tool in the island** for a card with that module's shortcuts and **Open · Manage · Remove**.
+- **Hide a module's icon from the app drawer** (it stays reachable from the island). Icons stay in the drawer by default.
+- **Get more modules:** a catalog of listed modules in the Modules tab and on the website (bundled with the app; the island still has no internet permission).
+- **Accessibility:** TalkBack labels throughout, heading navigation, pop-ups stay up longer when Android's "Time to take action" asks for it, and "Remove animations" turns off the island's bounce.
+- **Modules from other developers, built with AI coding agents:** the module SDK is on JitPack (`com.github.ajitpal.dynamic-island-android:module-sdk`), a standalone [module template](templates/module-template) with signed-release CI, an [agent guide](docs/modules/AGENT_GUIDE.md) plus `AGENTS.md` / `CLAUDE.md` for Claude, Codex and others, and listing through a catalog pull request that a review workflow checks automatically (signature, permissions, package, without running submitted code).
+- **SDK API 2:** `IslandTile`, `mainActivity`, launcher-icon toggle (`.Launcher` activity-alias), module-level commands. API 1 modules keep working.
+- **Modules updated:** Meeting Notes 1.3.0, AI Engine 1.2.0, Calendar 1.1.0, Automation Bridge 1.1.0 (shortcuts, tiles, drawer-icon toggle).
+- **Docs that stay current:** README and website sections are generated from `docs/features.json`, app screenshots are rendered from code in CI, and the website now deploys from GitHub Actions with a changelog page. Tagged releases build signed APKs in CI ([docs/RELEASING.md](docs/RELEASING.md)).
+
 ## 1.8.0 (28 Oct 2026): Gemini Nano, ask your meetings, catch up from the island
 - **Gemini Nano (optional, on supported phones):** Meeting Notes can use the Gemini Nano model built into some recent phones (Android AICore), with nothing to download. Android only lets the app on screen use it, so it's used while Meeting Notes is open and the AI Engine takes over in the background or if Nano refuses. Off by default; the switch only appears on phones that have Nano. AI Engine shows whether your phone has it, can ask Android to download it, and can test it.
 - **Ask about this meeting:** type a question on a meeting's page ("What did we decide about the budget?"). The answer comes from the notes and the most relevant parts of the transcript, cites timestamps you can tap to jump the player there, and is saved with the meeting (and included when you share).

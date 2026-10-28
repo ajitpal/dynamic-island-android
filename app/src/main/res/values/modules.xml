@@ -2,14 +2,14 @@
 <resources>
     <!--
       Approved module developers (lowercase SHA-256 of their signing certificate, no colons).
-      Modules signed by these certs are "Verified · approved developer" and can be enabled
-      without Developer mode. To get your digest:
-        run apksigner verify with the print-certs option on your module APK and copy "Signer #1 certificate SHA-256 digest"
-      Then open a pull request adding it here (see docs/MODULES.md).
+      GENERATED from catalog/modules by tools/gen_catalog.py: don't edit the list by hand.
+      To list a module, open a pull request adding catalog/modules/<id>.json (docs/modules/AGENT_GUIDE.md).
     -->
     <string-array name="approved_module_certs" translatable="false">
-        <!-- Ajit Kumar Pal (Dynamic Island, first-party modules) -->
+        <!-- GEN:certs -->
+        <!-- Ajit Kumar Pal -->
         <item>12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501</item>
+        <!-- /GEN:certs -->
     </string-array>
     <string name="perm_module_label">Dynamic Island module</string>
     <string name="perm_module_desc">Identifies an add-on module from an approved developer. Modules can show cards in the island but cannot read notifications.</string>

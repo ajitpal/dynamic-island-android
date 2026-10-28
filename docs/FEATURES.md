@@ -37,8 +37,11 @@ How this app compares with Apple's Dynamic Island (iPhone 14 Pro and later) and 
 
 <sub>Illustrations of the real layouts.</sub>
 
+## The app (1.9)
+Three tabs designed to Apple's Human Interface Guidelines: **Island** (status, Inbox, module tiles, your tools, pinned note, Try it), **Modules** (each module with its shortcuts and a ⋯ menu; Get more from the catalog) and **Settings**. Light and dark, text follows your font size, TalkBack throughout ([ACCESSIBILITY.md](ACCESSIBILITY.md)). Long-press a module tool in the island for that module's shortcuts.
+
 ## Add-on modules
-Optional apps that add abilities to the island, each with its own permissions (see [MODULES.md](MODULES.md)):
+Optional apps that add abilities to the island, each with its own permissions (see [MODULES.md](MODULES.md)). Each module's shortcuts appear on its card in the Modules tab and can be added to the island's tools; its icon can be hidden from the app drawer.
 - **Meeting Notes**: "Record meeting" island tool, red REC timer with live captions, Pause / Stop in the island, on-device English transcript (Moonshine Small or Tiny), playback with tap-to-jump, share / copy, and with AI Engine: automatic **AI notes** (summary, decisions, action items, open questions; 5 templates) with progress in the island.
 - **AI Engine**: on-device language model (Qwen3 0.6B / 1.7B or Gemma 4 E2B on LiteRT-LM), optional GPU, "Try it" box with speed. Powers Meeting Notes (notes and **Ask about this meeting** with tappable timestamps) and Smart Inbox ("Catch me up" in the Inbox or as an island tool, ✨ reply suggestions; opt-in). On phones with **Gemini Nano**, Meeting Notes can use it while on screen, with no download.
 - **Calendar**: next-meeting countdown, pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs.

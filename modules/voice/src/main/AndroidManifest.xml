@@ -36,12 +36,19 @@
             android:exported="false"
             android:foregroundServiceType="microphone|dataSync" />
 
-        <activity android:name=".MainActivity" android:exported="true" android:label="Meeting Notes">
+        <activity android:name=".MainActivity" android:exported="true" android:label="Meeting Notes" />
+
+        <!-- App-drawer entry. An alias (not the activity itself) so the island can hide the icon while
+             the module stays reachable from the island (IslandContract.LAUNCHER_ALIAS). -->
+        <activity-alias
+            android:name=".Launcher"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
 
         <!-- Opened by the island's "Record" tool: a visible screen is what lets Android start the mic. -->
         <activity

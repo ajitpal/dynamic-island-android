@@ -17,8 +17,8 @@ android {
         applicationId = "com.ajit.dynamicisland.module.voice"
         minSdk = 31
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
         // Moonshine ships native code for several ABIs; 64-bit ARM covers practically every Android 12+ phone.
         ndk { abiFilters += listOf("arm64-v8a") }
     }

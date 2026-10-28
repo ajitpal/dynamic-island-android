@@ -1,0 +1,31 @@
+{
+  "id": "voice",
+  "name": "Meeting Notes",
+  "icon": "🎙",
+  "package": "com.ajit.dynamicisland.module.voice",
+  "summary": "Record meetings from the island; on-device transcript, AI notes and questions.",
+  "developer": "Ajit Kumar Pal",
+  "firstParty": true,
+  "repo": "https://github.com/ajitpal/dynamic-island-android/tree/main/modules/voice",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501",
+  "permissions": [
+    {
+      "name": "android.permission.RECORD_AUDIO",
+      "reason": "Records meetings when you tap Record"
+    },
+    {
+      "name": "android.permission.POST_NOTIFICATIONS",
+      "reason": "Shows the recording notification Android requires"
+    },
+    {
+      "name": "android.permission.INTERNET",
+      "reason": "Downloads the speech model once"
+    },
+    {
+      "name": "com.google.android.apps.aicore.service.BIND_SERVICE",
+      "reason": "Uses Gemini Nano on phones that have it (off by default)"
+    }
+  ],
+  "privacy": "Everything stays on the phone. See PRIVACY.md in the repository."
+}

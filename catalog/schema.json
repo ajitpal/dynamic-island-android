@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dynamic Island module catalog entry",
+  "description": "One file per module in catalog/modules/<id>.json. Checked by tools/gen_catalog.py and the Module review workflow.",
+  "type": "object",
+  "required": ["id", "name", "package", "summary", "developer", "repo", "download", "certSha256", "permissions", "privacy"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9-]{2,32}$", "description": "Same as the file name"},
+    "name": {"type": "string", "maxLength": 40},
+    "icon": {"type": "string", "description": "One emoji shown in Get more"},
+    "package": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"},
+    "summary": {"type": "string", "maxLength": 140},
+    "developer": {"type": "string"},
+    "repo": {"type": "string", "pattern": "^https://"},
+    "download": {"type": "string", "pattern": "^https://", "description": "A release page or a direct link to the signed APK"},
+    "apkUrl": {"type": "string", "pattern": "^https://", "description": "Direct link to the signed APK of the version under review (third-party modules)"},
+    "version": {"type": "string"},
+    "certSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Lowercase SHA-256 of the signing certificate, no colons"},
+    "permissions": {"type": "array", "items": {"type": "object", "required": ["name", "reason"],
+      "properties": {"name": {"type": "string"}, "reason": {"type": "string", "minLength": 8}}}},
+    "privacy": {"type": "string", "minLength": 20},
+    "firstParty": {"type": "boolean"}
+  }
+}

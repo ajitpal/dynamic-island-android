@@ -33,8 +33,11 @@ abstract class IslandModuleService : Service() {
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var host: IIslandHost? = null
 
-    /** Tools this module adds to the island's tools panel. */
+    /** Tools this module adds to the island's tools panel and to its card on the Modules tab. */
     open val tools: List<ModuleTool> get() = emptyList()
+
+    /** API 2: the screen "Open" goes to on the Modules tab (defaults to the SETTINGS_ACTIVITY meta-data). */
+    open val mainActivity: Class<*>? get() = null
 
     /** Show / update / remove cards in the island. Safe to call when not connected (no-op). */
     val island = object : IslandClient {
@@ -44,6 +47,12 @@ abstract class IslandModuleService : Service() {
         }
         override fun remove(cardId: String) {
             try { host?.removeCard(cardId) } catch (e: Exception) { Log.w(TAG, "remove failed", e) }
+        }
+        override fun postTile(tile: IslandTile) {
+            try { host?.postTile(tile.bundle) } catch (e: Exception) { Log.w(TAG, "tile failed (island older than API 2?)", e) }
+        }
+        override fun removeTile() {
+            try { host?.removeTile() } catch (e: Exception) { Log.w(TAG, "removeTile failed", e) }
         }
     }
 
@@ -67,7 +76,13 @@ abstract class IslandModuleService : Service() {
                     it.activity?.let { a -> putString(C.K_TOOL_ACTIVITY, a.name) }
                 }
             })
-            return Bundle().apply { putParcelableArrayList(C.K_TOOLS, list) }
+            return Bundle().apply {
+                putParcelableArrayList(C.K_TOOLS, list)
+                mainActivity?.let { putString(C.K_MAIN_ACTIVITY, it.name) }
+                LauncherIcon.state(this@IslandModuleService)?.let { visible ->
+                    putBoolean(C.K_LAUNCHER_TOGGLE, true); putBoolean(C.K_LAUNCHER_VISIBLE, visible)
+                }
+            }
         }
 
         override fun attach(h: IIslandHost?) {
@@ -89,6 +104,13 @@ abstract class IslandModuleService : Service() {
 
         override fun onAction(cardId: String?, actionId: String?, input: String?) {
             if (!trusted() || cardId == null || actionId == null) return
+            if (cardId == C.MODULE_ID) {   // module-level commands from the island's Modules tab
+                when (actionId) {
+                    C.CMD_LAUNCHER_ON -> LauncherIcon.set(this@IslandModuleService, true)
+                    C.CMD_LAUNCHER_OFF -> LauncherIcon.set(this@IslandModuleService, false)
+                }
+                return
+            }
             main.post { this@IslandModuleService.onAction(cardId, actionId, input) }
         }
     }
@@ -114,6 +136,35 @@ interface IslandClient {
     val isConnected: Boolean
     fun post(card: IslandCard)
     fun remove(cardId: String)
+    /** API 2: this module's tile on the app's Island tab. No-op on older islands. */
+    fun postTile(tile: IslandTile)
+    fun removeTile()
+}
+
+/**
+ * Shows or hides the module's app-drawer icon. Declare the launcher entry as an activity-alias named
+ * ".Launcher" (IslandContract.LAUNCHER_ALIAS) so the module stays reachable from the island when hidden.
+ */
+object LauncherIcon {
+    private fun component(ctx: Context) = ComponentName(ctx.packageName, ctx.packageName + C.LAUNCHER_ALIAS)
+
+    /** true/false = shown/hidden; null = this module has no ".Launcher" alias. */
+    fun state(ctx: Context): Boolean? = try {
+        val pm = ctx.packageManager
+        val info = pm.getActivityInfo(component(ctx), PackageManager.MATCH_DISABLED_COMPONENTS)
+        when (pm.getComponentEnabledSetting(component(ctx))) {
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
+            PackageManager.COMPONENT_ENABLED_STATE_DISABLED -> false
+            else -> info.enabled
+        }
+    } catch (e: Exception) { null }
+
+    fun set(ctx: Context, visible: Boolean) {
+        if (state(ctx) == null) return
+        ctx.packageManager.setComponentEnabledSetting(component(ctx),
+            if (visible) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+            PackageManager.DONT_KILL_APP)
+    }
 }
 
 /** Verifies that a caller is the real Dynamic Island app (package + signing certificate). */

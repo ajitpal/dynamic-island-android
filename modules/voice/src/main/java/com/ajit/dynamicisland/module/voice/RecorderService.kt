@@ -271,6 +271,7 @@ class RecorderService : Service() {
             )
         }
         listeners.toList().forEach { it() }
+        VoiceModule.refreshTile()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -357,6 +358,7 @@ class RecorderService : Service() {
             island.post(b.build())
         }
         listeners.toList().forEach { it() }
+        VoiceModule.refreshTile()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

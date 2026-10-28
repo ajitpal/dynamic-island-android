@@ -1,0 +1,53 @@
+name: Module review
+
+# Runs when a pull request adds or changes a module listing (catalog/modules/*.json).
+# Uses pull_request_target so it can comment on PRs from forks, and for that reason it NEVER checks out
+# or runs the pull request's code: it reads only the JSON entries and inspects the signed APKs they link to.
+on:
+  pull_request_target:
+    paths: [ 'catalog/modules/**' ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the base branch (trusted scripts only)
+        uses: actions/checkout@v4
+      - name: Fetch the submitted entries (data only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          mkdir -p submitted
+          gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate --jq '.[] | select(.filename | startswith("catalog/modules/")) | select(.status != "removed") | .filename' > files.txt
+          cat files.txt
+          while read -r f; do
+            gh api "repos/$HEAD_REPO/contents/$f?ref=$HEAD_SHA" --jq '.content' | base64 -d > "submitted/$(basename "$f")"
+          done < files.txt
+      - name: Validate and inspect
+        id: review
+        run: |
+          set +e
+          cp submitted/*.json catalog/modules/ 2>/dev/null
+          python3 tools/gen_catalog.py > report.md 2>&1; status=$?
+          echo "" >> report.md
+          for f in submitted/*.json; do
+            python3 tools/review_module.py "$f" --report part.md; s=$?
+            cat part.md >> report.md; echo "" >> report.md
+            [ $s -ne 0 ] && status=1
+          done
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          cat report.md
+      - name: Post the report on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file report.md --repo ${{ github.repository }}
+      - name: Fail if a check failed
+        if: steps.review.outputs.status != '0'
+        run: exit 1

@@ -34,13 +34,25 @@
             </intent-filter>
         </service>
 
+        <!-- "Try AI" shortcut from the island (opens MainActivity at the Try it box). -->
+        <activity android:name=".TryActivity" android:exported="true"
+            android:permission="com.ajit.dynamicisland.permission.HOST"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" />
+
         <service android:name=".DownloadService" android:exported="false" android:foregroundServiceType="dataSync" />
 
-        <activity android:name=".MainActivity" android:exported="true" android:label="AI Engine">
+        <activity android:name=".MainActivity" android:exported="true" android:label="AI Engine" />
+
+        <!-- App-drawer entry. An alias (not the activity itself) so the island can hide the icon while
+             the module stays reachable from the island (IslandContract.LAUNCHER_ALIAS). -->
+        <activity-alias
+            android:name=".Launcher"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
     </application>
 </manifest>

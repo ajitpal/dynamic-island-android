@@ -51,7 +51,17 @@ data class ModuleInfo(
     val approved: Boolean,
     val connected: Boolean,
     val permissions: List<Pair<String, Boolean>>,
+    val version: String = "",
+    val icon: Drawable? = null,
+    /** From the module's describe() (API 2), once connected. */
+    val mainActivity: String? = null,
+    val launcherToggle: Boolean = false,
+    val launcherVisible: Boolean = true,
 )
+
+/** A module's tile on the Island tab (API 2). */
+class ModuleTile(val pkg: String, val title: String, val text: String?, val icon: Drawable?,
+                 val onTap: (() -> Unit)?, val actions: List<Pair<String, () -> Unit>>)
 
 data class ModuleTool(val fullId: String, val pkg: String, val toolId: String, val label: String, val icon: Drawable?, val activity: String? = null)
 
@@ -70,6 +80,9 @@ object ModuleRegistry {
 
     private val _modules = MutableStateFlow<List<ModuleInfo>>(emptyList())
     val modules: StateFlow<List<ModuleInfo>> = _modules
+
+    private val _tiles = MutableStateFlow<List<ModuleTile>>(emptyList())
+    val tiles: StateFlow<List<ModuleTile>> = _tiles
 
     private val _tools = MutableStateFlow<List<ModuleTool>>(emptyList())
     val tools: StateFlow<List<ModuleTool>> = _tools
@@ -103,7 +116,7 @@ object ModuleRegistry {
     // ------------------------------------------------------------------ discovery & trust
 
     fun rescan() {
-        if (!started) return
+        if (!started || preview) return
         var found = discover()
         if (autoEnable(found)) found = discover()
         val wanted = found.filter { it.approved && (it.trust != Trust.UNVERIFIED || prefs.modulesDevMode) }.map { it.pkg }.toSet()
@@ -133,6 +146,8 @@ object ModuleRegistry {
                 trust = trustOf(si.packageName, cert),
                 certSha256 = cert,
                 approved = si.packageName in prefs.approvedModules(),
+                version = try { pm.getPackageInfo(si.packageName, 0).versionName.orEmpty() } catch (e: Exception) { "" },
+                icon = try { pm.getApplicationIcon(si.packageName) } catch (e: Exception) { null },
                 connected = conns[si.packageName]?.module != null,
                 permissions = permissionsOf(si.packageName),
             )
@@ -241,6 +256,8 @@ object ModuleRegistry {
         var uid: Int = -1
         val cards = LinkedHashSet<String>()
         var tools: List<ModuleTool> = emptyList()
+        var described: Bundle? = null
+        var tile: ModuleTile? = null
         lateinit var host: IIslandHost.Stub
 
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
@@ -250,6 +267,7 @@ object ModuleRegistry {
             Thread {
                 val described = try { m.describe() } catch (e: Exception) { null }
                 main.post {
+                    this.described = described
                     tools = parseTools(info.pkg, described)
                     autoAddTools(tools)
                     try { m.attach(host) } catch (_: Exception) {}
@@ -260,6 +278,7 @@ object ModuleRegistry {
 
         override fun onServiceDisconnected(name: ComponentName?) {
             module = null
+            tile = null
             clearCards(this)
             publish()
         }
@@ -280,6 +299,38 @@ object ModuleRegistry {
         if (ok) conns[info.pkg] = c
     }
 
+    private fun parseTile(pkg: String, b: Bundle): ModuleTile? {
+        val title = b.getCharSequence(C.T_TITLE)?.toString()?.take(C.MAX_TITLE) ?: return null
+        @Suppress("DEPRECATION") val icon = (b.getParcelable(C.T_ICON) as? Icon)?.let { try { it.loadDrawable(app) } catch (e: Exception) { null } }
+            ?: try { app.packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
+        val tap = b.getString(C.T_TAP_ACTIVITY)?.let { cls -> { openModuleActivity(pkg, cls, b.getString(C.T_TAP_ARG)) } }
+        @Suppress("DEPRECATION") val acts = (b.getParcelableArrayList<Bundle>(C.T_ACTIONS) ?: arrayListOf()).take(2).mapNotNull { ab ->
+            val t = ab.getString(C.A_TITLE)?.take(20) ?: return@mapNotNull null
+            val id = ab.getString(C.A_ID) ?: return@mapNotNull null
+            val cls = ab.getString(C.A_ACTIVITY)
+            t to { if (cls != null) openModuleActivity(pkg, cls, ab.getString(C.A_ARG)) else sendAction(pkg, C.TILE_ID, id, null) }
+        }
+        return ModuleTile(pkg, title, b.getCharSequence(C.T_TEXT)?.toString()?.take(120), icon, tap, acts)
+    }
+
+    /** Open a module's main screen: its declared main activity, else its settings, else its launcher. */
+    fun openModule(ctx: Context, info: ModuleInfo) {
+        when {
+            info.mainActivity != null -> openModuleActivity(info.pkg, info.mainActivity, null)
+            info.settings != null -> openSettings(ctx, info)
+            else -> ctx.packageManager.getLaunchIntentForPackage(info.pkg)?.let { Launcher.start(app, it) }
+        }
+    }
+
+    /** Ask a module (API 2) to show or hide its app-drawer icon, then refresh what it reports. */
+    fun setLauncherVisible(pkg: String, visible: Boolean) {
+        val c = conns[pkg] ?: return
+        sendAction(pkg, C.MODULE_ID, if (visible) C.CMD_LAUNCHER_ON else C.CMD_LAUNCHER_OFF, null)
+        main.postDelayed({
+            Thread { val d = try { c.module?.describe() } catch (e: Exception) { null }; main.post { if (d != null) c.described = d; publish() } }.start()
+        }, 600)
+    }
+
     private fun disconnect(c: Conn) {
         try { c.module?.detach() } catch (_: Exception) {}
         try { app.unbindService(c) } catch (_: Exception) {}
@@ -288,6 +339,7 @@ object ModuleRegistry {
     }
 
     private fun clearCards(c: Conn) {
+        c.tile = null
         c.cards.toList().forEach { IslandRepository.remove(activityId(c.info.pkg, it)) }
         c.cards.clear()
     }
@@ -302,6 +354,14 @@ object ModuleRegistry {
         override fun removeCard(cardId: String?) {
             if (cardId == null || Binder.getCallingUid() != c.uid) return
             main.post { c.cards.remove(cardId); IslandRepository.remove(activityId(c.info.pkg, cardId)) }
+        }
+        override fun postTile(tile: Bundle?) {
+            if (tile == null || Binder.getCallingUid() != c.uid) return
+            main.post { c.tile = parseTile(c.info.pkg, tile); publish() }
+        }
+        override fun removeTile() {
+            if (Binder.getCallingUid() != c.uid) return
+            main.post { c.tile = null; publish() }
         }
     }
 
@@ -421,9 +481,25 @@ object ModuleRegistry {
     }
 
     private fun publish(found: List<ModuleInfo>? = null) {
-        val list = (found ?: _modules.value).map { it.copy(connected = conns[it.pkg]?.module != null, approved = it.pkg in prefs.approvedModules()) }
+        val list = (found ?: _modules.value).map { m ->
+            val c = conns[m.pkg]; val d = c?.described
+            m.copy(connected = c?.module != null, approved = m.pkg in prefs.approvedModules(),
+                mainActivity = d?.getString(C.K_MAIN_ACTIVITY) ?: m.mainActivity,
+                launcherToggle = d?.getBoolean(C.K_LAUNCHER_TOGGLE, false) ?: m.launcherToggle,
+                launcherVisible = d?.getBoolean(C.K_LAUNCHER_VISIBLE, true) ?: m.launcherVisible)
+        }
         _modules.value = list
+        _tiles.value = conns.values.mapNotNull { it.tile }
         _tools.value = conns.values.flatMap { it.tools }
+    }
+
+    @Volatile private var preview = false
+
+    /** Screenshot tests only: show sample modules instead of scanning the phone. */
+    @androidx.annotation.VisibleForTesting
+    fun showPreview(modules: List<ModuleInfo>, tools: List<ModuleTool>, tiles: List<ModuleTile>) {
+        preview = true
+        _modules.value = modules; _tools.value = tools; _tiles.value = tiles
     }
 
     /** For the Diagnostics card. */

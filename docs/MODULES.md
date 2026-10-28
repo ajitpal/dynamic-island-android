@@ -10,13 +10,21 @@ A **module** is a separate Android app that gives the island new abilities: a ca
 └────────────────────┘                   └─────────────────────────┘
 ```
 
+**Fastest start:** copy [`templates/module-template`](../templates/module-template) (a complete module with a tool, a card and a tile). **With an AI coding agent:** point it at the [agent guide](modules/AGENT_GUIDE.md) and describe your idea; it covers building, signing, releasing and submitting for listing.
+
 Modules **never draw UI** in the island. They send **cards** (title, text, icon, accent, countdown, progress, up to 3 buttons, an optional reply field), and the island renders them in the user's theme. A module can't spoof the system or break the island, and it can't read notifications or the Inbox.
 
 ## 1. Add the SDK
 
-The SDK lives in this repository as `:module-sdk`. Until it's published to Maven, either:
-- build your module inside this repo under `modules/your-module` (copy `modules/automation` as a template), or
-- copy the `module-sdk` folder into your project and `implementation(project(":module-sdk"))`.
+The SDK is published through JitPack, so your module can live in its own repository:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement { repositories { google(); mavenCentral(); maven("https://jitpack.io") } }
+// module/build.gradle.kts (use the newest tag from https://jitpack.io/#ajitpal/dynamic-island-android)
+implementation("com.github.ajitpal.dynamic-island-android:module-sdk:v1.9.0")
+```
+Inside this repository, first-party modules use `implementation(project(":module-sdk"))`.
 
 The SDK adds two things to your manifest automatically: `<queries>` for the host package, and `uses-permission com.ajit.dynamicisland.permission.MODULE_API`.
 
@@ -84,6 +92,42 @@ override val tools = listOf(ModuleTool("record", "Record meeting", R.drawable.ic
 
 A translucent activity can do its job (start the service, ask for the permission) and `finish()` straight away. `tapActivity(...)` and `activityAction(...)` work the same way for cards. Note: `HOST` is a `signature` permission, so a debug build of the island can't open these screens of a release-signed module; build both the same way while testing.
 
+### Shortcuts, main screen, tile and the app-drawer icon (SDK API 2)
+
+```kotlin
+class NotesModule : IslandModuleService() {
+    // Each shortcut is an island tool AND a button on your card in the app's Modules tab.
+    override val tools = listOf(
+        ModuleTool("record", "Record", R.drawable.ic_mic, RecordActivity::class.java),
+        ModuleTool("list", "Recordings", R.drawable.ic_list, MainActivity::class.java),
+    )
+    // What "Open" on the Modules tab opens (a shortcut to the same screen replaces the Open button).
+    override val mainActivity = MainActivity::class.java
+
+    override fun onIslandConnected() {
+        // One tile per module on the app's Island tab: a line of status and up to 2 buttons.
+        island.postTile(IslandTile.Builder(this).title("Weekly sync").text("Notes ready · 3 action items")
+            .icon(R.drawable.ic_notes).tapActivity(TranscriptActivity::class.java, "last")
+            .activityAction("record", "Record", RecordActivity::class.java)
+            .activityAction("list", "Recordings", MainActivity::class.java).build())
+    }
+}
+```
+
+Put your app-drawer entry on an **activity-alias named `.Launcher`** (not on the activity itself). The island then offers "Hide icon from app drawer" in your module's ⋯ menu, and the SDK handles it; your module stays reachable from the island.
+
+```xml
+<activity android:name=".MainActivity" android:exported="true" />
+<activity-alias android:name=".Launcher" android:targetActivity=".MainActivity" android:exported="true">
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+    </intent-filter>
+</activity-alias>
+```
+
+Long-pressing your tool in the island shows a card with your shortcuts and **Open · Manage · Remove**.
+
 ### Card cheat-sheet
 | Builder call | Effect |
 |---|---|
@@ -115,11 +159,13 @@ Limits enforced by the island: 3 cards per module, 80-character titles, 400-char
 | **Unverified modules** | Modules from developers not on the allow-list only run if the user turns on **Developer mode**, with a warning. Use this while you build. |
 | **Data** | Modules never receive notifications or Inbox data. A future, separate opt-in will allow it per module. |
 
-### Getting approved
-1. Sign your release APK with your own key (never the debug key).
-2. Get your certificate digest by running `apksigner verify` with the `--print-certs` option on your APK and copying the "Signer #1 certificate SHA-256 digest".
-3. Open a pull request that adds the digest to `app/src/main/res/values/modules.xml`, with a link to your module's source code.
-4. Once merged and released, your module shows as **Verified · approved developer**.
+### Getting listed
+1. Sign your release APK with your own key (never the debug key) and publish it as a GitHub release (the template's `Release` workflow does both).
+2. Open a pull request that adds **`catalog/modules/<id>.json`** ([schema](../catalog/schema.json), [example](../templates/module-template/catalog-entry.example.json)) and the files `python3 tools/gen_catalog.py` regenerates. Don't edit `modules.xml` by hand: the allow-list is generated from the catalog.
+3. The **Module review** workflow downloads your APK and checks the signature against `certSha256`, the package name, the module service, that every permission is explained and none is banned, and that no development flag is left on. It posts a report on the PR; it never runs your code.
+4. A maintainer reviews the purpose, the permission reasons and the privacy note. Once merged, the next island release lists your module in **Modules → Get more** and on the website, as **Verified · approved developer**.
+
+The [agent guide](modules/AGENT_GUIDE.md) walks through all of this step by step.
 
 ## 5. Using the on-device AI Engine
 First-party apps (signed with the same key as the island) can use the AI Engine module through the SDK:
@@ -138,10 +184,11 @@ The client checks the engine's signing certificate before sending anything, and 
 **Gemini Nano:** `modules/nano` wraps ML Kit's GenAI Prompt API. Android only accepts Nano requests from the **top foreground app** (even a foreground service gets `BACKGROUND_USE_BLOCKED`), inputs are limited to about 4000 tokens, and AICore applies a per-app quota. So a module should call Nano in its own process while its screen is open and fall back to the AI Engine otherwise; see `Brain.kt` in Meeting Notes. ML Kit adds the INTERNET permission (for Google's usage statistics), which is why the island app never links it.
 
 ## 6. Reference modules in this repo
+- **`templates/module-template`**: the smallest complete module (tool, card, tile, launcher alias, signed release workflow).
 - **`modules/automation`**, Automation Bridge: bridges Tasker, MacroDroid and adb into the island using a secret key. Shows queued cards, tools and reply buttons.
 - **`modules/calendar`**, Calendar: uses the `READ_CALENDAR` permission (in the module only), a countdown, a progress phase, a Join link and `peek` at T-5 minutes.
 - **`modules/ai`**, AI Engine: LiteRT-LM, pinned model downloads with checksum, a bound AIDL service with caller checks, idle unloading.
 - **`modules/voice`**, Meeting Notes: a tool that opens a translucent activity to start a `microphone` foreground service, a count-up REC card with live text and Pause/Stop buttons, on-device speech-to-text with Moonshine, and a "saved" card that opens the transcript.
 
 ## Contract stability
-`IslandContract.API_VERSION = 1`. Everything travels as `Bundle`s: new keys are optional, and unknown keys are ignored. Breaking changes will bump the API version, and the island will keep supporting older versions.
+`IslandContract.API_VERSION = 2` (API 2 added tiles, `mainActivity` and the launcher toggle). Everything travels as `Bundle`s: new keys are optional, and unknown keys are ignored. Breaking changes will bump the API version, and the island will keep supporting older versions.

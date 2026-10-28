@@ -55,7 +55,7 @@ h2{font-size:clamp(28px,4vw,40px);letter-spacing:-.02em;font-weight:800;margin-b
 .sec-lead{color:var(--mut);max-width:640px;margin-bottom:36px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
-.card .ic{font-size:24px}.card h3{font-size:16px;margin:8px 0 4px}.card p{color:var(--mut);font-size:14px}
+.card .ic{font-size:24px}.card h3 small{color:var(--mut);font-weight:500;font-size:12px}.card.mod .links{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 6px}.card.mod .links span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px}.card .perm{font-size:12.5px}.ver{color:var(--mut)}.card h3{font-size:16px;margin:8px 0 4px}.card p{color:var(--mut);font-size:14px}
 .gallery{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:12px}
 .gallery img{height:460px;border-radius:28px;scroll-snap-align:start;flex:none}
 .note{color:var(--mut);font-size:12.5px;margin-top:8px}
@@ -80,7 +80,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 <body>
 <nav><div class="wrap">
   <a class="brand" href="#"><span class="logo"></span>Dynamic Island</a>
-  <div class="links"><a href="#features">Features</a><a href="#screens">Screens</a><a href="#install">Install</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a></div>
+  <div class="links"><a href="#features">Features</a><a href="#modules">Modules</a><a href="#ai">AI</a><a href="#screens">Screens</a><a href="#install">Install</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a></div>
   <a class="btn sm" href="https://github.com/ajitpal/dynamic-island-android">★ GitHub</a>
 </div></nav>
 
@@ -104,19 +104,52 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 <section id="features"><div class="wrap">
   <h2>Everything the iPhone island does, plus more.</h2>
   <p class="sec-lead">Built from Apple's Dynamic Island and Android 16 Live Updates, with features neither has.</p>
+<!-- GEN:features -->
   <div class="grid">
-    <div class="card"><div class="ic">🫥</div><h3>Invisible at rest</h3><p>Shrinks to exactly your camera hole. A calibrate mode helps you fit it pixel-perfect.</p></div>
-    <div class="card"><div class="ic">💬</div><h3>Preview, then decide</h3><p>Tap to read the whole notification in the island, reply inline, or open the app.</p></div>
-    <div class="card"><div class="ic">🎵</div><h3>Now playing</h3><p>Any music or video app: artwork colour, animated bars, progress, play / pause / skip.</p></div>
-    <div class="card"><div class="ic">📞</div><h3>Calls</h3><p>Answer or decline phone, WhatsApp and Telegram calls, then see a live call timer.</p></div>
-    <div class="card"><div class="ic">🏏</div><h3>Live updates</h3><p>Scores, rides, food and grocery delivery, downloads, navigation. Supports Android 16 Live Updates.</p></div>
-    <div class="card"><div class="ic">💳</div><h3>Payments</h3><p>A confirmation glimpse for Google Wallet and UPI apps: GPay, PhonePe, Paytm, BHIM, CRED.</p></div>
-    <div class="card"><div class="ic">⚡</div><h3>System glimpses</h3><p>Charging, low battery, silent, DND, earbuds + battery, offline / back online, hotspot, NFC, unlock.</p></div>
-    <div class="card"><div class="ic">🔴</div><h3>Recording & privacy</h3><p>Screen / voice recording timer, plus camera and microphone in-use dots.</p></div>
-    <div class="card"><div class="ic">🧰</div><h3>Island tools</h3><p>Long-press the empty island: flashlight, timers, stopwatch, screenshot, pin a note.</p></div>
-    <div class="card"><div class="ic">🪄</div><h3>Two at once</h3><p>The main activity sits in the pill and the second in a bubble. Tap to swap.</p></div>
+    <div class="card"><div class="ic">🫥</div><h3>Invisible at rest</h3><p>Shrinks to exactly your camera hole, with a calibrate mode for a pixel-perfect fit.</p></div>
+    <div class="card"><div class="ic">🎵</div><h3>Now playing</h3><p>Any music or video app: artwork colour, animated bars, seek progress, play/pause/skip.</p></div>
+    <div class="card"><div class="ic">💬</div><h3>Preview, then decide</h3><p>Tap to read the full notification in the island; quick reply inline (with ✨ suggested replies), or open the app.</p></div>
+    <div class="card"><div class="ic">📞</div><h3>Calls</h3><p>Answer or decline in the island (phone, WhatsApp, Telegram…), then a live call timer.</p></div>
+    <div class="card"><div class="ic">⏱</div><h3>Timers &amp; stopwatch</h3><p>From your Clock app or the island&#x27;s own tools.</p></div>
+    <div class="card"><div class="ic">🏏</div><h3>Live updates</h3><p>Navigation, deliveries, rides and live scores from any app (Android 16 Live Updates supported).</p></div>
+    <div class="card"><div class="ic">💳</div><h3>Payments</h3><p>Confirmation glimpse for Google Wallet and UPI apps (GPay, PhonePe, Paytm, BHIM, CRED).</p></div>
+    <div class="card"><div class="ic">⚡</div><h3>System glimpses</h3><p>Charging, low battery, silent/vibrate, DND, earbuds + battery, airplane mode, offline / back online, hotspot, NFC, unlock, flashlight.</p></div>
+    <div class="card"><div class="ic">🔴</div><h3>Recording</h3><p>Screen and voice recording with a red REC timer, camera/mic in-use dots.</p></div>
+    <div class="card"><div class="ic">🧰</div><h3>Island tools</h3><p>Long-press the empty island: 25+ tools you choose and arrange, any app, and shortcuts from your modules.</p></div>
+    <div class="card"><div class="ic">📥</div><h3>Notification Inbox</h3><p>Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy, ✨ Catch me up.</p></div>
+    <div class="card"><div class="ic">🚫</div><h3>No double pop-ups</h3><p>Turn off system banners per app, or move notifications into the island; never pops twice.</p></div>
     <div class="card"><div class="ic">🎨</div><h3>Make it yours</h3><p>7 themes, width, height, roundness, opacity, glow outline, animation speed.</p></div>
-    <div class="card"><div class="ic">🙈</div><h3>Polite by design</h3><p>Hides message text on the lock screen and an app's activity while you're in it. Per-app on/off.</p></div>
+    <div class="card"><div class="ic">📱</div><h3>Simple app</h3><p>A short first-run setup, then three tabs (Island, Modules, Settings) laid out the way iPhone settings are.</p></div>
+    <div class="card"><div class="ic">♿</div><h3>Accessible</h3><p>Large-text ready, 48 dp touch targets, TalkBack labels, respects reduced motion and your &quot;time to take action&quot; setting.</p></div>
+    <div class="card"><div class="ic">🙈</div><h3>Polite</h3><p>Hides an app&#x27;s activity while that app is open, hides message text on the lock screen, per-app on/off.</p></div>
+  </div>
+<!-- /GEN:features -->
+</div></section>
+
+<section id="modules"><div class="wrap">
+  <h2>Add only what you need.</h2>
+  <p class="sec-lead">Modules are small add-on apps with their own permissions. Install one and its shortcuts appear in the island and on the app's Modules tab. The island itself never gets new permissions.</p>
+<!-- GEN:modules -->
+  <div class="grid">
+    <div class="card mod"><div class="ic">🎙</div><h3>Meeting Notes <small>v1.3.0</small></h3><p>Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, AI notes (summary, decisions, action items) and Ask about this meeting.</p><div class="links"><span>Record meeting</span><span>Recordings</span><span>Ask last meeting</span></div><p class="perm">Permissions: Microphone, Notifications, Internet (one-time model download)</p></div>
+    <div class="card mod"><div class="ic">✨</div><h3>AI Engine <small>v1.2.0</small></h3><p>A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download.</p><div class="links"><span>AI Engine</span><span>Try AI</span></div><p class="perm">Permissions: Notifications, Internet (model download only)</p></div>
+    <div class="card mod"><div class="ic">📅</div><h3>Calendar <small>v1.1.0</small></h3><p>Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs.</p><div class="links"><span>Next meeting</span><span>Open (settings)</span></div><p class="perm">Permissions: Calendar</p></div>
+    <div class="card mod"><div class="ic">🔗</div><h3>Automation Bridge <small>v1.1.0</small></h3><p>Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key.</p><div class="links"><span>Two automation tools you name</span><span>Open (settings)</span></div><p class="perm">Permissions: None</p></div>
+  </div>
+<!-- /GEN:modules -->
+  <p class="note">Build your own: <a href="https://github.com/ajitpal/dynamic-island-android/blob/main/docs/MODULES.md">module guide</a> · with an AI coding agent: <a href="https://github.com/ajitpal/dynamic-island-android/blob/main/docs/modules/AGENT_GUIDE.md">agent guide</a>.</p>
+</div></section>
+
+<section id="ai"><div class="wrap">
+  <h2>AI that stays on your phone.</h2>
+  <p class="sec-lead">Meeting notes, "Catch me up" and reply suggestions run on a small model on the device. Nothing you say or receive is sent anywhere.</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🎙</div><h3>Record from the island</h3><p>Tap Record in your island tools. A red timer with live captions shows while you talk; Pause and Stop are right there.</p></div>
+    <div class="card"><div class="ic">📝</div><h3>Notes, written for you</h3><p>Summary, decisions, action items and open questions, with templates for meetings, stand-ups, 1:1s, calls and lectures.</p></div>
+    <div class="card"><div class="ic">💬</div><h3>Ask about a meeting</h3><p>"What did we decide about the budget?" Answers cite timestamps you can tap to hear that moment.</p></div>
+    <div class="card"><div class="ic">📥</div><h3>Catch me up</h3><p>One tap in the island or the Inbox summarises unread notifications. One-time codes are masked first.</p></div>
+    <div class="card"><div class="ic">🧠</div><h3>Your choice of model</h3><p>Qwen3 0.6B, Qwen3 1.7B or Gemma 4 E2B, downloaded once and checksum-verified. Gemini Nano is used where the phone has it.</p></div>
+    <div class="card"><div class="ic">🔒</div><h3>Opt-in and offline</h3><p>Smart Inbox is off until you turn it on. The island app still has no internet permission.</p></div>
   </div>
 </div></section>
 
@@ -136,6 +169,27 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
     <img src="screenshots/10-themes.webp" alt="Themes" loading="lazy">
   </div>
   <p class="note">Illustrations of the app's real layouts. Real-device screenshots from the community are welcome.</p>
+  <h3 style="margin-top:40px">The app</h3>
+  <div class="gallery">
+    <img src="screenshots/app/app-01-island.png" alt="Island tab: status, Inbox, module tiles and tools" loading="lazy">
+    <img src="screenshots/app/app-02-modules.png" alt="Modules tab with each module's shortcuts" loading="lazy">
+    <img src="screenshots/app/app-03-settings.png" alt="Settings tab" loading="lazy">
+    <img src="screenshots/app/app-04-look.png" alt="Look settings" loading="lazy">
+    <img src="screenshots/app/app-05-tools.png" alt="Island tools editor" loading="lazy">
+    <img src="screenshots/app/app-06-welcome.png" alt="Welcome" loading="lazy">
+    <img src="screenshots/app/app-07-permissions.png" alt="Permissions step" loading="lazy">
+    <img src="screenshots/app/app-08-keep-running.png" alt="Keep it running step" loading="lazy">
+    <img src="screenshots/app/app-09-settings-dark.png" alt="Settings, dark" loading="lazy">
+    <img src="screenshots/app/app-10-modules-dark.png" alt="Modules, dark" loading="lazy">
+  </div>
+  <h3 style="margin-top:40px">The island, rendered by the app's own code</h3>
+  <div class="gallery">
+    <img src="screenshots/app/island-01-message.png" alt="Message with reply" loading="lazy" style="height:auto;width:min(420px,85vw)">
+    <img src="screenshots/app/island-02-call.png" alt="Incoming call" loading="lazy" style="height:auto;width:min(420px,85vw)">
+    <img src="screenshots/app/island-03-payment.png" alt="Payment" loading="lazy" style="height:auto;width:min(420px,85vw)">
+    <img src="screenshots/app/island-04-live-score.png" alt="Live score" loading="lazy" style="height:auto;width:min(420px,85vw)">
+  </div>
+  <p class="note">App screens are rendered from the source on every build, so they always match the current release.</p>
 </div></section>
 
 <section id="install"><div class="wrap">
@@ -175,7 +229,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 
 <footer><div class="wrap">
   <span>© 2026 <a href="https://github.com/ajitpal">Ajit Kumar Pal</a> · MIT License · Not affiliated with Apple or Google.</span>
-  <span><a href="https://github.com/ajitpal/dynamic-island-android">GitHub</a> · <a href="https://github.com/ajitpal/dynamic-island-android/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/ajitpal/dynamic-island-android/issues">Report an issue</a></span>
+<!-- GEN:version -->
+  <span class="ver">Version 1.9.0</span>
+<!-- /GEN:version -->
+  <span><a href="https://github.com/ajitpal/dynamic-island-android">GitHub</a> · <a href="changelog.html">Changelog</a> · <a href="https://github.com/ajitpal/dynamic-island-android/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/ajitpal/dynamic-island-android/issues">Report an issue</a></span>
 </div></footer>
 
 <script>

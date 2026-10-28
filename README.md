@@ -20,7 +20,11 @@ At rest it shrinks into your camera hole and disappears.
 
 <img src="docs/screenshots/01-resting.webp" width="19%" alt="Invisible at rest"/> <img src="docs/screenshots/02-music.webp" width="19%" alt="Now playing"/> <img src="docs/screenshots/04-message-preview.webp" width="19%" alt="Message preview"/> <img src="docs/screenshots/06-call.webp" width="19%" alt="Incoming call"/> <img src="docs/screenshots/09-live-updates.webp" width="19%" alt="Live updates"/>
 
-<sub>Screenshots are illustrations of the app's layouts. Real-device captures from contributors are welcome; see <a href="docs/screenshots/README.md">docs/screenshots</a>.</sub>
+<sub>The island (illustrations).</sub>
+
+<img src="docs/screenshots/app/app-01-island.png" width="19%" alt="Island tab"/> <img src="docs/screenshots/app/app-02-modules.png" width="19%" alt="Modules tab with shortcuts"/> <img src="docs/screenshots/app/app-03-settings.png" width="19%" alt="Settings tab"/> <img src="docs/screenshots/app/app-06-welcome.png" width="19%" alt="Welcome"/> <img src="docs/screenshots/app/app-10-modules-dark.png" width="19%" alt="Modules tab, dark"/>
+
+<sub>The app (rendered from code on every build). Real-device captures from contributors are welcome; see <a href="docs/screenshots/README.md">docs/screenshots</a>.</sub>
 
 </div>
 
@@ -37,25 +41,30 @@ This app aims to be the clean alternative:
 
 ## Features at a glance
 
+<!-- GEN:features -->
 | | |
 |---|---|
 | 🫥 **Invisible at rest** | Shrinks to exactly your camera hole, with a calibrate mode for a pixel-perfect fit |
 | 🎵 **Now playing** | Any music or video app: artwork colour, animated bars, seek progress, play/pause/skip |
-| 💬 **Preview, then decide** | Tap to read the full notification in the island; **quick reply** inline, or open the app |
+| 💬 **Preview, then decide** | Tap to read the full notification in the island; quick reply inline (with ✨ suggested replies), or open the app |
 | 📞 **Calls** | Answer or decline in the island (phone, WhatsApp, Telegram…), then a live call timer |
 | ⏱ **Timers & stopwatch** | From your Clock app or the island's own tools |
-| 🧭 **Navigation · 📦 deliveries · 🚕 rides · 🏏 live scores** | Progress and live info from any app (Android 16 *Live Updates* supported) |
+| 🏏 **Live updates** | Navigation, deliveries, rides and live scores from any app (Android 16 Live Updates supported) |
 | 💳 **Payments** | Confirmation glimpse for Google Wallet and UPI apps (GPay, PhonePe, Paytm, BHIM, CRED) |
 | ⚡ **System glimpses** | Charging, low battery, silent/vibrate, DND, earbuds + battery, airplane mode, offline / back online, hotspot, NFC, unlock, flashlight |
-| 🔴 **Recording** | Screen and voice recording with a red REC timer · camera/mic in-use dots |
-| 🧰 **Island tools** | Long-press the empty island: 25+ tools you choose and arrange (flashlight, timers, lock screen, media keys, Wi-Fi/volume panels, DND, copy OTP…) plus any app, across swipeable pages |
-| 📥 **Notification Inbox** | Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy. Swipe down on the empty island |
+| 🔴 **Recording** | Screen and voice recording with a red REC timer, camera/mic in-use dots |
+| 🧰 **Island tools** | Long-press the empty island: 25+ tools you choose and arrange, any app, and shortcuts from your modules |
+| 📥 **Notification Inbox** | Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy, ✨ Catch me up |
 | 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
-| 🎨 **Make it yours** | 7 themes (iPhone Black, Glass, Light, Rose, Ocean, Lavender, Graphite), width, height, roundness, opacity, glow outline, animation speed |
-| 🎙 **Meeting Notes** (module) | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, then **AI notes** (summary, decisions, action items). Nothing leaves the phone |
-| ✨ **AI Engine** (module) | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, **Ask about this meeting**, a "Catch me up" summary in the Inbox or right in the island, and reply suggestions. Offline after a one-time model download |
-| 🧩 **Modules** | Optional add-on apps with their own permissions: **Automation Bridge** (Tasker/MacroDroid/adb → island), **Calendar** (next meeting, one-tap Join), **Meeting Notes** and **AI Engine**. [Build your own](docs/MODULES.md) |
+| 🎨 **Make it yours** | 7 themes, width, height, roundness, opacity, glow outline, animation speed |
+| 📱 **Simple app** | A short first-run setup, then three tabs (Island, Modules, Settings) laid out the way iPhone settings are |
+| ♿ **Accessible** | Large-text ready, 48 dp touch targets, TalkBack labels, respects reduced motion and your "time to take action" setting |
 | 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
+| 🎙 **Meeting Notes** (module) | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, AI notes (summary, decisions, action items) and Ask about this meeting. |
+| ✨ **AI Engine** (module) | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. |
+| 📅 **Calendar** (module) | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. |
+| 🔗 **Automation Bridge** (module) | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. |
+<!-- /GEN:features -->
 
 Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.md)**.
 
@@ -68,6 +77,19 @@ Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.
 | Swipe up or sideways | Shrink back to the pill (the activity keeps running) |
 | Tap the side bubble | Switch between two running activities |
 | Tap the empty pill | Bring back shrunk activities |
+
+## Modules
+
+Optional add-on apps, each with its own permissions. Modules from this repo switch on when installed, and their shortcuts appear in the island's tools and on the app's **Modules** tab. Anyone can [build a module](docs/MODULES.md), with or without an AI coding agent ([agent guide](docs/modules/AGENT_GUIDE.md)).
+
+<!-- GEN:modules -->
+| Module | What it adds | Shortcuts it puts in the island and the app | Permissions |
+|---|---|---|---|
+| 🎙 **Meeting Notes** 1.3.0 | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, AI notes (summary, decisions, action items) and Ask about this meeting. | Record meeting, Recordings, Ask last meeting | Microphone, Notifications, Internet (one-time model download) |
+| ✨ **AI Engine** 1.2.0 | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. | AI Engine, Try AI | Notifications, Internet (model download only) |
+| 📅 **Calendar** 1.1.0 | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. | Next meeting, Open (settings) | Calendar |
+| 🔗 **Automation Bridge** 1.1.0 | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. | Two automation tools you name, Open (settings) | None |
+<!-- /GEN:modules -->
 
 ## Install (2 minutes)
 

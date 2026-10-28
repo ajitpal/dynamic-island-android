@@ -44,6 +44,8 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         /** Smart replies are on and the AI Engine is available. */
         val smartReplies: Boolean
         fun suggestReplies(input: InputState)
+        /** Long-press on a tool (module tools show that module's shortcuts and options). */
+        fun toolLongPress(id: String) {}
     }
 
     enum class MediaCmd { PREV, TOGGLE, NEXT }
@@ -332,7 +334,8 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         val cols = if (cells.size > 6) 4 else 3
         cells.chunked(cols).forEach { chunk ->
             val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-            chunk.forEach { c -> row.addView(toolButton(c) { host.tool(c.id) }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)) }
+            chunk.forEach { c -> row.addView(toolButton(c) { host.tool(c.id) }.apply { setOnLongClickListener { host.toolLongPress(c.id); true } },
+                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)) }
             repeat(cols - chunk.size) { row.addView(View(ctx), LinearLayout.LayoutParams(0, 1, 1f)) }
             col.addView(row, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
         }

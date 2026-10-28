@@ -482,7 +482,8 @@ class IslandOverlay(
         setWindow(max(fw, w) + slack, max(fh, h) + slack)
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = (560 / prefs.animSpeed).roundToInt().toLong()
-            interpolator = SpringInterpolator()
+            // Reduced motion: no springy overshoot, just a short straight resize.
+            interpolator = if (reducedMotion()) android.view.animation.DecelerateInterpolator() else SpringInterpolator()
             addUpdateListener {
                 val t = it.animatedValue as Float
                 curW = (fw + (w - fw) * t).roundToInt().coerceAtLeast(1)
@@ -585,6 +586,7 @@ class IslandOverlay(
     }
 
     private fun bounce() {
+        if (reducedMotion()) return
         pill.animate().scaleX(1.08f).scaleY(1.08f).setDuration(110).withEndAction {
             pill.animate().scaleX(1f).scaleY(1f).setInterpolator(SpringInterpolator()).setDuration(400).start()
         }.start()
@@ -599,8 +601,20 @@ class IslandOverlay(
 
     private fun rescheduleCollapse(ms: Long = 10_000) {
         handler.removeCallbacks(collapseRunnable)
-        handler.postDelayed(collapseRunnable, ms)
+        handler.postDelayed(collapseRunnable, a11yTimeout(ms))
     }
+
+    /** HIG: minimise time-boxed UI. Honour Android's "Time to take action" accessibility setting. */
+    private fun a11yTimeout(ms: Long): Long = try {
+        ctx.getSystemService(android.view.accessibility.AccessibilityManager::class.java)
+            ?.getRecommendedTimeoutMillis(ms.toInt(), android.view.accessibility.AccessibilityManager.FLAG_CONTENT_TEXT or
+                android.view.accessibility.AccessibilityManager.FLAG_CONTENT_CONTROLS)?.toLong()?.coerceAtLeast(ms) ?: ms
+    } catch (e: Exception) { ms }
+
+    /** "Remove animations" (or a 0 animator scale) is on. */
+    private fun reducedMotion(): Boolean =
+        !android.animation.ValueAnimator.areAnimatorsEnabled() ||
+            android.provider.Settings.Global.getFloat(ctx.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
     fun collapse() {
         handler.removeCallbacks(collapseRunnable)
@@ -624,7 +638,7 @@ class IslandOverlay(
         handler.removeCallbacks(collapseRunnable)
         if (a.peekMs > 0) {
             stickyPeekId = null
-            handler.postDelayed(collapseRunnable, a.peekMs)
+            handler.postDelayed(collapseRunnable, a11yTimeout(a.peekMs))
         } else {
             stickyPeekId = id
         }
@@ -698,6 +712,32 @@ class IslandOverlay(
         }
         val label = if (active && d.activeLabel != null) d.activeLabel else d.label
         return ContentBinder.ToolCell(id, label, ContextCompat.getDrawable(ctx, d.icon), tint = true, active = active)
+    }
+
+    /** Long-press a module tool: a card with that module's shortcuts and options (Open · Manage · Remove). */
+    override fun toolLongPress(id: String) {
+        if (!id.startsWith(ModuleRegistry.TOOL_PREFIX)) return
+        val t = ModuleRegistry.tool(id) ?: return
+        haptic()
+        val info = ModuleRegistry.modules.value.firstOrNull { it.pkg == t.pkg } ?: return
+        val shortcuts = ModuleRegistry.tools.value.filter { it.pkg == t.pkg }.joinToString(" · ") { it.label }
+        val menuId = "sys:modmenu"
+        IslandRepository.upsert(IslandActivity(
+            id = menuId, kind = Kind.SYSTEM, packageName = ctx.packageName, title = info.label,
+            text = "Shortcuts: $shortcuts", icon = info.icon, accent = com.ajit.dynamicisland.core.Colors.BLUE,
+            compactText = info.label, expiresAt = System.currentTimeMillis() + 15_000, contentHash = id.hashCode(),
+            actions = listOf(
+                IslandAction("Open", style = com.ajit.dynamicisland.core.ActionStyle.POSITIVE, onClick = { IslandRepository.remove(menuId); ModuleRegistry.openModule(ctx, info) }),
+                IslandAction("Manage", onClick = {
+                    IslandRepository.remove(menuId)
+                    launchIntent(Intent(ctx, com.ajit.dynamicisland.MainActivity::class.java)
+                        .putExtra(com.ajit.dynamicisland.MainActivity.EXTRA_TAB, com.ajit.dynamicisland.MainActivity.TAB_MODULES)
+                        .putExtra(com.ajit.dynamicisland.MainActivity.EXTRA_MODULE, info.pkg))
+                }),
+                IslandAction("Remove", style = com.ajit.dynamicisland.core.ActionStyle.NEGATIVE, onClick = { IslandRepository.remove(menuId); ModuleRegistry.setToolShown(id, false) }),
+            ),
+        ))
+        expand(menuId)
     }
 
     override fun tool(id: String) {

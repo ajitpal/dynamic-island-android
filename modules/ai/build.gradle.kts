@@ -17,8 +17,8 @@ android {
         applicationId = "com.ajit.dynamicisland.module.ai"
         minSdk = 31
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
         // LiteRT-LM ships native code for several ABIs; 64-bit ARM covers practically every Android 12+ phone.
         ndk { abiFilters += listOf("arm64-v8a") }
     }

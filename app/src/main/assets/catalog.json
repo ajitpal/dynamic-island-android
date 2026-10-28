@@ -1,0 +1,42 @@
+[
+ {
+  "id": "ai",
+  "name": "AI Engine",
+  "icon": "✨",
+  "package": "com.ajit.dynamicisland.module.ai",
+  "summary": "A small language model on your phone for notes, Catch me up and reply suggestions.",
+  "developer": "Ajit Kumar Pal",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
+ },
+ {
+  "id": "automation",
+  "name": "Automation Bridge",
+  "icon": "🔗",
+  "package": "com.ajit.dynamicisland.module.automation",
+  "summary": "Tasker, MacroDroid or adb can show cards and tools in the island.",
+  "developer": "Ajit Kumar Pal",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
+ },
+ {
+  "id": "calendar",
+  "name": "Calendar",
+  "icon": "📅",
+  "package": "com.ajit.dynamicisland.module.calendar",
+  "summary": "Your next meeting in the island with one-tap Join.",
+  "developer": "Ajit Kumar Pal",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
+ },
+ {
+  "id": "voice",
+  "name": "Meeting Notes",
+  "icon": "🎙",
+  "package": "com.ajit.dynamicisland.module.voice",
+  "summary": "Record meetings from the island; on-device transcript, AI notes and questions.",
+  "developer": "Ajit Kumar Pal",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
+ }
+]

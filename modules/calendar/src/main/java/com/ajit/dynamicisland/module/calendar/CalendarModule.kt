@@ -22,6 +22,8 @@ class CalendarModule : IslandModuleService() {
     private var shownId: Long = -1
 
     override val tools = listOf(ModuleTool("next", "Next meeting", R.drawable.ic_event))
+    override val mainActivity: Class<*> get() = SettingsActivity::class.java
+    private var lastTile: String? = null
 
     override fun onIslandConnected() { handler.removeCallbacks(tick); handler.post(tick) }
     override fun onIslandDisconnected() { handler.removeCallbacks(tick) }
@@ -45,6 +47,7 @@ class CalendarModule : IslandModuleService() {
     /** Show the next meeting once it is within the lead time; keep it during the meeting. */
     fun refresh() {
         if (!island.isConnected) return
+        postTile()
         val now = System.currentTimeMillis()
         val lead = Prefs.leadMinutes(this) * 60_000L
         val m = Calendars.upcoming(this, now, 24 * 3600_000L).firstOrNull { it.begin - lead <= now && it.end > now }
@@ -57,6 +60,22 @@ class CalendarModule : IslandModuleService() {
         val peek = soon && peeked.add(m.eventId) && Prefs.popUp(this)
         val phase = when { now >= m.begin -> 3; soon -> 2; else -> 1 }
         island.post(cardFor(m, peek).version(phase).build())
+    }
+
+    /** Island-tab tile: the next meeting in the coming day (updated every 30 s with the card). */
+    private fun postTile() {
+        val tf = DateFormat.getTimeFormat(this)
+        val next = if (Calendars.hasPermission(this)) Calendars.upcoming(this, windowMs = 24 * 3600_000L).firstOrNull() else null
+        val key = next?.let { "${it.eventId}:${it.begin}" } ?: if (Calendars.hasPermission(this)) "none" else "noperm"
+        if (key == lastTile) return
+        lastTile = key
+        val b = com.ajit.dynamicisland.sdk.IslandTile.Builder(this).icon(R.drawable.ic_event).tapActivity(SettingsActivity::class.java)
+        when {
+            !Calendars.hasPermission(this) -> b.title("Calendar").text("Allow calendar access to see your next meeting")
+            next == null -> b.title("Calendar").text("No meetings in the next 24 hours")
+            else -> b.title(next.title).text("${dayPrefix(this, next.begin)}${tf.format(Date(next.begin))}" + (next.provider?.let { " · $it" } ?: ""))
+        }
+        island.postTile(b.build())
     }
 
     private fun cardFor(m: Meeting, peek: Boolean): IslandCard.Builder {

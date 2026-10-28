@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Island · Hello</string>
+    <string name="module_description">An example module: a tool, a card with buttons and a tile.</string>
+    <string name="developer">Your name</string>
+</resources>

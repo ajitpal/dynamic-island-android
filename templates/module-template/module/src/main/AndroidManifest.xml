@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Ask only for what your module needs, and explain each permission in your catalog entry. -->
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.Module">
+
+        <!-- The island binds to this service. Every call is verified by the SDK (island certificate pinned). -->
+        <service android:name=".HelloModule" android:exported="true" android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.MODULE" />
+            </intent-filter>
+            <meta-data android:name="com.ajit.dynamicisland.module.DESCRIPTION" android:value="@string/module_description" />
+            <meta-data android:name="com.ajit.dynamicisland.module.SETTINGS_ACTIVITY" android:value=".MainActivity" />
+            <meta-data android:name="com.ajit.dynamicisland.module.DEVELOPER" android:value="@string/developer" />
+        </service>
+
+        <!-- Your module's main screen (Open on the island's Modules tab). -->
+        <activity android:name=".MainActivity" android:exported="true" />
+
+        <!-- App-drawer icon as an alias, so people can hide it and still reach the module from the island. -->
+        <activity-alias android:name=".Launcher" android:targetActivity=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+    </application>
+</manifest>

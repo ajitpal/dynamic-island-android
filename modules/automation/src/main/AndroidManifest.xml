@@ -29,11 +29,18 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".SettingsActivity" android:exported="true" android:label="Automation Bridge">
+        <activity android:name=".SettingsActivity" android:exported="true" android:label="Automation Bridge" />
+
+        <!-- App-drawer entry. An alias (not the activity itself) so the island can hide the icon while
+             the module stays reachable from the island (IslandContract.LAUNCHER_ALIAS). -->
+        <activity-alias
+            android:name=".Launcher"
+            android:targetActivity=".SettingsActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
     </application>
 </manifest>

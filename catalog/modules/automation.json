@@ -1,0 +1,14 @@
+{
+  "id": "automation",
+  "name": "Automation Bridge",
+  "icon": "🔗",
+  "package": "com.ajit.dynamicisland.module.automation",
+  "summary": "Tasker, MacroDroid or adb can show cards and tools in the island.",
+  "developer": "Ajit Kumar Pal",
+  "firstParty": true,
+  "repo": "https://github.com/ajitpal/dynamic-island-android/tree/main/modules/automation",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501",
+  "permissions": [],
+  "privacy": "Everything stays on the phone. See PRIVACY.md in the repository."
+}

@@ -6,3 +6,6 @@ local.properties
 *.iml
 keystore.properties
 *.jks
+.kotlin/
+__pycache__/
+_site/

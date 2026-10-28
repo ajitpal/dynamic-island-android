@@ -1,0 +1,5 @@
+# JitPack builds only the module SDK (https://jitpack.io/#ajitpal/dynamic-island-android).
+jdk:
+  - openjdk17
+install:
+  - ./gradlew :module-sdk:publishReleasePublicationToMavenLocal -x lint

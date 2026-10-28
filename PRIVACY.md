@@ -12,6 +12,8 @@ What the app processes, **only on your device**:
 - **Settings** you choose (theme, size, enabled apps, pinned note) are saved in the app's private storage and never leave the device. Uninstalling the app deletes them.
 
 ## Add-on modules
+The **module catalog** shown in the app (Modules → Get more) is bundled inside the app; looking at it doesn't contact any server. Tapping "Get" opens the module's release page in your browser.
+
 Modules are separate apps you choose to install. Each asks for its own permissions and is covered by this policy when it comes from this repository:
 - **Calendar**: reads your calendar on the device to show the next meeting. Nothing is sent anywhere.
 - **Automation Bridge**: receives cards from automation apps on your phone (protected by a secret key). Nothing is sent anywhere.
