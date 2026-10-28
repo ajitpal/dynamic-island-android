@@ -40,6 +40,9 @@ class AiClient(context: Context) {
     class Result(val text: String?, val errorCode: Int = 0, val error: String? = null)
 
     companion object {
+        /** How long to wait for the engine to bind before giving up with a message. */
+        const val CONNECT_TIMEOUT_MS = 15_000L
+
         fun isInstalled(ctx: Context) = try { ctx.packageManager.getPackageInfo(AiContract.ENGINE_PACKAGE, 0); true } catch (e: Exception) { false }
 
         /** Installed and signed by a trusted (first-party) certificate. */
@@ -59,8 +62,19 @@ class AiClient(context: Context) {
         } catch (e: Exception) { false }
     }
 
+    /** Why the last connection attempt failed, for the error message. */
+    @Volatile private var connectError: String? = null
+    private val connectTimeout = Runnable {
+        if (engine == null && synchronized(waiting) { waiting.isNotEmpty() }) {
+            connectError = "AI Engine didn't respond. Open the AI Engine app once, then try again."
+            unbind(); flush(null)
+        }
+    }
+
     private val conn = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            main.removeCallbacks(connectTimeout)
+            connectError = null
             engine = IAiEngine.Stub.asInterface(service)
             flush(engine)
         }
@@ -79,18 +93,26 @@ class AiClient(context: Context) {
         list.forEach { it(e) }
     }
 
-    /** Connect (if needed) and hand over the engine, or null if it isn't available. Main thread. */
+    /**
+     * Connect (if needed) and hand over the engine, or null if it isn't available. Main thread.
+     * Never waits forever: if the engine doesn't answer within [CONNECT_TIMEOUT_MS] you get null.
+     */
     fun connect(onReady: (IAiEngine?) -> Unit) {
-        engine?.let { onReady(it); return }
-        if (!isTrusted(ctx)) { onReady(null); return }
+        engine?.let { if (it.asBinder().isBinderAlive) { onReady(it); return } else engine = null }
+        if (!isTrusted(ctx)) { connectError = null; onReady(null); return }
         synchronized(waiting) { waiting += onReady }
         if (!bound) {
             bound = try {
                 ctx.bindService(Intent(AiContract.ACTION_ENGINE).setPackage(AiContract.ENGINE_PACKAGE), conn, Context.BIND_AUTO_CREATE)
             } catch (e: Exception) { false }
-            if (!bound) flush(null)
+            if (!bound) { connectError = "Couldn't start AI Engine"; flush(null); return }
         }
+        main.removeCallbacks(connectTimeout)
+        main.postDelayed(connectTimeout, CONNECT_TIMEOUT_MS)
     }
+
+    /** The message to show when [connect] gave null. */
+    fun unavailableMessage(): String = connectError ?: "AI Engine isn't installed or isn't trusted"
 
     /** Status of the engine, or null if not available. Blocking: call off the main thread. */
     fun statusBlocking(timeoutMs: Long = 5000): Bundle? {
@@ -98,20 +120,27 @@ class AiClient(context: Context) {
         return try { e.status() } catch (ex: Exception) { null }
     }
 
+    /**
+     * Run a request; callbacks arrive on the main thread. With [wait] = false the engine refuses at once
+     * (E_BUSY) when another app is using it, instead of queueing: use that for anything a person is
+     * watching. [onProgress] gets AiContract.P_* bundles from engines that support API 2.
+     */
     fun generate(
         system: String, prompt: String, maxTokens: Int = 512, temperature: Float = 0.3f,
         onPartial: (String) -> Unit = {}, onDone: (String) -> Unit, onError: (Int, String) -> Unit,
+        wait: Boolean = true, onProgress: (Bundle) -> Unit = {},
     ): String {
         val id = UUID.randomUUID().toString()
         connect { e ->
-            if (e == null) { onError(AiContract.E_UNAVAILABLE, "AI Engine isn't installed or isn't trusted"); return@connect }
+            if (e == null) { onError(AiContract.E_UNAVAILABLE, unavailableMessage()); return@connect }
             pending[id] = onError
             val cb = object : IAiCallback.Stub() {
                 override fun onPartial(requestId: String?, textSoFar: String?) { main.post { if (pending.containsKey(id)) onPartial(textSoFar.orEmpty()) } }
                 override fun onDone(requestId: String?, text: String?) { main.post { if (pending.remove(id) != null) onDone(text.orEmpty()) } }
                 override fun onError(requestId: String?, code: Int, message: String?) { main.post { if (pending.remove(id) != null) onError(code, message ?: "Error $code") } }
+                override fun onProgress(requestId: String?, progress: Bundle?) { if (progress != null) main.post { if (pending.containsKey(id)) onProgress(progress) } }
             }
-            try { e.generate(id, request(system, prompt, maxTokens, temperature), cb) }
+            try { e.generate(id, request(system, prompt, maxTokens, temperature).apply { putBoolean(AiContract.R_WAIT, wait) }, cb) }
             catch (ex: Exception) { pending.remove(id); onError(AiContract.E_UNAVAILABLE, ex.message ?: "AI Engine disconnected") }
         }
         return id
@@ -122,7 +151,7 @@ class AiClient(context: Context) {
                          timeoutMs: Long = 10 * 60_000L, onPartial: (String) -> Unit = {},
                          isCancelled: () -> Boolean = { false }): Result {
         check(Looper.myLooper() != Looper.getMainLooper()) { "generateBlocking on the main thread" }
-        val e = awaitEngine(10_000) ?: return Result(null, AiContract.E_UNAVAILABLE, "AI Engine isn't installed or isn't trusted")
+        val e = awaitEngine(CONNECT_TIMEOUT_MS + 1000) ?: return Result(null, AiContract.E_UNAVAILABLE, unavailableMessage())
         val latch = CountDownLatch(1)
         var result = Result(null, AiContract.E_FAILED, "Timed out")
         val id = UUID.randomUUID().toString()
@@ -130,6 +159,7 @@ class AiClient(context: Context) {
             override fun onPartial(requestId: String?, textSoFar: String?) { onPartial(textSoFar.orEmpty()) }
             override fun onDone(requestId: String?, text: String?) { result = Result(text.orEmpty()); latch.countDown() }
             override fun onError(requestId: String?, code: Int, message: String?) { result = Result(null, code, message); latch.countDown() }
+            override fun onProgress(requestId: String?, progress: Bundle?) {}
         }
         try { e.generate(id, request(system, prompt, maxTokens, temperature), cb) } catch (ex: Exception) {
             return Result(null, AiContract.E_UNAVAILABLE, ex.message)
@@ -162,5 +192,5 @@ class AiClient(context: Context) {
 
     private fun unbind() { if (bound) { runCatching { ctx.unbindService(conn) }; bound = false } }
 
-    fun close() { pending.clear(); engine = null; unbind() }
+    fun close() { main.removeCallbacks(connectTimeout); pending.clear(); engine = null; unbind() }
 }

@@ -34,4 +34,24 @@ class SmartInboxTest {
         assertTrue(out.lines().size <= 6)
         assertFalse(out.contains("#"))
     }
+
+    @Test fun groupsByAppAndCapsEachApp() {
+        val many = List(10) { e("WhatsApp", "Group", "Message $it") } + e("Gmail", "Bank", "Statement ready")
+        val p = SmartInbox.digestPrompt(many)
+        assertEquals(4, Regex("\\[WhatsApp\\] Group").findAll(p).count())
+        assertTrue(p.contains("[WhatsApp] and 6 more"))
+        assertTrue(p.contains("[Gmail] Bank: Statement ready"))
+    }
+
+    @Test fun dropsIdenticalLines() {
+        val p = SmartInbox.digestPrompt(List(5) { e("Swiggy", "Order", "Out for delivery") })
+        assertEquals(1, Regex("Out for delivery").findAll(p).count())
+    }
+
+    @Test fun splitsSummaryIntoSections() {
+        val s = SmartInbox.sections("## Needs attention\n- Priya asked about **7 pm**\n## Everything else\n- Gmail: 3 newsletters\n")
+        assertEquals(listOf("Needs Attention", "Everything Else"), s.map { it.first })
+        assertEquals("Priya asked about 7 pm", s[0].second.single())
+        assertEquals(listOf("Summary" to listOf("Just one line")), SmartInbox.sections("Just one line"))
+    }
 }

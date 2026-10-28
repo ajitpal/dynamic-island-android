@@ -31,7 +31,21 @@ class IslandAccessibilityService : AccessibilityService() {
     private val ignoredPackages = mutableSetOf("com.android.systemui")
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key != Prefs.NOTE) overlay?.onSettingsChanged()
+        when (key) {
+            Prefs.ISLAND_ON -> applyOnOff()
+            Prefs.NOTE -> {}
+            else -> overlay?.onSettingsChanged()
+        }
+    }
+
+    /** The master switch: remove the island window when off, put it back when on. The service keeps running so this is instant. */
+    private fun applyOnOff() {
+        if (prefs.islandOn) {
+            if (overlay == null) overlay = IslandOverlay(this, prefs) { performGlobalAction(it) }.also { it.attach() }
+        } else {
+            overlay?.detach(); overlay = null
+        }
+        IslandToggleTile.refresh(this)
     }
 
     override fun onServiceConnected() {
@@ -42,7 +56,8 @@ class IslandAccessibilityService : AccessibilityService() {
             getSystemService(InputMethodManager::class.java)?.inputMethodList?.forEach { ignoredPackages += it.packageName }
         } catch (_: Exception) {}
 
-        overlay = IslandOverlay(this, prefs) { performGlobalAction(it) }.also { it.attach() }
+        if (prefs.islandOn) overlay = IslandOverlay(this, prefs) { performGlobalAction(it) }.also { it.attach() }
+        IslandToggleTile.refresh(this)
         monitor = SystemEventMonitor(this, prefs).also { it.start() }
         IslandTools.restore(this)
         com.ajit.dynamicisland.core.modules.ModuleRegistry.start(this)

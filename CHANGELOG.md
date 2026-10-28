@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.2 (28 Oct 2026): Catch Me Up that shows its work, one AI request at a time, and an on/off switch
+- **Fixed: Catch Me Up could sit on "Summarising…" forever.** If the AI Engine didn't answer the connection, or its process stopped before replying, nothing ever told the app. Now a connection that doesn't answer within 15 seconds ends with a clear message ("AI Engine didn't respond. Open the AI Engine app once, then try again").
+- **Catch Me Up shows what it's doing**, step by step with checkmarks and a timer: Gathered 23 notifications → Load Qwen3 1.7B → Read them → Write summary. The summary streams in as it's written, in two sections (Needs Attention, Everything Else), with **Mark All as Read**. It's a proper sheet now: **Cancel** while it works, **Done** when it's finished. In the island the card shows the current step and seconds, with **Cancel**.
+- **One AI request at a time.** Tapping Catch Me Up while it's running shows the running one instead of starting another. If Suggest replies or another app (for example Meeting Notes writing notes) is using the AI Engine, you get "AI Engine is busy with Meeting Notes. Try again when it's finished." with **Try Again**, instead of a silent wait.
+- **Faster:** notifications are grouped by app (at most four per app, plus "and N more", repeats removed), so the model has about half as much to read. If nothing changed since the last catch-up, the last summary appears instantly.
+- **On/off switch:** turn Dynamic Island off and on at the top of the Island tab and Settings, or with the new **Dynamic Island** Quick Settings tile. Off hides the island immediately; your Inbox keeps collecting notifications.
+- **AI Engine 1.2.1:** reports progress (waiting, loading the model, reading, writing), names the app it's busy with, and supports "don't queue" requests. Older apps keep working. Install it together with the island update.
+
 ## 1.9.1 (28 Oct 2026): fix for the Modules tab freezing
 - **Fixed:** opening the **Modules** tab with a module installed made the app stop responding ("Dynamic Island isn't responding"). Showing the tab rescanned the installed modules, and every rescan looked like a change because each module's icon was loaded again as a new object, so the tab refreshed and rescanned over and over. Icons are now kept per installed version, the tab never rescans while drawing, and back-to-back refreshes are merged. A unit test reproduces the loop.
 - Modules are unchanged; keep Meeting Notes 1.3.0, AI Engine 1.2.0, Calendar 1.1.0 and Automation Bridge 1.1.0.

@@ -43,7 +43,10 @@ class AiEngineService : Service() {
                     override fun onPartial(text: String) { runCatching { cb.onPartial(requestId, text) } }
                     override fun onDone(text: String) { runCatching { cb.onDone(requestId, text) } }
                     override fun onError(code: Int, message: String) { runCatching { cb.onError(requestId, code, message) } }
+                    // Older clients don't know this call; a oneway call they don't implement is simply ignored.
+                    override fun onProgress(p: Bundle) { runCatching { cb.onProgress(requestId, p) } }
                 },
+                caller = who, wait = request.getBoolean(AiContract.R_WAIT, true),
             )
         }
 

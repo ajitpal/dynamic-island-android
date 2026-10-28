@@ -80,6 +80,7 @@ class IslandOverlay(
     companion object {
         const val TOOLS_ID = "__tools"
         const val DIGEST_ID = "sys:digest"
+        const val REPLY_LABEL = "Suggest replies"
         const val INBOX_ID = "__inbox"
         fun isPanel(id: String?) = id == TOOLS_ID || id == INBOX_ID
     }
@@ -918,54 +919,59 @@ class IslandOverlay(
 
     // ---- "Catch me up" in the island (Smart Inbox, on-device AI Engine) ----
 
-    private var digestRequest: String? = null
-
-    private fun digestCard(title: String, text: String, actions: List<IslandAction>, done: Boolean) = IslandActivity(
+    private fun digestCard(title: String, text: String, actions: List<IslandAction>, done: Boolean, progress: Float? = null) = IslandActivity(
         id = DIGEST_ID, kind = Kind.LIVE, packageName = ctx.packageName, title = title, text = text,
         icon = ContextCompat.getDrawable(ctx, R.drawable.ic_spark), tintIcon = true, accent = com.ajit.dynamicisland.core.Colors.PURPLE,
-        compactText = if (done) "Catch-up" else "…", indeterminate = !done, actions = actions,
-        expiresAt = System.currentTimeMillis() + if (done) 120_000 else 300_000, contentHash = 7,
+        compactText = if (done) "Catch-up" else "…", indeterminate = !done && progress == null, actions = actions,
+        expiresAt = System.currentTimeMillis() + if (done) 120_000 else 600_000, contentHash = 7,
         onTap = { IslandRepository.remove(DIGEST_ID); launchIntent(Intent(ctx, com.ajit.dynamicisland.InboxActivity::class.java)) },
     )
 
-    private fun catchUp() {
-        val openInbox = IslandAction("Open Inbox", onClick = { IslandRepository.remove(DIGEST_ID); launchIntent(Intent(ctx, com.ajit.dynamicisland.InboxActivity::class.java)) })
-        val openSettings = IslandAction("Settings", onClick = { IslandRepository.remove(DIGEST_ID); launchIntent(Intent(ctx, com.ajit.dynamicisland.MainActivity::class.java)) })
-        fun show(a: IslandActivity) { IslandRepository.upsert(a); expand(DIGEST_ID) }
-        when {
-            !prefs.smartDigest -> { show(digestCard("Catch me up is off", "Turn on Smart Inbox → \"Catch me up\" in Dynamic Island settings. It uses the AI Engine on this phone.", listOf(openSettings), true)); return }
-            !com.ajit.dynamicisland.sdk.ai.AiClient.isTrusted(ctx) -> { show(digestCard("AI Engine needed", "Install the AI Engine module to summarise your notifications on this phone.", listOf(openSettings), true)); return }
-            isLocked() -> { show(digestCard("Unlock to catch up", "Your catch-up includes message text, so it's hidden on the lock screen.", emptyList(), true)); return }
+    /** Draws Catch Me Up's state as an island card while the island is the one showing it. */
+    private var digestShown = false
+    private val digestListener = com.ajit.dynamicisland.core.ai.CatchUp.Listener { st -> if (digestShown) renderDigest(st) }
+
+    private fun renderDigest(st: com.ajit.dynamicisland.core.ai.CatchUp.State) {
+        val cu = com.ajit.dynamicisland.core.ai.CatchUp
+        val openInbox = IslandAction("Open Inbox", onClick = { closeDigest(); launchIntent(Intent(ctx, com.ajit.dynamicisland.InboxActivity::class.java)) })
+        val card = when (st) {
+            is com.ajit.dynamicisland.core.ai.CatchUp.State.Working -> digestCard(
+                "Catching Up · ${cu.elapsed(st)} s",
+                st.text?.takeIf { it.isNotBlank() }?.let { com.ajit.dynamicisland.core.ai.SmartInbox.forIsland(it) } ?: cu.stepText(st),
+                listOf(IslandAction("Cancel", onClick = { cu.cancel() })), false)
+            is com.ajit.dynamicisland.core.ai.CatchUp.State.Done -> digestCard(
+                if (st.unchanged) "Catch-Up · nothing new" else "Catch-Up · ${st.count} notifications",
+                com.ajit.dynamicisland.core.ai.SmartInbox.forIsland(st.text),
+                listOf(openInbox, IslandAction("Mark Read", onClick = { InboxStore.markAllRead(ctx); closeDigest() })), true)
+            com.ajit.dynamicisland.core.ai.CatchUp.State.Empty -> digestCard("All Caught Up", "Nothing new in the last day.", listOf(openInbox), true)
+            is com.ajit.dynamicisland.core.ai.CatchUp.State.Failed -> digestCard(st.title, st.message, when (st.reason) {
+                com.ajit.dynamicisland.core.ai.CatchUp.Reason.BUSY, com.ajit.dynamicisland.core.ai.CatchUp.Reason.ERROR ->
+                    listOf(IslandAction("Try Again", onClick = { cu.dismiss(); catchUp() }))
+                com.ajit.dynamicisland.core.ai.CatchUp.Reason.OFF -> listOf(IslandAction("Settings", onClick = { closeDigest(); launchIntent(Intent(ctx, com.ajit.dynamicisland.MainActivity::class.java).putExtra(com.ajit.dynamicisland.MainActivity.EXTRA_TAB, com.ajit.dynamicisland.MainActivity.TAB_SETTINGS)) }))
+                else -> listOf(IslandAction("Open AI Engine", onClick = { closeDigest(); com.ajit.dynamicisland.sdk.ai.AiClient.openEngineApp(ctx) }))
+            }, true)
+            com.ajit.dynamicisland.core.ai.CatchUp.State.Idle -> { closeDigest(); return }
         }
-        show(digestCard("Catching up…", "Reading your notifications on this phone", emptyList(), false))
-        Thread {
-            val dayAgo = System.currentTimeMillis() - 24 * 3600_000L
-            val entries = InboxStore.query(ctx, com.ajit.dynamicisland.core.inbox.InboxFilter.UNREAD, null, 80).ifEmpty {
-                InboxStore.query(ctx, com.ajit.dynamicisland.core.inbox.InboxFilter.ALL, null, 80).filter { it.posted >= dayAgo }
-            }
-            handler.post {
-                if (entries.isEmpty()) { show(digestCard("All caught up", "Nothing new in the last day.", listOf(openInbox), true)); return@post }
-                val client = ai ?: com.ajit.dynamicisland.sdk.ai.AiClient(ctx).also { ai = it }
-                digestRequest?.let { client.cancel(it) }
-                var last = 0L
-                digestRequest = client.generate(
-                    system = com.ajit.dynamicisland.core.ai.SmartInbox.DIGEST_SYSTEM,
-                    prompt = com.ajit.dynamicisland.core.ai.SmartInbox.digestPrompt(entries),
-                    maxTokens = com.ajit.dynamicisland.core.ai.SmartInbox.DIGEST_TOKENS, temperature = 0.2f,
-                    onPartial = { p ->
-                        val now = android.os.SystemClock.uptimeMillis()
-                        if (p.isNotBlank() && now - last > 700) { last = now
-                            IslandRepository.upsert(digestCard("Catching up · ${entries.size}", com.ajit.dynamicisland.core.ai.SmartInbox.forIsland(p), emptyList(), false)) }
-                    },
-                    onDone = { t ->
-                        digestRequest = null
-                        val mark = IslandAction("Mark read", onClick = { InboxStore.markAllRead(ctx); IslandRepository.remove(DIGEST_ID) })
-                        IslandRepository.upsert(digestCard("Catch-up · ${entries.size} notifications", com.ajit.dynamicisland.core.ai.SmartInbox.forIsland(t), listOf(openInbox, mark), true))
-                    },
-                    onError = { _, msg -> digestRequest = null; IslandRepository.upsert(digestCard("Couldn't catch up", msg, listOf(openInbox), true)) },
-                )
-            }
-        }.start()
+        IslandRepository.upsert(card)
+    }
+
+    private fun closeDigest() {
+        digestShown = false
+        com.ajit.dynamicisland.core.ai.CatchUp.removeListener(digestListener)
+        IslandRepository.remove(DIGEST_ID)
+        com.ajit.dynamicisland.core.ai.CatchUp.dismiss()
+    }
+
+    private fun catchUp() {
+        val cu = com.ajit.dynamicisland.core.ai.CatchUp
+        if (isLocked()) {
+            IslandRepository.upsert(digestCard("Unlock to Catch Up", "Your catch-up includes message text, so it's hidden on the lock screen.", emptyList(), true))
+            expand(DIGEST_ID); return
+        }
+        // Tapping again while it runs shows the running one; it never starts a second request.
+        if (!cu.running) cu.start(ctx)
+        if (!digestShown) { digestShown = true; cu.addListener(digestListener) } else renderDigest(cu.state)
+        expand(DIGEST_ID)
     }
 
     // ---- Smart replies (optional, on-device AI Engine) ----
@@ -978,6 +984,11 @@ class IslandOverlay(
     override fun suggestReplies(input: ContentBinder.InputState) {
         val (from, msg) = input.replyTo ?: return
         if (input.loading) return
+        // One AI request at a time: say what's running instead of queueing behind it.
+        if (!com.ajit.dynamicisland.core.ai.AiGate.tryAcquire(REPLY_LABEL)) {
+            android.widget.Toast.makeText(ctx, com.ajit.dynamicisland.core.ai.AiGate.busyMessage(), android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
         input.loading = true; input.suggestions = null
         binder.fillReplyChips(input, primary?.accent ?: com.ajit.dynamicisland.core.Colors.BLUE)
         val client = ai ?: com.ajit.dynamicisland.sdk.ai.AiClient(ctx).also { ai = it }
@@ -985,11 +996,14 @@ class IslandOverlay(
             system = com.ajit.dynamicisland.core.ai.SmartInbox.REPLY_SYSTEM,
             prompt = com.ajit.dynamicisland.core.ai.SmartInbox.replyPrompt(from, msg),
             maxTokens = com.ajit.dynamicisland.core.ai.SmartInbox.REPLY_TOKENS, temperature = 0.7f,
+            wait = false,
             onDone = { text ->
+                com.ajit.dynamicisland.core.ai.AiGate.release(REPLY_LABEL)
                 input.loading = false; input.suggestions = com.ajit.dynamicisland.core.ai.SmartInbox.parseReplies(text)
                 if (this.input === input) binder.fillReplyChips(input, primary?.accent ?: com.ajit.dynamicisland.core.Colors.BLUE)
             },
             onError = { _, msg2 ->
+                com.ajit.dynamicisland.core.ai.AiGate.release(REPLY_LABEL)
                 input.loading = false; input.suggestions = emptyList()
                 if (this.input === input) { binder.fillReplyChips(input, primary?.accent ?: com.ajit.dynamicisland.core.Colors.BLUE); android.widget.Toast.makeText(ctx, msg2, android.widget.Toast.LENGTH_SHORT).show() }
             },
@@ -999,7 +1013,7 @@ class IslandOverlay(
     }
 
     private fun endInput() {
-        input?.requestId?.let { id -> ai?.cancel(id) }
+        input?.let { i -> if (i.loading) { i.requestId?.let { id -> ai?.cancel(id) }; i.loading = false; com.ajit.dynamicisland.core.ai.AiGate.release(REPLY_LABEL) } }
         input?.editText?.let { et ->
             ctx.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(et.windowToken, 0)
         }

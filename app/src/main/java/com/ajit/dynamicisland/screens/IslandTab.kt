@@ -65,8 +65,9 @@ class IslandTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
             !IslandAccessibilityService.running -> s.add(hig.row("The island isn't running",
                 "Your phone may have stopped it. Check Keep it running.", hig.tile(R.drawable.ic_battery, Hig.Tile.ORANGE), chevron = true,
                 onClick = { a.startActivity(Intent(a, OnboardingActivity::class.java).putExtra(OnboardingActivity.EXTRA_STEP, 2)) }))
-            else -> s.add(hig.row("Dynamic Island is on", "Long-press the empty island for tools; swipe down for the Inbox",
-                hig.tile(R.drawable.ic_check, Hig.Tile.GREEN)))
+            else -> {
+                s.add(onOffToggle(a, hig, prefs) { refresh() })
+            }
         }
     }
 
@@ -136,7 +137,7 @@ class IslandTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
     }
 
     private fun tryIt() {
-        val s = hig.section(dynamic, "Try it", if (IslandAccessibilityService.running) "Watch the top of the screen." else "Turn on the island first to see these.")
+        val s = hig.section(dynamic, "Try it", when { !IslandAccessibilityService.running -> "Turn on the island first to see these."; !prefs.islandOn -> "Dynamic Island is off. Turn it on above to see these."; else -> "Watch the top of the screen." })
         fun p(t: String, f: () -> Unit) = hig.pill(t) { f() }
         s.add(hig.flow(listOf(
             p("Message") { Demo.message(a) }, p("Incoming call") { Demo.incomingCall(a) }, p("Download") { Demo.download(a) },
@@ -152,3 +153,13 @@ interface Tab {
     val root: View
     fun refresh()
 }
+
+/**
+ * The master switch, like Wi-Fi at the top of iPhone Settings. Off hides the island at once; the Inbox,
+ * modules and tools keep their settings. Also in Settings and as a Quick Settings tile.
+ */
+internal fun onOffToggle(a: android.app.Activity, hig: Hig, prefs: Prefs, after: () -> Unit) =
+    hig.toggle("Dynamic Island", prefs.islandOn,
+        if (prefs.islandOn) "Long-press the empty island for tools; swipe down for the Inbox"
+        else "Off. Your Inbox keeps collecting notifications. Also in Quick Settings.",
+        R.drawable.ic_tab_island, Hig.Tile.BLACK) { on -> prefs.set(Prefs.ISLAND_ON, on); after() }

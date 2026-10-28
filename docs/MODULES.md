@@ -179,6 +179,17 @@ if (AiClient.isTrusted(context)) {
 // On a worker thread: val r = ai.generateBlocking(system, prompt, 400)
 ai.close()
 ```
+**Requests a person is watching** should pass `wait = false` and show progress (AI API 2):
+```kotlin
+ai.generate(system, prompt, wait = false,
+    onProgress = { p -> when (p.getString(AiContract.P_STAGE)) {   // queued · loading · reading · writing
+        AiContract.STAGE_LOADING -> show("Loading ${p.getString(AiContract.P_MODEL)}")
+        AiContract.STAGE_READING -> show("Reading…")
+    } },
+    onPartial = { preview(it) }, onDone = { show(it) },
+    onError = { code, msg -> if (code == AiContract.E_BUSY) show(msg) /* "AI Engine is busy with Meeting Notes…" */ else warn(msg) })
+```
+The engine runs one request at a time. With `wait = false` it refuses at once with `E_BUSY` (naming the app it's busy with) instead of queueing behind, say, a long meeting summary. If the engine doesn't bind within 15 seconds you get `E_UNAVAILABLE` with a message, never silence.
 The client checks the engine's signing certificate before sending anything, and the engine checks every caller's certificate. `status()` tells you whether a model is ready and roughly how much text fits in one request (`S_MAX_INPUT_CHARS`); split longer inputs, as Meeting Notes does. Third-party access will need an explicit per-app approval, planned for Phase 5.
 
 **Gemini Nano:** `modules/nano` wraps ML Kit's GenAI Prompt API. Android only accepts Nano requests from the **top foreground app** (even a foreground service gets `BACKGROUND_USE_BLOCKED`), inputs are limited to about 4000 tokens, and AICore applies a per-app quota. So a module should call Nano in its own process while its screen is open and fall back to the AI Engine otherwise; see `Brain.kt` in Meeting Notes. ML Kit adds the INTERNET permission (for Google's usage statistics), which is why the island app never links it.
@@ -187,7 +198,7 @@ The client checks the engine's signing certificate before sending anything, and 
 - **`templates/module-template`**: the smallest complete module (tool, card, tile, launcher alias, signed release workflow).
 - **`modules/automation`**, Automation Bridge: bridges Tasker, MacroDroid and adb into the island using a secret key. Shows queued cards, tools and reply buttons.
 - **`modules/calendar`**, Calendar: uses the `READ_CALENDAR` permission (in the module only), a countdown, a progress phase, a Join link and `peek` at T-5 minutes.
-- **`modules/ai`**, AI Engine: LiteRT-LM, pinned model downloads with checksum, a bound AIDL service with caller checks, idle unloading.
+- **`modules/ai`**, AI Engine: LiteRT-LM, pinned model downloads with checksum, a bound AIDL service with caller checks, one request at a time with progress stages and a busy rule, idle unloading.
 - **`modules/voice`**, Meeting Notes: a tool that opens a translucent activity to start a `microphone` foreground service, a count-up REC card with live text and Pause/Stop buttons, on-device speech-to-text with Moonshine, and a "saved" card that opens the transcript.
 
 ## Contract stability

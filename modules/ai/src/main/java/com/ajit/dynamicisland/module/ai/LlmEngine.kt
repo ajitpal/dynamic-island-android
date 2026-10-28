@@ -32,7 +32,16 @@ object LlmEngine {
         fun onPartial(text: String)
         fun onDone(text: String)
         fun onError(code: Int, message: String)
+        /** AiContract.P_* keys: queued, loading the model, reading the prompt, writing. */
+        fun onProgress(p: android.os.Bundle) {}
     }
+
+    /** A request waiting or running, and which app sent it (to explain "busy"). */
+    private class Job(val id: String, val caller: String, val callerLabel: String)
+    private val jobs = java.util.Collections.synchronizedList(mutableListOf<Job>())
+
+    private fun stage(stage: String, extra: android.os.Bundle.() -> Unit = {}) =
+        android.os.Bundle().apply { putString(AiContract.P_STAGE, stage); extra() }
 
     class Stats(val model: String, val backend: String, val loadMs: Long, val firstTokenMs: Long, val totalMs: Long, val chars: Int)
 
@@ -53,13 +62,31 @@ object LlmEngine {
 
     val busy get() = queued > 0
 
-    fun submit(ctx: Context, id: String, system: String, prompt: String, maxTokens: Int, temperature: Float, l: Listener) {
+    /**
+     * Queue a request. [caller] is the package that sent it. With [wait] = false the request is refused
+     * at once (E_BUSY) when another app's request is running or waiting: one person-facing request
+     * should never sit silently behind, say, a long meeting summary.
+     */
+    fun submit(ctx: Context, id: String, system: String, prompt: String, maxTokens: Int, temperature: Float, l: Listener,
+               caller: String = ctx.packageName, wait: Boolean = true) {
         val app = ctx.applicationContext
+        val other = synchronized(jobs) { jobs.firstOrNull { it.caller != caller } }
+        if (!wait && other != null) {
+            l.onError(AiContract.E_BUSY, "AI Engine is busy with ${other.callerLabel}. Try again when it's finished.")
+            return
+        }
+        val label = try { app.packageManager.getApplicationLabel(app.packageManager.getApplicationInfo(caller, 0)).toString() } catch (e: Exception) { caller }
+        val ahead = synchronized(jobs) { jobs.size }
+        val running = synchronized(jobs) { jobs.firstOrNull() }
+        jobs += Job(id, caller, label)
         queued++
+        if (ahead > 0) l.onProgress(stage(AiContract.STAGE_QUEUED) {
+            putInt(AiContract.P_AHEAD, ahead); running?.let { putString(AiContract.P_BUSY_WITH, it.callerLabel) }
+        })
         worker.execute {
             try { run(app, id, system, prompt, maxTokens, temperature, l) }
             catch (t: Throwable) { Log.e(TAG, "request failed", t); l.onError(AiContract.E_FAILED, t.message ?: t.javaClass.simpleName) }
-            finally { queued--; scheduleUnload() }
+            finally { queued--; synchronized(jobs) { jobs.removeAll { it.id == id } }; scheduleUnload() }
         }
     }
 
@@ -75,7 +102,9 @@ object LlmEngine {
         if (system.length + prompt.length > max) { l.onError(AiContract.E_TOO_LONG, "Text too long for one request (max about $max characters)"); return }
 
         val t0 = SystemClock.elapsedRealtime()
+        if (!isLoaded(ctx, model)) l.onProgress(stage(AiContract.STAGE_LOADING) { putString(AiContract.P_MODEL, model.label) })
         val eng = ensureLoaded(ctx, model)
+        l.onProgress(stage(AiContract.STAGE_READING) { putString(AiContract.P_MODEL, model.label) })
         val loadMs = SystemClock.elapsedRealtime() - t0
 
         val conv = eng.createConversation(
@@ -97,7 +126,7 @@ object LlmEngine {
         try {
             conv.sendMessageAsync(text, object : MessageCallback {
                 override fun onMessage(message: Message) {
-                    if (firstAt == 0L) firstAt = SystemClock.elapsedRealtime()
+                    if (firstAt == 0L) { firstAt = SystemClock.elapsedRealtime(); l.onProgress(stage(AiContract.STAGE_WRITING) { putString(AiContract.P_MODEL, model.label) }) }
                     raw = Text.merge(raw, textOf(message))
                     val now = SystemClock.elapsedRealtime()
                     if (now - lastPush > 250) { lastPush = now; l.onPartial(Text.clean(raw)) }
@@ -121,6 +150,9 @@ object LlmEngine {
     }
 
     private fun textOf(m: Message) = m.contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
+
+    private fun isLoaded(ctx: Context, model: Model) =
+        engine != null && loadedKey == "${model.name}:${if (Models.useGpu(ctx)) "gpu" else "cpu"}"
 
     private fun ensureLoaded(ctx: Context, model: Model): Engine {
         unload?.cancel(false)

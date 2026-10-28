@@ -16,18 +16,49 @@ object SmartInbox {
         "Answer with two headings: \"## Needs attention\" (messages that ask something, payments, deadlines, deliveries, missed calls) " +
         "and \"## Everything else\" (one short line per app). Use bullets starting with \"- \". At most 10 bullets in total."
 
-    /** One line per notification, newest first, within [maxChars]. OTP codes are masked before sending. */
-    fun digestPrompt(entries: List<InboxEntry>, maxChars: Int = 6000): String {
+    /**
+     * The notifications for the model, newest first and grouped by app: at most [perApp] lines per app
+     * plus "and N more", identical lines once, within [maxChars]. Short prompts matter: on a mid-range
+     * phone the model reads roughly 20–50 words a second before it writes anything. OTPs are masked.
+     */
+    fun digestPrompt(entries: List<InboxEntry>, maxChars: Int = 3000, perApp: Int = 4): String {
         val sb = StringBuilder("Notifications (newest first):\n")
-        for (e in entries) {
-            val body = mask("${e.title}: ${e.text}".replace(Regex("\\s+"), " ").trim()).take(180)
-            val line = "- [${e.app}] $body\n"
-            if (sb.length + line.length > maxChars) break
-            sb.append(line)
+        val byApp = LinkedHashMap<String, MutableList<InboxEntry>>()
+        entries.forEach { byApp.getOrPut(it.app) { mutableListOf() } += it }
+        loop@ for ((app, list) in byApp) {
+            val lines = list.map { e -> mask("${e.title}: ${e.text}".replace(Regex("\\s+"), " ").trim()).take(140) }.distinct()
+            for (body in lines.take(perApp)) {
+                val line = "- [$app] $body\n"
+                if (sb.length + line.length > maxChars) break@loop
+                sb.append(line)
+            }
+            if (lines.size > perApp) {
+                val more = "- [$app] and ${lines.size - perApp} more\n"
+                if (sb.length + more.length > maxChars) break@loop
+                sb.append(more)
+            }
         }
         sb.append("\nWrite the catch-up now.")
         return sb.toString()
     }
+
+    /** The summary as (heading, bullets) for the Catch Me Up sheet. Text without headings is one "Summary" section. */
+    fun sections(text: String): List<Pair<String, List<String>>> {
+        val out = mutableListOf<Pair<String, MutableList<String>>>()
+        for (raw in text.lines()) {
+            val l = raw.trim()
+            if (l.isEmpty()) continue
+            if (l.startsWith("#")) { out += titleCase(l.trimStart('#').trim().trimEnd(':')) to mutableListOf(); continue }
+            if (out.isEmpty()) out += "Summary" to mutableListOf()
+            val b = l.removePrefix("- ").removePrefix("* ").removePrefix("• ").replace("**", "").trim()
+            if (b.isNotEmpty()) out.last().second += b
+        }
+        return out.filter { it.second.isNotEmpty() }
+    }
+
+    private fun titleCase(s: String) = s.split(" ").joinToString(" ") { w ->
+        if (w.lowercase() in setOf("a", "an", "the", "and", "or", "of", "in", "on", "to", "for")) w.lowercase() else w.replaceFirstChar { it.uppercase() }
+    }.replaceFirstChar { it.uppercase() }
 
     /** Hide anything that looks like a one-time code. */
     fun mask(s: String): String {

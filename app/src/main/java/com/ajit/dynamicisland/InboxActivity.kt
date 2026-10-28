@@ -96,7 +96,7 @@ class InboxActivity : AppCompatActivity() {
         val prefs = com.ajit.dynamicisland.core.Prefs(this)
         if (prefs.smartDigest && com.ajit.dynamicisland.sdk.ai.AiClient.isTrusted(this)) {
             root.addView(MaterialButton(this).apply {
-                text = "✨ Catch me up"; setOnClickListener { catchUp() }
+                text = "✨ Catch Me Up"; setOnClickListener { catchUp() }
             }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         }
 
@@ -123,40 +123,45 @@ class InboxActivity : AppCompatActivity() {
         lifecycleScope.launch { InboxStore.version.collect { reload() } }
     }
 
-    private var ai: com.ajit.dynamicisland.sdk.ai.AiClient? = null
+    private var sheet: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+    private var sheetListener: com.ajit.dynamicisland.core.ai.CatchUp.Listener? = null
 
-    /** Summarise unread (or today's) notifications with the on-device AI Engine. */
+    /**
+     * Catch Me Up as a sheet. Starting it while one is already running shows the running one; the
+     * sheet can be closed while it works (the island keeps nothing running for it), and Cancel stops it.
+     */
     private fun catchUp() {
-        val out = TextView(this).apply { setPadding(dp(24), dp(12), dp(24), dp(8)); setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f); setTextIsSelectable(true) }
-        val scroll = android.widget.ScrollView(this).apply { addView(out) }
-        val dialog = MaterialAlertDialogBuilder(this).setTitle("Catch me up").setView(scroll)
-            .setPositiveButton("Done", null).show()
-        out.text = "Reading your notifications…"
-        lifecycleScope.launch {
-            val dayAgo = System.currentTimeMillis() - 24 * 3600_000L
-            val entries = withContext(Dispatchers.IO) {
-                InboxStore.query(this@InboxActivity, InboxFilter.UNREAD, null, 80).ifEmpty {
-                    InboxStore.query(this@InboxActivity, InboxFilter.ALL, null, 80).filter { it.posted >= dayAgo }
-                }
-            }
-            if (entries.isEmpty()) { out.text = "Nothing new in the last day."; return@launch }
-            val client = ai ?: com.ajit.dynamicisland.sdk.ai.AiClient(this@InboxActivity).also { ai = it }
-            out.text = "Summarising ${entries.size} notifications on this phone… (the first run loads the model, which takes a few seconds)"
-            val id = client.generate(
-                system = com.ajit.dynamicisland.core.ai.SmartInbox.DIGEST_SYSTEM,
-                prompt = com.ajit.dynamicisland.core.ai.SmartInbox.digestPrompt(entries),
-                maxTokens = com.ajit.dynamicisland.core.ai.SmartInbox.DIGEST_TOKENS, temperature = 0.2f,
-                onPartial = { if (it.isNotBlank()) out.text = pretty(it) },
-                onDone = { out.text = pretty(it) + "\n\nWritten on this phone by the AI Engine. It can make mistakes." },
-                onError = { _, msg -> out.text = "⚠ $msg" },
-            )
-            dialog.setOnDismissListener { client.cancel(id) }
+        val cu = com.ajit.dynamicisland.core.ai.CatchUp
+        if (sheet?.isShowing == true) return
+        val hig = com.ajit.dynamicisland.ui.hig.Hig(this)
+        val view = com.ajit.dynamicisland.screens.CatchUpSheet(this, hig,
+            onCancel = { cu.cancel(); sheet?.dismiss() },
+            onDone = { sheet?.dismiss() },
+            onRetry = { cu.dismiss(); cu.start(this) },
+            onMarkRead = { InboxStore.markAllRead(this); Toast.makeText(this, "Marked all as read", Toast.LENGTH_SHORT).show(); sheet?.dismiss() },
+            onOpenEngine = { sheet?.dismiss(); com.ajit.dynamicisland.sdk.ai.AiClient.openEngineApp(this) },
+            onOpenSettings = { sheet?.dismiss(); startActivity(Intent(this, PageActivity::class.java).putExtra(PageActivity.EXTRA_KEY, PageActivity.SMART)) },
+        )
+        val d = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        d.setContentView(view.root, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (resources.displayMetrics.heightPixels * 0.85f).toInt()))
+        d.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        d.behavior.skipCollapsed = true
+        // The sheet draws its own rounded background.
+        (view.root.parent as? View)?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        val l = com.ajit.dynamicisland.core.ai.CatchUp.Listener { view.render(it) }
+        d.setOnDismissListener {
+            cu.removeListener(l); sheetListener = null; sheet = null
+            // A finished result is kept for next time only through CatchUp's cache; clear the screen state.
+            if (!cu.running) cu.dismiss()
         }
+        sheet = d; sheetListener = l
+        if (!cu.running) cu.start(this)
+        cu.addListener(l)
+        d.show()
     }
 
-    private fun pretty(s: String) = s.replace(Regex("(?m)^#{1,4}\\s*"), "").replace(Regex("(?m)^\\s*[-*]\\s+"), "• ").trim()
 
-    override fun onDestroy() { ai?.close(); super.onDestroy() }
+    override fun onDestroy() { sheetListener?.let { com.ajit.dynamicisland.core.ai.CatchUp.removeListener(it) }; sheet?.dismiss(); super.onDestroy() }
 
     private fun reload() {
         lifecycleScope.launch {

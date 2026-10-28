@@ -73,6 +73,9 @@ class Prefs(context: Context) {
         set(v) = sp.edit().putString(TOOLS, com.ajit.dynamicisland.core.tools.ToolLayout.join(v)).apply()
     val toolsPerPage get() = sp.getInt(TOOLS_PER_PAGE, 6)
 
+    /** The master switch: false hides the island (the Inbox keeps working). */
+    val islandOn get() = b(ISLAND_ON, true)
+
     // Notification inbox
     val inboxEnabled get() = b(INBOX_ENABLED, true)
     val inboxDays get() = sp.getInt(INBOX_DAYS, 7).coerceIn(1, 90)
@@ -156,6 +159,7 @@ class Prefs(context: Context) {
         const val TOOLS = "tools"
         const val TOOLS_PER_PAGE = "tools_per_page"
         const val INBOX_ENABLED = "inbox_enabled"
+        const val ISLAND_ON = "island_on"
         const val INBOX_DAYS = "inbox_days"
         const val SMART_DIGEST = "smart_digest"
         const val SMART_REPLIES = "smart_replies"

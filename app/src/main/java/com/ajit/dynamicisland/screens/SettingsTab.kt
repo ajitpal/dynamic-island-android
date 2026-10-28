@@ -26,6 +26,8 @@ class SettingsTab(private val a: AppCompatActivity, private val hig: Hig) : Tab 
 
     override fun refresh() {
         dynamic.removeAllViews()
+        if (Setup.ready(a)) hig.section(dynamic, footer = "Add the Dynamic Island tile to Quick Settings to turn it on or off from anywhere.")
+            .add(onOffToggle(a, hig, prefs) { refresh() })
         val island = hig.section(dynamic, "Island")
         island.add(hig.nav("Look and fit", R.drawable.ic_palette, Hig.Tile.PURPLE, value = Themes.byId(prefs.theme).name) { open(PageActivity.LOOK) })
         island.add(hig.nav("What shows", R.drawable.ic_eye, Hig.Tile.BLUE) { open(PageActivity.SHOWS) })

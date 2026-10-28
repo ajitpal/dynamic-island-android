@@ -111,6 +111,41 @@ class ScreenshotTest {
         shoot(main(MainActivity.TAB_SETTINGS), "app-09-settings-dark", night = true)
     }
 
+    /** Settings once set up: the Dynamic Island on/off switch at the top. */
+    @Test fun settingsWithSwitch() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val svc = android.content.ComponentName(ctx, com.ajit.dynamicisland.service.IslandAccessibilityService::class.java).flattenToString()
+        val nls = android.content.ComponentName(ctx, com.ajit.dynamicisland.service.IslandNotificationListener::class.java).flattenToString()
+        android.provider.Settings.Secure.putString(ctx.contentResolver, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, svc)
+        android.provider.Settings.Secure.putString(ctx.contentResolver, "enabled_notification_listeners", nls)
+        shoot(main(MainActivity.TAB_SETTINGS), "app-11-settings-switch")
+    }
+
+    /** Catch Me Up sheet in each state (Inbox). */
+    @Test fun catchUpSheet() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val themed = android.view.ContextThemeWrapper(ctx, com.ajit.dynamicisland.R.style.Theme_Island)
+        val hig = com.ajit.dynamicisland.ui.hig.Hig(themed)
+        val now = android.os.SystemClock.elapsedRealtime()
+        val summary = "## Needs attention\n- Priya asked if you can join dinner at 7 pm\n- HDFC: payment of Rs 2,499 to Swiggy\n- Amazon: parcel arrives today\n## Everything else\n- WhatsApp: 6 messages in Family\n- Gmail: 3 newsletters"
+        fun render(state: com.ajit.dynamicisland.core.ai.CatchUp.State, name: String) {
+            val sheet = com.ajit.dynamicisland.screens.CatchUpSheet(themed, hig, {}, {}, {}, {}, {}, {})
+            sheet.render(state)
+            val frame = FrameLayout(themed).apply { setBackgroundColor(0xFF8E8E93.toInt()); setPadding(0, 120, 0, 0) }
+            frame.addView(sheet.root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            frame.measure(View.MeasureSpec.makeMeasureSpec(786, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1500, View.MeasureSpec.EXACTLY))
+            frame.layout(0, 0, 786, 1500)
+            val bmp = android.graphics.Bitmap.createBitmap(786, 1500, android.graphics.Bitmap.Config.ARGB_8888)
+            frame.draw(android.graphics.Canvas(bmp))
+            bmp.captureRoboImage(out(name), opts)
+        }
+        render(com.ajit.dynamicisland.core.ai.CatchUp.State.Working(com.ajit.dynamicisland.core.ai.CatchUp.Step.LOADING, 23, now - 12_000, model = "Qwen3 1.7B"), "catchup-1-loading")
+        render(com.ajit.dynamicisland.core.ai.CatchUp.State.Working(com.ajit.dynamicisland.core.ai.CatchUp.Step.WRITING, 23, now - 41_000, model = "Qwen3 1.7B", text = summary.substringBefore("- Amazon")), "catchup-2-writing")
+        render(com.ajit.dynamicisland.core.ai.CatchUp.State.Done(summary, 23, 1761640200000, "Qwen3 1.7B"), "catchup-3-done")
+        render(com.ajit.dynamicisland.core.ai.CatchUp.State.Failed(com.ajit.dynamicisland.core.ai.CatchUp.Reason.BUSY, "AI Engine Is Busy",
+            "AI Engine is busy with Meeting Notes. Try again when it's finished."), "catchup-4-busy")
+    }
+
     /** The island's expanded states, drawn by the same code the overlay uses. */
     @Test fun islandStates() {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()

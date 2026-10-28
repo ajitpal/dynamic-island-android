@@ -58,6 +58,7 @@ This app aims to be the clean alternative:
 | 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
 | 🎨 **Make it yours** | 7 themes, width, height, roundness, opacity, glow outline, animation speed |
 | 📱 **Simple app** | A short first-run setup, then three tabs (Island, Modules, Settings) laid out the way iPhone settings are |
+| ⏻ **On/off switch** | Turn the island off and on from the app or a Quick Settings tile; your Inbox keeps working |
 | ♿ **Accessible** | Large-text ready, 48 dp touch targets, TalkBack labels, respects reduced motion and your "time to take action" setting |
 | 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
 | 🎙 **Meeting Notes** (module) | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, AI notes (summary, decisions, action items) and Ask about this meeting. |
@@ -86,7 +87,7 @@ Optional add-on apps, each with its own permissions. Modules from this repo swit
 | Module | What it adds | Shortcuts it puts in the island and the app | Permissions |
 |---|---|---|---|
 | 🎙 **Meeting Notes** 1.3.0 | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, AI notes (summary, decisions, action items) and Ask about this meeting. | Record meeting, Recordings, Ask last meeting | Microphone, Notifications, Internet (one-time model download) |
-| ✨ **AI Engine** 1.2.0 | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. | AI Engine, Try AI | Notifications, Internet (model download only) |
+| ✨ **AI Engine** 1.2.1 | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. | AI Engine, Try AI | Notifications, Internet (model download only) |
 | 📅 **Calendar** 1.1.0 | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. | Next meeting, Open (settings) | Calendar |
 | 🔗 **Automation Bridge** 1.1.0 | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. | Two automation tools you name, Open (settings) | None |
 <!-- /GEN:modules -->
