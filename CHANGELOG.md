@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.1 (28 Oct 2026): fix for the Modules tab freezing
+- **Fixed:** opening the **Modules** tab with a module installed made the app stop responding ("Dynamic Island isn't responding"). Showing the tab rescanned the installed modules, and every rescan looked like a change because each module's icon was loaded again as a new object, so the tab refreshed and rescanned over and over. Icons are now kept per installed version, the tab never rescans while drawing, and back-to-back refreshes are merged. A unit test reproduces the loop.
+- Modules are unchanged; keep Meeting Notes 1.3.0, AI Engine 1.2.0, Calendar 1.1.0 and Automation Bridge 1.1.0.
+
 ## 1.9.0 (28 Oct 2026): A new home for the island, module shortcuts, and modules from other developers
 - **Redesigned app, following Apple's Human Interface Guidelines:** three tabs, **Island** (status, your Inbox, module tiles, your tools, the pinned note, "Try it"), **Modules** and **Settings**, with inset grouped lists, larger touch targets, text that follows your font size, and full light and dark themes. A 3-step **welcome** walks new users through permissions and keeping the island running.
 - **Module shortcuts:** every module card on the Modules tab shows that module's direct links. For example, Meeting Notes has **Record**, **Recordings** and **Ask last meeting**, and AI Engine has **AI Engine** and **Try AI**. A ⋯ menu offers Settings, Permissions, Hide/Show app-drawer icon, Add/Remove tools, Turn off and Uninstall.

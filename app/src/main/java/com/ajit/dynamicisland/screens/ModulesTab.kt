@@ -32,8 +32,8 @@ class ModulesTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
 
     init { page.column.addView(dynamic, hig.mp()) }
 
+    /** Draws what the registry knows. Never rescans: rescanning publishes, and publishing triggers a refresh. */
     override fun refresh() {
-        ModuleRegistry.start(a)
         dynamic.removeAllViews()
         val mods = ModuleRegistry.modules.value
         if (mods.isEmpty()) hig.note(dynamic, "No modules installed yet. Pick one below to add it.")

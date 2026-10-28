@@ -11,6 +11,7 @@ Dynamic Island grows as a **small core app plus optional add-on modules**. Each 
 | 4b. Intelligence+ | 1.8 | **Gemini Nano** (ML Kit GenAI Prompt API) as a zero-download option on supported phones, used while Meeting Notes is on screen (Android only allows it for the top foreground app) with automatic fallback to the AI Engine; **Ask about this meeting** (answers with tappable timestamps, saved per meeting); **Catch me up** island tool | ✅ shipped |
 | 4c. Experience & ecosystem | 1.9 | App redesigned to Apple's HIG (Island · Modules · Settings tabs, onboarding, light/dark, accessibility); **module shortcuts**, tiles, long-press module card, hide drawer icon; module catalog; SDK API 2 on JitPack; module template, AI-agent guide and automated listing review; generated docs, screenshots from code, signed releases from CI | ✅ shipped |
 | 3b. Voice (Hindi / Hinglish) | 1.10 | Second speech model for Hindi and code-mixed speech; import audio files | next |
+| 4d. Updates | 1.11 | **Update from GitHub Releases** for the island and every module: check for new versions, a notification and island card with what's new, one tap to download, signature check against the installed app, Android's install prompt. Planned as an optional **Updater module** so the island app keeps no internet permission | planned |
 | 5. Ecosystem | 2.0 | Public SDK docs, third-party module catalogue, Scanner / Weather & AQI / Screen Recorder modules, three activities at once, IzzyOnDroid listings | planned |
 
 ## Module security model (Phase 2, designed for third parties)

@@ -125,6 +125,20 @@ object ModuleRegistry {
         publish(found)
     }
 
+    /**
+     * Icons are cached per install (package + last update time). A Drawable has no value equality, so a
+     * fresh icon on every scan made each rescan look like a change, and screens that refresh on change and
+     * rescan on refresh looped forever on the main thread (1.9.0 "isn't responding" on the Modules tab).
+     */
+    private val iconCache = HashMap<String, Pair<Long, android.graphics.drawable.Drawable?>>()
+
+    private fun iconOf(pm: PackageManager, pkg: String, updated: Long): android.graphics.drawable.Drawable? {
+        iconCache[pkg]?.let { (t, d) -> if (t == updated) return d }
+        val d = try { pm.getApplicationIcon(pkg) } catch (e: Exception) { null }
+        iconCache[pkg] = updated to d
+        return d
+    }
+
     private fun discover(): List<ModuleInfo> {
         val pm = app.packageManager
         val services = pm.queryIntentServices(Intent(C.ACTION_MODULE), PackageManager.GET_META_DATA)
@@ -136,6 +150,7 @@ object ModuleRegistry {
                 ComponentName(si.packageName, if (it.startsWith(".")) si.packageName + it else it)
             }
             val cert = certSha256(si.packageName)
+            val pi = try { pm.getPackageInfo(si.packageName, 0) } catch (e: Exception) { null }
             ModuleInfo(
                 pkg = si.packageName,
                 service = ComponentName(si.packageName, si.name),
@@ -146,8 +161,8 @@ object ModuleRegistry {
                 trust = trustOf(si.packageName, cert),
                 certSha256 = cert,
                 approved = si.packageName in prefs.approvedModules(),
-                version = try { pm.getPackageInfo(si.packageName, 0).versionName.orEmpty() } catch (e: Exception) { "" },
-                icon = try { pm.getApplicationIcon(si.packageName) } catch (e: Exception) { null },
+                version = pi?.versionName.orEmpty(),
+                icon = iconOf(pm, si.packageName, pi?.lastUpdateTime ?: 0L),
                 connected = conns[si.packageName]?.module != null,
                 permissions = permissionsOf(si.packageName),
             )
@@ -500,6 +515,13 @@ object ModuleRegistry {
     fun showPreview(modules: List<ModuleInfo>, tools: List<ModuleTool>, tiles: List<ModuleTile>) {
         preview = true
         _modules.value = modules; _tools.value = tools; _tiles.value = tiles
+    }
+
+    /** Tests only: forget preview data and start from scratch. */
+    @androidx.annotation.VisibleForTesting
+    fun resetForTest() {
+        preview = false; started = false; conns.clear(); iconCache.clear()
+        _modules.value = emptyList(); _tools.value = emptyList(); _tiles.value = emptyList()
     }
 
     /** For the Diagnostics card. */

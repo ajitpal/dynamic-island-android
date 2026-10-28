@@ -66,10 +66,18 @@ class MainActivity : AppCompatActivity() {
         show(current)
 
         // Keep the live preview and module cards current.
+        // Refreshes are merged (modules, tools and tiles often change together) and never rescan.
         lifecycleScope.launch { IslandRepository.activities.collect { if (current == TAB_ISLAND) island.refreshPreview() } }
-        lifecycleScope.launch { ModuleRegistry.modules.collect { if (current == TAB_MODULES) modules.refresh() } }
-        lifecycleScope.launch { ModuleRegistry.tools.collect { if (current == TAB_MODULES) modules.refresh() } }
-        lifecycleScope.launch { ModuleRegistry.tiles.collect { if (current == TAB_ISLAND) island.refresh() } }
+        lifecycleScope.launch { ModuleRegistry.modules.collect { if (current == TAB_MODULES) refreshSoon() } }
+        lifecycleScope.launch { ModuleRegistry.tools.collect { if (current == TAB_MODULES) refreshSoon() } }
+        lifecycleScope.launch { ModuleRegistry.tiles.collect { if (current == TAB_ISLAND) refreshSoon() } }
+    }
+
+    private var refreshPending = false
+    private fun refreshSoon() {
+        if (refreshPending) return
+        refreshPending = true
+        content.post { refreshPending = false; if (!isFinishing) tabs[current].refresh() }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -82,6 +90,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Pick up modules installed, removed or changed while we were away (publishes only real changes).
+        ModuleRegistry.rescan()
         tabs[current].refresh()
         if (!Setup.ready(this)) bar.badge(TAB_ISLAND, "!")
     }
