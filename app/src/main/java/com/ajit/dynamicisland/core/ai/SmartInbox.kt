@@ -42,19 +42,31 @@ object SmartInbox {
         return sb.toString()
     }
 
-    /** The summary as (heading, bullets) for the Catch Me Up sheet. Text without headings is one "Summary" section. */
+    /**
+     * The summary as (heading, bullets) for the Catch Me Up sheet. Text without headings is one "Summary"
+     * section. Small models don't always follow the format (seen with Qwen3 0.6B: "- **## Needs attention**",
+     * "- - [WhatsApp] …"), so headings are recognised inside bullets and bold, and repeated bullets are removed.
+     */
     fun sections(text: String): List<Pair<String, List<String>>> {
         val out = mutableListOf<Pair<String, MutableList<String>>>()
         for (raw in text.lines()) {
-            val l = raw.trim()
+            var l = raw.trim()
             if (l.isEmpty()) continue
-            if (l.startsWith("#")) { out += titleCase(l.trimStart('#').trim().trimEnd(':')) to mutableListOf(); continue }
+            while (Regex("^[-*•]\\s+").containsMatchIn(l)) l = l.replaceFirst(Regex("^[-*•]\\s+"), "")
+            val plain = l.replace("**", "").replace("__", "").trim()
+            val heading = when {
+                plain.startsWith("#") -> plain.trimStart('#').trim().trimEnd(':')
+                (l.startsWith("**") && l.endsWith("**") || plain.endsWith(":")) && plain.length <= 40 && HEADINGS.any { plain.lowercase().startsWith(it) } -> plain.trimEnd(':')
+                else -> null
+            }
+            if (heading != null) { if (heading.isNotBlank()) out += titleCase(heading) to mutableListOf(); continue }
             if (out.isEmpty()) out += "Summary" to mutableListOf()
-            val b = l.removePrefix("- ").removePrefix("* ").removePrefix("• ").replace("**", "").trim()
-            if (b.isNotEmpty()) out.last().second += b
+            if (plain.isNotEmpty()) out.last().second += plain
         }
         return out.filter { it.second.isNotEmpty() }
     }
+
+    private val HEADINGS = listOf("needs attention", "everything else", "summary", "important", "other")
 
     private fun titleCase(s: String) = s.split(" ").joinToString(" ") { w ->
         if (w.lowercase() in setOf("a", "an", "the", "and", "or", "of", "in", "on", "to", "for")) w.lowercase() else w.replaceFirstChar { it.uppercase() }
@@ -68,11 +80,10 @@ object SmartInbox {
 
     /** The digest shortened for the island: headings dropped, bullets kept, at most ~6 lines. */
     fun forIsland(text: String, maxLines: Int = 6): String {
-        val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
         val out = mutableListOf<String>()
-        for (l in lines) {
-            if (l.startsWith("#")) { val h = l.trimStart('#').trim(); if (h.equals("Everything else", true) && out.isNotEmpty()) out += "Also:"; continue }
-            out += "• " + l.removePrefix("- ").removePrefix("* ").removePrefix("• ").trim()
+        for ((heading, bullets) in sections(text)) {
+            if (heading.equals("Everything Else", true) && out.isNotEmpty()) out += "Also:"
+            for (b in bullets) { out += "• $b"; if (out.size >= maxLines) break }
             if (out.size >= maxLines) break
         }
         return out.joinToString("\n").take(400)

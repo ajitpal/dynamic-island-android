@@ -10,17 +10,23 @@ object Notes {
             "should|must|let's|action item|todo|to-do|to do:|follow up|follow-up|deadline|due|assign(ed)?|owner|" +
             "by (monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|tonight|eod|eow|end of (the )?(day|week|month)|next week))\\b"
     )
+    /** Hindi and Hinglish commitments ("करना है", "भेज दूंगा", "kal tak"). No \\b: it doesn't work with Devanagari. */
+    private val HINDI_CUES = Regex(
+        "(?i)(करना है|करनी है|करने हैं|करेंगे|करूंगा|करूँगा|करूंगी|करूँगी|कर दूंगा|कर दूँगा|कर दूंगी|भेज दूंगा|भेज दूँगा|भेजूंगा|भेजूँगा|" +
+            "देख लूंगा|देख लूँगा|कल तक|परसों तक|सोमवार तक|शुक्रवार तक|डेडलाइन|ज़रूर|जरूर|" +
+            "karna hai|karni hai|karenge|karunga|kar dunga|bhej dunga|bhejunga|dekh lunga|kal tak|parso tak|deadline)"
+    )
     private val FILLER = Regex("(?i)^(uh|um|okay|ok|yeah|yes|no|right|so)[,.!? ]*$")
 
     /** Sentences that sound like commitments or tasks: a starting point for real notes. */
     fun actionItems(lines: List<Line>, max: Int = 12): List<Line> =
         lines.flatMap { l -> splitSentences(l.text).map { Line(l.startMs, it) } }
-            .filter { s -> val words = s.text.split(Regex("\\s+")).size; words in 4..40 && ACTION_CUES.containsMatchIn(s.text) && !FILLER.matches(s.text) }
+            .filter { s -> val words = s.text.split(Regex("\\s+")).size; words in 4..40 && (ACTION_CUES.containsMatchIn(s.text) || HINDI_CUES.containsMatchIn(s.text)) && !FILLER.matches(s.text) }
             .distinctBy { it.text.lowercase() }
             .take(max)
 
     fun splitSentences(text: String): List<String> =
-        text.split(Regex("(?<=[.!?])\\s+")).map { it.trim() }.filter { it.isNotEmpty() }
+        text.split(Regex("(?<=[.!?।])\\s+")).map { it.trim() }.filter { it.isNotEmpty() }
 
     fun clock(ms: Long): String {
         val s = (ms.coerceAtLeast(0) / 1000)

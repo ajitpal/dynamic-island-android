@@ -1,28 +1,22 @@
 package com.ajit.dynamicisland.module.ai
 
 import android.content.Context
-import android.os.SystemClock
+import android.os.Bundle
 import android.util.Log
 import com.ajit.dynamicisland.sdk.ai.AiContract
-import com.google.ai.edge.litertlm.Backend
-import com.google.ai.edge.litertlm.Content
-import com.google.ai.edge.litertlm.Contents
-import com.google.ai.edge.litertlm.Conversation
-import com.google.ai.edge.litertlm.ConversationConfig
-import com.google.ai.edge.litertlm.Engine
-import com.google.ai.edge.litertlm.EngineConfig
-import com.google.ai.edge.litertlm.Message
-import com.google.ai.edge.litertlm.MessageCallback
-import com.google.ai.edge.litertlm.SamplerConfig
-import com.google.ai.edge.litertlm.ThinkingConfig
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
- * Runs one request at a time on a single worker thread. The model stays loaded for a few minutes
- * after the last request (loading takes seconds), then is released to give the memory back.
+ * Runs one request at a time on a single worker thread, through [EngineCore] (deadlines on every wait).
+ * The model stays loaded for a few minutes after the last request, then is released.
+ *
+ * Recovery: if a native call doesn't return (the core is "stuck"), every waiting request gets a clear
+ * error and the AI Engine process restarts itself ([restartProcess]) so the next request starts clean.
+ * A load that crashed the process last time is detected at the next start, and its prepared file is
+ * deleted (a half-written prepared file could otherwise break every later load).
  */
 object LlmEngine {
     private const val TAG = "AiEngine"
@@ -33,43 +27,41 @@ object LlmEngine {
         fun onDone(text: String)
         fun onError(code: Int, message: String)
         /** AiContract.P_* keys: queued, loading the model, reading the prompt, writing. */
-        fun onProgress(p: android.os.Bundle) {}
+        fun onProgress(p: Bundle) {}
     }
 
+    class Stats(val model: String, val backend: String, val loadMs: Long, val firstTokenMs: Long, val totalMs: Long, val chars: Int, val writeTps: Double)
+
     /** A request waiting or running, and which app sent it (to explain "busy"). */
-    private class Job(val id: String, val caller: String, val callerLabel: String)
+    private class Job(val id: String, val caller: String, val callerLabel: String, val listener: Listener)
     private val jobs = java.util.Collections.synchronizedList(mutableListOf<Job>())
 
-    private fun stage(stage: String, extra: android.os.Bundle.() -> Unit = {}) =
-        android.os.Bundle().apply { putString(AiContract.P_STAGE, stage); extra() }
-
-    class Stats(val model: String, val backend: String, val loadMs: Long, val firstTokenMs: Long, val totalMs: Long, val chars: Int)
+    private fun stage(stage: String, extra: Bundle.() -> Unit = {}) = Bundle().apply { putString(AiContract.P_STAGE, stage); extra() }
 
     private val worker = Executors.newSingleThreadScheduledExecutor { Thread(it, "llm") }
-    private var engine: Engine? = null
-    private var loadedKey: String? = null
+    private val core = EngineCore { Diag.log(it) }
     private var unload: ScheduledFuture<*>? = null
-
     @Volatile private var runningId: String? = null
-    @Volatile private var running: Conversation? = null
     private val cancelled = java.util.Collections.synchronizedSet(mutableSetOf<String>())
     @Volatile var queued = 0
         private set
     @Volatile var lastStats: Stats? = null
         private set
-    @Volatile var loadedModel: String? = null
-        private set
+    val loadedModel: String? get() = core.loadedName
 
     val busy get() = queued > 0
 
+    /** Called when the core got stuck; the app restarts the process (set by [AiEngineApp]). */
+    @Volatile var restartProcess: () -> Unit = {}
+
     /**
      * Queue a request. [caller] is the package that sent it. With [wait] = false the request is refused
-     * at once (E_BUSY) when another app's request is running or waiting: one person-facing request
-     * should never sit silently behind, say, a long meeting summary.
+     * at once (E_BUSY) when another app's request is running or waiting.
      */
     fun submit(ctx: Context, id: String, system: String, prompt: String, maxTokens: Int, temperature: Float, l: Listener,
                caller: String = ctx.packageName, wait: Boolean = true) {
         val app = ctx.applicationContext
+        if (core.stuck) { l.onError(AiContract.E_UNAVAILABLE, RESTARTING); restartProcess(); return }
         val other = synchronized(jobs) { jobs.firstOrNull { it.caller != caller } }
         if (!wait && other != null) {
             l.onError(AiContract.E_BUSY, "AI Engine is busy with ${other.callerLabel}. Try again when it's finished.")
@@ -78,21 +70,24 @@ object LlmEngine {
         val label = try { app.packageManager.getApplicationLabel(app.packageManager.getApplicationInfo(caller, 0)).toString() } catch (e: Exception) { caller }
         val ahead = synchronized(jobs) { jobs.size }
         val running = synchronized(jobs) { jobs.firstOrNull() }
-        jobs += Job(id, caller, label)
+        jobs += Job(id, caller, label, l)
         queued++
         if (ahead > 0) l.onProgress(stage(AiContract.STAGE_QUEUED) {
             putInt(AiContract.P_AHEAD, ahead); running?.let { putString(AiContract.P_BUSY_WITH, it.callerLabel) }
         })
         worker.execute {
             try { run(app, id, system, prompt, maxTokens, temperature, l) }
-            catch (t: Throwable) { Log.e(TAG, "request failed", t); l.onError(AiContract.E_FAILED, t.message ?: t.javaClass.simpleName) }
-            finally { queued--; synchronized(jobs) { jobs.removeAll { it.id == id } }; scheduleUnload() }
+            catch (t: Throwable) { Log.e(TAG, "request failed", t); Diag.log("request failed: $t"); l.onError(AiContract.E_FAILED, t.message ?: t.javaClass.simpleName) }
+            finally {
+                queued--; synchronized(jobs) { jobs.removeAll { it.id == id } }
+                if (core.stuck) failAllAndRestart() else scheduleUnload()
+            }
         }
     }
 
     fun cancel(id: String) {
         cancelled += id
-        if (runningId == id) runCatching { running?.cancelProcess() }
+        if (runningId == id) core.cancel()
     }
 
     private fun run(ctx: Context, id: String, system: String, prompt: String, maxTokens: Int, temperature: Float, l: Listener) {
@@ -101,90 +96,94 @@ object LlmEngine {
         val max = Text.maxInputChars(model.contextTokens, maxTokens)
         if (system.length + prompt.length > max) { l.onError(AiContract.E_TOO_LONG, "Text too long for one request (max about $max characters)"); return }
 
-        val t0 = SystemClock.elapsedRealtime()
-        if (!isLoaded(ctx, model)) l.onProgress(stage(AiContract.STAGE_LOADING) { putString(AiContract.P_MODEL, model.label) })
-        val eng = ensureLoaded(ctx, model)
-        l.onProgress(stage(AiContract.STAGE_READING) { putString(AiContract.P_MODEL, model.label) })
-        val loadMs = SystemClock.elapsedRealtime() - t0
+        unload?.cancel(false)
+        val gpu = Models.useGpu(ctx)
+        val key = "${model.label}|${if (gpu) "gpu" else "cpu"}"
+        val modelFile = Models.file(ctx, model)
+        val cacheDir = Models.preparedDir(ctx)
+        var loadMs = 0L
+        if (!core.isLoaded(key)) {
+            val firstTime = core.preparedFiles(cacheDir, modelFile).isEmpty()
+            // Preparing writes a file about the size of the model; don't start if it can't fit.
+            if (firstTime && Models.freeBytes(ctx) < model.bytes + 300L * 1024 * 1024) {
+                l.onError(AiContract.E_FAILED, "Not enough free storage to prepare ${model.label}: it needs about " +
+                    android.text.format.Formatter.formatShortFileSize(ctx, model.bytes + 300L * 1024 * 1024) + " free. Free up space or pick a smaller model.")
+                return
+            }
+            l.onProgress(stage(AiContract.STAGE_LOADING) { putString(AiContract.P_MODEL, model.label) })
+            Diag.markLoading(ctx, model.name)
+            loadMs = try {
+                core.load(key, modelFile, cacheDir, gpu, model.contextTokens, null)
+            } catch (t: TimeoutException) {
+                // Leave the crash marker cleared: we know what happened. The prepared file may be half-written.
+                Diag.clearLoading(ctx)
+                core.preparedFiles(cacheDir, modelFile).forEach { it.delete() }
+                Diag.record(ctx, model.label, "load timed out")
+                l.onError(AiContract.E_FAILED, "${model.label} didn't finish loading. AI Engine will restart; try again, or pick a smaller model.")
+                return
+            } catch (t: Throwable) {
+                Diag.clearLoading(ctx)
+                if (gpu) { Log.w(TAG, "GPU failed, using CPU", t); Diag.log("GPU load failed ($t), switching to CPU"); Models.setUseGpu(ctx, false) }
+                core.preparedFiles(cacheDir, modelFile).forEach { it.delete() }
+                Diag.record(ctx, model.label, "load failed: ${t.message}")
+                if (gpu) { run(ctx, id, system, prompt, maxTokens, temperature, l); return }
+                l.onError(AiContract.E_FAILED, "Couldn't load ${model.label}: ${t.message ?: t.javaClass.simpleName}")
+                return
+            }
+            Diag.clearLoading(ctx)
+        }
+        if (cancelled.remove(id)) { l.onError(AiContract.E_CANCELLED, "Cancelled"); return }
 
-        val conv = eng.createConversation(
-            ConversationConfig(
-                systemInstruction = Contents.of(system),
-                samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature.toDouble().coerceIn(0.0, 1.5), seed = 0),
-                maxOutputToken = maxTokens.coerceIn(16, 2048),
-                thinkingConfig = ThinkingConfig(false),
-            )
-        )
         // Qwen3's documented switch to answer without a long hidden "thinking" phase.
         val text = if (model.qwen) "$prompt /no_think" else prompt
-        var raw = ""
-        var lastPush = 0L
-        var firstAt = 0L
-        var error: Throwable? = null
-        val done = CountDownLatch(1)
-        runningId = id; running = conv
-        try {
-            conv.sendMessageAsync(text, object : MessageCallback {
-                override fun onMessage(message: Message) {
-                    if (firstAt == 0L) { firstAt = SystemClock.elapsedRealtime(); l.onProgress(stage(AiContract.STAGE_WRITING) { putString(AiContract.P_MODEL, model.label) }) }
-                    raw = Text.merge(raw, textOf(message))
-                    val now = SystemClock.elapsedRealtime()
-                    if (now - lastPush > 250) { lastPush = now; l.onPartial(Text.clean(raw)) }
-                }
-                override fun onDone() { done.countDown() }
-                override fun onError(throwable: Throwable) { error = throwable; done.countDown() }
-            })
-            done.await()
-        } finally {
-            runningId = null; running = null
-            runCatching { conv.close() }
-        }
-        val out = Text.clean(raw)
-        val end = SystemClock.elapsedRealtime()
-        lastStats = Stats(model.label, if (Models.useGpu(ctx)) "GPU" else "CPU", loadMs, if (firstAt > 0) firstAt - t0 - loadMs else -1, end - t0, out.length)
-        when {
-            cancelled.remove(id) -> l.onError(AiContract.E_CANCELLED, "Cancelled")
-            error != null && out.isEmpty() -> l.onError(AiContract.E_FAILED, error?.message ?: "Generation failed")
-            else -> l.onDone(out)
+        runningId = id
+        val outcome = try {
+            core.generate(system, text, maxTokens, temperature.toDouble(), onPartial = { l.onPartial(it) }) { st ->
+                l.onProgress(stage(if (st == EngineCore.STAGE_WRITING) AiContract.STAGE_WRITING else AiContract.STAGE_READING) { putString(AiContract.P_MODEL, model.label) })
+            }
+        } finally { runningId = null }
+        when (outcome) {
+            is EngineCore.Outcome.Done -> {
+                val s = outcome.stats
+                lastStats = Stats(model.label, if (gpu) "GPU" else "CPU", loadMs, s.firstTokenMs, s.totalMs, outcome.text.length, s.writeTps)
+                Diag.record(ctx, model.label, "ok · load ${loadMs / 1000.0}s · first word ${s.firstTokenMs / 1000.0}s · total ${s.totalMs / 1000.0}s · ~${"%.1f".format(s.writeTps)} tokens/s")
+                if (cancelled.remove(id)) l.onError(AiContract.E_CANCELLED, "Cancelled") else l.onDone(outcome.text)
+            }
+            is EngineCore.Outcome.Failed -> {
+                Diag.record(ctx, model.label, (if (outcome.stuck) "STUCK · " else "") + outcome.message)
+                cancelled.remove(id)
+                l.onError(outcome.code, if (outcome.stuck) "${outcome.message} AI Engine will restart; try again." else outcome.message)
+            }
         }
     }
 
-    private fun textOf(m: Message) = m.contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
-
-    private fun isLoaded(ctx: Context, model: Model) =
-        engine != null && loadedKey == "${model.name}:${if (Models.useGpu(ctx)) "gpu" else "cpu"}"
-
-    private fun ensureLoaded(ctx: Context, model: Model): Engine {
-        unload?.cancel(false)
-        val gpu = Models.useGpu(ctx)
-        val key = "${model.name}:${if (gpu) "gpu" else "cpu"}"
-        engine?.let { if (loadedKey == key) return it }
-        release()
-        fun make(gpu: Boolean) = Engine(EngineConfig(
-            modelPath = Models.file(ctx, model).absolutePath,
-            backend = if (gpu) Backend.GPU() else Backend.CPU(),
-            maxNumTokens = model.contextTokens,
-            cacheDir = ctx.cacheDir.absolutePath,
-        )).also { it.initialize() }
-        val e = try { make(gpu) } catch (t: Throwable) {
-            if (!gpu) throw t
-            // GPU isn't supported on every phone: fall back to the CPU and remember it.
-            Log.w(TAG, "GPU failed, using CPU", t); Models.setUseGpu(ctx, false); make(false)
-        }
-        engine = e; loadedKey = "${model.name}:${if (Models.useGpu(ctx)) "gpu" else "cpu"}"; loadedModel = model.label
-        return e
+    /** The native runtime didn't return: tell everyone waiting, then restart the process. */
+    private fun failAllAndRestart() {
+        val waiting = synchronized(jobs) { jobs.toList().also { jobs.clear() } }
+        waiting.forEach { runCatching { it.listener.onError(AiContract.E_UNAVAILABLE, RESTARTING) } }
+        Diag.log("restarting AI Engine (native runtime stuck)")
+        restartProcess()
     }
 
     private fun scheduleUnload() {
         unload?.cancel(false)
-        unload = worker.schedule({ if (queued == 0) release() }, IDLE_UNLOAD_MS, TimeUnit.MILLISECONDS)
+        unload = worker.schedule({ if (queued == 0) core.release() }, IDLE_UNLOAD_MS, TimeUnit.MILLISECONDS)
     }
 
     /** Free the model now (e.g. when it's deleted or the selection changes). */
-    fun releaseAsync() { worker.execute { release() } }
+    fun releaseAsync() { worker.execute { core.release() } }
 
-    private fun release() {
-        runCatching { engine?.close() }
-        engine = null; loadedKey = null; loadedModel = null
+    /** Delete every prepared-model file (Diagnostics → Clear Prepared Models). Runs when idle. */
+    fun clearPrepared(ctx: Context, then: () -> Unit) {
+        worker.execute {
+            core.release()
+            Models.preparedDir(ctx).listFiles()?.forEach { if (it.name.endsWith(".xnnpack_cache")) it.delete() }
+            // Older versions put them in the app cache folder.
+            ctx.cacheDir.listFiles()?.forEach { if (it.name.endsWith(".xnnpack_cache")) it.delete() }
+            Diag.log("prepared models cleared")
+            then()
+        }
     }
+
+    const val RESTARTING = "AI Engine got stuck and is restarting. Try again in a few seconds."
 }

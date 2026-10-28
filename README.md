@@ -61,7 +61,8 @@ This app aims to be the clean alternative:
 | ⏻ **On/off switch** | Turn the island off and on from the app or a Quick Settings tile; your Inbox keeps working |
 | ♿ **Accessible** | Large-text ready, 48 dp touch targets, TalkBack labels, respects reduced motion and your "time to take action" setting |
 | 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
-| 🎙 **Meeting Notes** (module) | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, AI notes (summary, decisions, action items) and Ask about this meeting. |
+| 🎙 **Meeting Notes** (module) | Record a meeting from the island or import an audio file: REC timer, live captions, on-device transcript in English, Hindi or Hinglish, playback, AI notes (summary, decisions, action items) and Ask about this meeting. |
+| 🗣 **Speech Pack** (module) | Hindi and Hinglish speech-to-text on your phone (Meta's Omnilingual ASR) for Meeting Notes, when the phone's own speech recognition can't do Hindi offline. Hindi in Devanagari, English words in Latin letters. Offline after a one-time download. |
 | ✨ **AI Engine** (module) | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. |
 | 📅 **Calendar** (module) | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. |
 | 🔗 **Automation Bridge** (module) | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. |
@@ -87,8 +88,9 @@ Optional add-on apps, each with its own permissions. Modules from this repo swit
 <!-- GEN:modules -->
 | Module | What it adds | Shortcuts it puts in the island and the app | Permissions |
 |---|---|---|---|
-| 🎙 **Meeting Notes** 1.3.0 | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, AI notes (summary, decisions, action items) and Ask about this meeting. | Record meeting, Recordings, Ask last meeting | Microphone, Notifications, Internet (one-time model download) |
-| ✨ **AI Engine** 1.2.1 | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. | AI Engine, Try AI | Notifications, Internet (model download only) |
+| 🎙 **Meeting Notes** 1.4.0 | Record a meeting from the island or import an audio file: REC timer, live captions, on-device transcript in English, Hindi or Hinglish, playback, AI notes (summary, decisions, action items) and Ask about this meeting. | Record meeting, Import audio, Recordings, Ask last meeting | Microphone, Notifications, Internet (one-time model download) |
+| 🗣 **Speech Pack** 1.0.0 | Hindi and Hinglish speech-to-text on your phone (Meta's Omnilingual ASR) for Meeting Notes, when the phone's own speech recognition can't do Hindi offline. Hindi in Devanagari, English words in Latin letters. Offline after a one-time download. | Speech Pack, Try it on an audio file | Notifications, Internet (model download only) |
+| ✨ **AI Engine** 1.3.0 | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. | AI Engine, Try AI | Notifications, Internet (model download only) |
 | 📅 **Calendar** 1.1.0 | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. | Next meeting, Open (settings) | Calendar |
 | 🔗 **Automation Bridge** 1.1.0 | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. | Two automation tools you name, Open (settings) | None |
 | ⬇️ **Updater** 1.0.0 | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Off in Modules means no checks at all. | Software Update | Internet (GitHub only), Install apps (you confirm each), Notifications |

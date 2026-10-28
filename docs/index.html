@@ -132,8 +132,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
   <p class="sec-lead">Modules are small add-on apps with their own permissions. Install one and its shortcuts appear in the island and on the app's Modules tab. The island itself never gets new permissions.</p>
 <!-- GEN:modules -->
   <div class="grid">
-    <div class="card mod"><div class="ic">🎙</div><h3>Meeting Notes <small>v1.3.0</small></h3><p>Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, AI notes (summary, decisions, action items) and Ask about this meeting.</p><div class="links"><span>Record meeting</span><span>Recordings</span><span>Ask last meeting</span></div><p class="perm">Permissions: Microphone, Notifications, Internet (one-time model download)</p></div>
-    <div class="card mod"><div class="ic">✨</div><h3>AI Engine <small>v1.2.1</small></h3><p>A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download.</p><div class="links"><span>AI Engine</span><span>Try AI</span></div><p class="perm">Permissions: Notifications, Internet (model download only)</p></div>
+    <div class="card mod"><div class="ic">🎙</div><h3>Meeting Notes <small>v1.4.0</small></h3><p>Record a meeting from the island or import an audio file: REC timer, live captions, on-device transcript in English, Hindi or Hinglish, playback, AI notes (summary, decisions, action items) and Ask about this meeting.</p><div class="links"><span>Record meeting</span><span>Import audio</span><span>Recordings</span><span>Ask last meeting</span></div><p class="perm">Permissions: Microphone, Notifications, Internet (one-time model download)</p></div>
+    <div class="card mod"><div class="ic">🗣</div><h3>Speech Pack <small>v1.0.0</small></h3><p>Hindi and Hinglish speech-to-text on your phone (Meta&#x27;s Omnilingual ASR) for Meeting Notes, when the phone&#x27;s own speech recognition can&#x27;t do Hindi offline. Hindi in Devanagari, English words in Latin letters. Offline after a one-time download.</p><div class="links"><span>Speech Pack</span><span>Try it on an audio file</span></div><p class="perm">Permissions: Notifications, Internet (model download only)</p></div>
+    <div class="card mod"><div class="ic">✨</div><h3>AI Engine <small>v1.3.0</small></h3><p>A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download.</p><div class="links"><span>AI Engine</span><span>Try AI</span></div><p class="perm">Permissions: Notifications, Internet (model download only)</p></div>
     <div class="card mod"><div class="ic">📅</div><h3>Calendar <small>v1.1.0</small></h3><p>Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs.</p><div class="links"><span>Next meeting</span><span>Open (settings)</span></div><p class="perm">Permissions: Calendar</p></div>
     <div class="card mod"><div class="ic">🔗</div><h3>Automation Bridge <small>v1.1.0</small></h3><p>Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key.</p><div class="links"><span>Two automation tools you name</span><span>Open (settings)</span></div><p class="perm">Permissions: None</p></div>
     <div class="card mod"><div class="ic">⬇️</div><h3>Updater <small>v1.0.0</small></h3><p>Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what&#x27;s new, and installs only after you tap Update and confirm. Off in Modules means no checks at all.</p><div class="links"><span>Software Update</span></div><p class="perm">Permissions: Internet (GitHub only), Install apps (you confirm each), Notifications</p></div>
@@ -188,6 +189,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
     <img src="screenshots/app/catchup-3-done.png" alt="Catch Me Up summary: Needs Attention and Everything Else" loading="lazy">
     <img src="screenshots/app/updater-1-available.png" alt="Software Update: Update All with download progress" loading="lazy">
     <img src="screenshots/app/updater-2-up-to-date.png" alt="Software Update: up to date" loading="lazy">
+    <img src="screenshots/app/ai-engine.png" alt="AI Engine: models, Try It and Diagnostics" loading="lazy">
+    <img src="screenshots/app/meeting-notes-hindi.png" alt="Meeting Notes: language (English, Hindi, Hinglish), Import Audio File and saved meetings" loading="lazy">
+    <img src="screenshots/app/speech-pack.png" alt="Speech Pack: Hindi speech models and Try It" loading="lazy">
   </div>
   <h3 style="margin-top:40px">The island, rendered by the app's own code</h3>
   <div class="gallery">
@@ -237,7 +241,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 <footer><div class="wrap">
   <span>© 2026 <a href="https://github.com/ajitpal">Ajit Kumar Pal</a> · MIT License · Not affiliated with Apple or Google.</span>
 <!-- GEN:version -->
-  <span class="ver">Version 1.10.0</span>
+  <span class="ver">Version 1.11.0</span>
 <!-- /GEN:version -->
   <span><a href="https://github.com/ajitpal/dynamic-island-android">GitHub</a> · <a href="changelog.html">Changelog</a> · <a href="https://github.com/ajitpal/dynamic-island-android/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/ajitpal/dynamic-island-android/issues">Report an issue</a></span>
 </div></footer>

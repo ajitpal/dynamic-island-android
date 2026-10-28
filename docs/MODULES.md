@@ -199,6 +199,17 @@ ai.generate(system, prompt, wait = false,
 The engine runs one request at a time. With `wait = false` it refuses at once with `E_BUSY` (naming the app it's busy with) instead of queueing behind, say, a long meeting summary. If the engine doesn't bind within 15 seconds you get `E_UNAVAILABLE` with a message, never silence.
 The client checks the engine's signing certificate before sending anything, and the engine checks every caller's certificate. `status()` tells you whether a model is ready and roughly how much text fits in one request (`S_MAX_INPUT_CHARS`); split longer inputs, as Meeting Notes does. Third-party access will need an explicit per-app approval, planned for Phase 5.
 
+**Speech (Hindi / Hinglish):** first-party apps can transcribe an audio file with the Speech Pack module the same way:
+```kotlin
+val speech = SpeechClient(context)
+if (speech.isInstalled()) speech.transcribe(file, language = "hi",
+    onLine = { startMs, endMs, text -> add(startMs, text) },          // streamed as each stretch of speech is done
+    onProgress = { stage, fraction -> show(stage, fraction) },        // STAGE_LOADING, then STAGE_TRANSCRIBING 0..1
+    onDone = { finish() },
+    onError = { code, msg -> if (code == SpeechContract.E_BUSY) show(msg) else warn(msg) })
+```
+Any format Android can decode works (it's converted to 16 kHz mono inside the Speech Pack). One job runs at a time; `cancel()` stops it. Both sides check signing certificates, as with the AI Engine.
+
 **Gemini Nano:** `modules/nano` wraps ML Kit's GenAI Prompt API. Android only accepts Nano requests from the **top foreground app** (even a foreground service gets `BACKGROUND_USE_BLOCKED`), inputs are limited to about 4000 tokens, and AICore applies a per-app quota. So a module should call Nano in its own process while its screen is open and fall back to the AI Engine otherwise; see `Brain.kt` in Meeting Notes. ML Kit adds the INTERNET permission (for Google's usage statistics), which is why the island app never links it.
 
 ## 6. Reference modules in this repo
@@ -206,7 +217,8 @@ The client checks the engine's signing certificate before sending anything, and 
 - **`modules/automation`**, Automation Bridge: bridges Tasker, MacroDroid and adb into the island using a secret key. Shows queued cards, tools and reply buttons.
 - **`modules/calendar`**, Calendar: uses the `READ_CALENDAR` permission (in the module only), a countdown, a progress phase, a Join link and `peek` at T-5 minutes.
 - **`modules/ai`**, AI Engine: LiteRT-LM, pinned model downloads with checksum, a bound AIDL service with caller checks, one request at a time with progress stages and a busy rule, idle unloading.
-- **`modules/voice`**, Meeting Notes: a tool that opens a translucent activity to start a `microphone` foreground service, a count-up REC card with live text and Pause/Stop buttons, on-device speech-to-text with Moonshine, and a "saved" card that opens the transcript.
+- **`modules/voice`**, Meeting Notes: a tool that opens a translucent activity to start a `microphone` foreground service, a count-up REC card with live text and Pause/Stop buttons, on-device speech-to-text with Moonshine (English) or Android's on-device recognizer (Hindi, fed through `EXTRA_AUDIO_SOURCE`), file import, and a "saved" card that opens the transcript.
+- **`modules/speech`**, Speech Pack: ONNX Runtime with a CTC model, decoding restricted to the scripts you want, Silero voice detection to split audio, a file-in / lines-out AIDL service, and resumable checksum-verified downloads.
 
 ## Contract stability
 `IslandContract.API_VERSION = 2` (API 2 added tiles, `mainActivity` and the launcher toggle). Everything travels as `Bundle`s: new keys are optional, and unknown keys are ignored. Breaking changes will bump the API version, and the island will keep supporting older versions.

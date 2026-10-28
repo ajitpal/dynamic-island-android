@@ -54,6 +54,12 @@ Install the **Updater** module (`Island-Module-Updater-v….apk`, listed first i
 
 Without the Updater, download new versions from [Releases](https://github.com/ajitpal/dynamic-island-android/releases/latest) as before.
 
+## 6. Meeting Notes in Hindi or Hinglish
+1. In **Meeting Notes**, under **Language**, pick **हिन्दी** or **Hindi + English**.
+2. Meeting Notes checks whether your phone's own speech recognition can do Hindi offline. If it offers **Download Hindi for Android**, tap it (Android 13+); you then get live captions.
+3. If your phone can't, install the **Speech Pack** module (`Island-Module-SpeechPack-v….apk`), open it and download the **Standard** model (365 MB; **Best** is 1.0 GB and more accurate, for phones with 8 GB of memory). Use Wi-Fi. Meeting Notes then transcribes Hindi right after each recording.
+4. To transcribe a recording you already have, tap **Import Audio File…**.
+
 ## Troubleshooting
 | Symptom | Fix |
 |---|---|

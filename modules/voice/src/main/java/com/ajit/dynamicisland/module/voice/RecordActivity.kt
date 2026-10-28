@@ -28,6 +28,10 @@ class RecordActivity : AppCompatActivity() {
                 RecorderService.command(this, RecorderService.ACTION_STOP); finish(); return
             }
             RecorderService.State.SAVING -> { finish(); return }
+            RecorderService.State.TRANSCRIBING -> {
+                Toast.makeText(this, "Still writing the last transcript. Try again when it's done, or cancel it in the island.", Toast.LENGTH_LONG).show()
+                finish(); return
+            }
             RecorderService.State.SUMMARIZING -> {
                 // A new meeting matters more than notes for the last one (they can be rewritten later).
                 RecorderService.command(this, RecorderService.ACTION_CANCEL_NOTES)
@@ -40,8 +44,9 @@ class RecordActivity : AppCompatActivity() {
     }
 
     private fun checkAndGo() {
-        if (!ModelStore.isPresent(this)) {
-            Toast.makeText(this, "Download the speech model first (one time)", Toast.LENGTH_LONG).show()
+        // Hindi engines are checked when recording starts (Android's recognizer or Speech Pack).
+        if (!VoicePrefs.language(this).isHindi && !ModelStore.isPresent(this)) {
+            Toast.makeText(this, "Download the English speech model first (one time)", Toast.LENGTH_LONG).show()
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             finish(); return
         }

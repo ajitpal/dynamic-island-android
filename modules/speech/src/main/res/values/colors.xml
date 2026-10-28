@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iPhone-style system palette (light). Secondary text and blue are slightly darker than iOS's
+     so small text meets the 4.5:1 contrast the HIG asks for. -->
+<resources>
+    <color name="hig_bg">#F2F2F7</color>
+    <color name="hig_card">#FFFFFF</color>
+    <color name="hig_label">#000000</color>
+    <color name="hig_secondary">#6C6C70</color>
+    <color name="hig_separator">#C6C6C8</color>
+    <color name="hig_fill">#E5E5EA</color>
+    <color name="hig_bar">#F2F9F9F9</color>
+    <color name="hig_blue">#0064D2</color>
+    <color name="hig_blue_fill">#007AFF</color>
+    <color name="hig_green">#248A3D</color>
+    <color name="hig_green_fill">#34C759</color>
+    <color name="hig_red">#D70015</color>
+    <color name="hig_orange">#C93400</color>
+    <color name="hig_orange_fill">#FF9500</color>
+    <color name="hig_gray_fill">#8E8E93</color>
+</resources>

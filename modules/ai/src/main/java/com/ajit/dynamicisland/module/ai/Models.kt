@@ -35,6 +35,13 @@ object Models {
     fun file(ctx: Context, m: Model) = File(dir(ctx), m.file)
     fun partFile(ctx: Context, m: Model) = File(dir(ctx), m.file + ".part")
 
+    /**
+     * Where LiteRT-LM keeps each model's "prepared" (XNNPACK) file, about the size of the model, made
+     * on the first load. In app storage rather than the cache folder, so Android doesn't delete it to
+     * free space (which would make the next load slow again).
+     */
+    fun preparedDir(ctx: Context) = File(ctx.filesDir, "prepared").apply { mkdirs() }
+
     fun isPresent(ctx: Context, m: Model) = file(ctx, m).let { it.exists() && it.length() == m.bytes }
 
     fun selected(ctx: Context): Model =
@@ -48,7 +55,10 @@ object Models {
     fun useGpu(ctx: Context) = prefs(ctx).getBoolean("gpu", false)
     fun setUseGpu(ctx: Context, on: Boolean) = prefs(ctx).edit().putBoolean("gpu", on).apply()
 
-    fun delete(ctx: Context, m: Model) { file(ctx, m).delete(); partFile(ctx, m).delete() }
+    fun delete(ctx: Context, m: Model) {
+        file(ctx, m).delete(); partFile(ctx, m).delete()
+        listOf(preparedDir(ctx), ctx.cacheDir).forEach { d -> d.listFiles()?.filter { it.name.startsWith(m.file + "_") }?.forEach { it.delete() } }
+    }
 
     fun totalRamGb(ctx: Context): Double {
         val mi = ActivityManager.MemoryInfo(); ctx.getSystemService(ActivityManager::class.java).getMemoryInfo(mi)

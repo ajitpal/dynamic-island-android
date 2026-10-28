@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.11.0 (28 Oct 2026): Meeting Notes in Hindi and Hinglish, and importing audio files
+- **Meeting Notes 1.4.0 understands Hindi and Hinglish.** Pick **English**, **हिन्दी (Hindi)** or **Hindi + English (Hinglish)** under **Language**. Hindi is written in Devanagari and English words stay in Latin letters, the way people actually mix them ("कल तक presentation ready करनी है"). Notes and action items are written in English, and action items are found in Hindi too ("भेज दूंगा", "करना है").
+  - **Live, when your phone can:** if Android's own on-device speech recognition has Hindi (Android 13 or later, often a one-time language download that Meeting Notes offers to start), you get live captions in the island, like English.
+  - **Otherwise with the new Speech Pack**, after the recording: the island shows "Transcribing…" with progress and a Stop button, and the transcript appears line by line. You can also choose **Use Speech Pack for Hindi** if it's more accurate on your phone.
+  - If neither is set up, Meeting Notes says so and shows what to do instead of recording audio it can't transcribe.
+- **Import Audio File…** in Meeting Notes: transcribe a recording you already have (voice note, call recording, meeting audio: MP3, M4A, WAV, OGG, FLAC, AAC) in the chosen language. Imported meetings get playback, AI notes and Ask, like recorded ones.
+- **New Speech Pack module 1.0.0:** Hindi and Hinglish speech-to-text on your phone with Meta's **Omnilingual ASR** (two models: **Standard**, 365 MB, and **Best**, 1.0 GB). It downloads one model once from Hugging Face, checked against a fixed checksum, and then works offline. Its screen has **Try It** (pick an audio file and watch the transcript appear) and shows which apps used it. Only apps signed with the Dynamic Island key can use it.
+  - **How it was chosen:** on 40 Hindi test recordings (Google's FLEURS set), measured on a computer with the same model files: Standard got about 18% of words wrong, Best about 10%, while Whisper Small (the first plan) got about 78% wrong and often repeated itself. So Whisper was dropped. These numbers are from clean read speech; real meetings will be harder.
+  - **Safer output:** the Speech Pack only writes Devanagari, Latin letters, digits and punctuation (the model otherwise sometimes switched to Urdu or Gujarati script), splits audio at pauses using Silero voice detection, and retries a quiet or mixed-volume stretch that came out empty.
+- **Meeting Notes screen redesigned** like the rest of the app: status, Record, Language, Import, English speech model, AI notes and saved meetings (which now show the language).
+- **SDK 2.2:** `SpeechClient` / `SpeechContract` for first-party apps to transcribe a file with the Speech Pack (lines stream back with timestamps; one job at a time; busy and cancel like the AI Engine).
+- The island app is unchanged apart from listing the Speech Pack under **Modules → Get more**; it still has no internet permission.
+
+## 1.10.1 (28 Oct 2026): AI that answers, or tells you why
+- **AI Engine 1.3.0 fixes "Loading the model…" forever.** The engine runs one request at a time, and in earlier versions it waited for the model with no time limit. If one load or answer never finished on a phone, every later request, and even switching models, queued behind it for good. Now:
+  - **Every wait has a limit:** loading (longer the first time, while the model is prepared), the first word, gaps between words and the whole answer. You get a clear message instead of an endless wait.
+  - **It recovers by itself:** if the AI runtime doesn't respond, AI Engine tells every app that's waiting, then restarts so the next try starts clean.
+  - **Prepared models are handled safely:** the first load of a model writes a "prepared" copy about the size of the model. AI Engine now checks there's room first, keeps it in app storage (Android no longer deletes it to free space), and removes a copy left half-written by a load that timed out or closed the app.
+  - **Diagnostics** on the AI Engine screen: **Test AI Engine** (shows each stage with seconds), **Copy Report** (phone, chip, memory, storage, models, recent runs and the engine's own log lines, which stay on your phone unless you share them), **Clear Prepared Models** and **Restart AI Engine**. Recent runs show how long loading and answering took.
+- **AI Engine screen redesigned** like the rest of the app: model list with checkmarks, download progress, Try It with live stages, Diagnostics, Gemini Nano and Used By.
+- **Catch Me Up reads small models' answers better:** headings written inside bullets or in bold, and doubled bullets (seen with Qwen3 0.6B), no longer end up in the summary.
+- Verified on a computer with the same LiteRT-LM 0.18.1 runtime and the exact model files: Qwen3 0.6B and 1.7B load and answer, and every time limit, cancel and recovery path behaves as intended.
+
 ## 1.10.0 (28 Oct 2026): Software Update
 - **New Updater module** keeps Dynamic Island and every module up to date from GitHub Releases. It's the recommended first module (listed first in **Modules → Get more**) and switches itself on when installed, like the other first-party modules.
   - **Software Update** screen, like on an iPhone: what's installed, what's new, **Update All**, and a download bar for each app. Also in **Settings → Software Update**, as a tile on the Island tab and as an island tool.

@@ -17,8 +17,8 @@ android {
         applicationId = "com.ajit.dynamicisland.module.voice"
         minSdk = 31
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 5
+        versionName = "1.4.0"
         // Moonshine ships native code for several ABIs; 64-bit ARM covers practically every Android 12+ phone.
         ndk { abiFilters += listOf("arm64-v8a") }
     }
@@ -42,6 +42,17 @@ android {
     }
     // Compress the native libraries in the APK (smaller download; Android extracts them on install).
     packaging { jniLibs { useLegacyPackaging = true } }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { t ->
+            t.systemProperty("screenshots.dir", rootProject.file("docs/screenshots/app").absolutePath)
+            when (project.findProperty("screenshots")) {
+                "record" -> t.systemProperty("roborazzi.test.record", "true")
+                "verify" -> t.systemProperty("roborazzi.test.verify", "true")
+                else -> t.exclude("**/ScreenshotTest*")
+            }
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -56,6 +67,10 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.77.0")
+    testImplementation("androidx.test:core-ktx:1.6.1")
+    testImplementation("androidx.test.ext:junit:1.2.1")
 }
 
 kotlin {

@@ -12,6 +12,15 @@
     <!-- Only used to download the speech model once (Moonshine CDN). Audio and transcripts never leave the phone. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- See the Speech Pack (Hindi), the AI Engine (notes) and Android's own speech recognizer. -->
+    <queries>
+        <package android:name="com.ajit.dynamicisland.module.speech" />
+        <package android:name="com.ajit.dynamicisland.module.ai" />
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
@@ -26,7 +35,7 @@
                 <action android:name="com.ajit.dynamicisland.action.MODULE" />
             </intent-filter>
             <meta-data android:name="com.ajit.dynamicisland.module.DESCRIPTION"
-                android:value="Record meetings from the island and get a live, on-device English transcript, then AI notes (summary, decisions, action items) with the AI Engine module. Audio, transcripts and notes stay on your phone." />
+                android:value="Record meetings from the island, or import audio, and get an on-device transcript in English, Hindi or Hinglish, then AI notes (summary, decisions, action items) with the AI Engine module. Audio, transcripts and notes stay on your phone." />
             <meta-data android:name="com.ajit.dynamicisland.module.SETTINGS_ACTIVITY" android:value=".MainActivity" />
             <meta-data android:name="com.ajit.dynamicisland.module.DEVELOPER" android:value="Ajit Kumar Pal" />
         </service>

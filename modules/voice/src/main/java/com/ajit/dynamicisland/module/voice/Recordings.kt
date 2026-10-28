@@ -6,8 +6,11 @@ import org.json.JSONObject
 import java.io.File
 
 /** A saved meeting: filesDir/recordings/<id>/{audio.m4a, transcript.json}. App-private, excluded from backup. */
-data class Recording(val id: String, val title: String, val startedAt: Long, val durationMs: Long, val lines: List<Line>, val model: String) {
-    fun audio(ctx: Context) = File(Recordings.dir(ctx, id), "audio.m4a")
+data class Recording(val id: String, val title: String, val startedAt: Long, val durationMs: Long, val lines: List<Line>, val model: String,
+                     val language: String = "en", val imported: Boolean = false) {
+    /** audio.m4a for recordings; imported files keep their own format (audio.mp3, audio.ogg, …). */
+    fun audio(ctx: Context): File = Recordings.dir(ctx, id).listFiles { f -> f.name.startsWith("audio.") && !f.name.endsWith(".tmp") }?.firstOrNull()
+        ?: File(Recordings.dir(ctx, id), "audio.m4a")
 }
 
 object Recordings {
@@ -20,6 +23,7 @@ object Recordings {
         val d = dir(ctx, r.id).apply { mkdirs() }
         val json = JSONObject()
             .put("title", r.title).put("startedAt", r.startedAt).put("durationMs", r.durationMs).put("model", r.model)
+            .put("language", r.language).put("imported", r.imported)
             .put("lines", JSONArray().apply { r.lines.forEach { put(JSONObject().put("t", it.startMs).put("s", it.text)) } })
         val tmp = File(d, "transcript.json.tmp")
         tmp.writeText(json.toString())
@@ -32,7 +36,7 @@ object Recordings {
         Recording(
             id, o.optString("title", "Meeting"), o.optLong("startedAt"), o.optLong("durationMs"),
             (0 until arr.length()).map { arr.getJSONObject(it).let { l -> Line(l.optLong("t"), l.optString("s")) } },
-            o.optString("model"),
+            o.optString("model"), o.optString("language", "en"), o.optBoolean("imported", false),
         )
     } catch (e: Exception) { null }
 

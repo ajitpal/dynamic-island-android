@@ -7,7 +7,7 @@ plugins {
 // Published through JitPack so modules can live in their own repos:
 //   maven("https://jitpack.io") + implementation("com.github.ajitpal.dynamic-island-android:module-sdk:v1.9.0")
 group = "com.github.ajitpal.dynamic-island-android"
-version = "2.1.0"
+version = "2.2.0"
 
 android {
     namespace = "com.ajit.dynamicisland.sdk"

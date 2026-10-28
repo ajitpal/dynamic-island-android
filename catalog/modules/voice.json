@@ -3,7 +3,7 @@
   "name": "Meeting Notes",
   "icon": "🎙",
   "package": "com.ajit.dynamicisland.module.voice",
-  "summary": "Record meetings from the island; on-device transcript, AI notes and questions.",
+  "summary": "Record meetings or import audio; on-device English, Hindi and Hinglish transcripts, AI notes and questions.",
   "developer": "Ajit Kumar Pal",
   "firstParty": true,
   "repo": "https://github.com/ajitpal/dynamic-island-android/tree/main/modules/voice",
@@ -20,7 +20,7 @@
     },
     {
       "name": "android.permission.INTERNET",
-      "reason": "Downloads the speech model once"
+      "reason": "Downloads the English speech model once"
     },
     {
       "name": "com.google.android.apps.aicore.service.BIND_SERVICE",

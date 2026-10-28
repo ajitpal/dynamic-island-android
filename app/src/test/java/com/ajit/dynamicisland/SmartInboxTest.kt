@@ -54,4 +54,13 @@ class SmartInboxTest {
         assertEquals("Priya asked about 7 pm", s[0].second.single())
         assertEquals(listOf("Summary" to listOf("Just one line")), SmartInbox.sections("Just one line"))
     }
+
+    /** Real output from Qwen3 0.6B (desktop run of the same model file): headings inside bullets, double bullets. */
+    @Test fun toleratesSmallModelFormatting() {
+        val t = "- **## Needs attention**  \n- **## Everything else**  \n- - [WhatsApp] Priya: Dinner at 7? I booked the table  \n- - [HDFC Bank] Payment: Rs 2,499 paid to Swiggy"
+        val s = SmartInbox.sections(t)
+        assertEquals("Everything Else", s.single().first)
+        assertEquals(listOf("[WhatsApp] Priya: Dinner at 7? I booked the table", "[HDFC Bank] Payment: Rs 2,499 paid to Swiggy"), s.single().second)
+        assertFalse(SmartInbox.forIsland(t).contains("##"))
+    }
 }

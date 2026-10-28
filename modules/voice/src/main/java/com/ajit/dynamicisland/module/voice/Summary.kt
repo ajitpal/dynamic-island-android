@@ -29,6 +29,7 @@ object Summary {
         "You turn transcripts of ${t.hint} into short, accurate notes in English. " +
             "Use only what is said in the transcript. Never invent names, numbers, dates or decisions. " +
             "Speech recognition may contain mistakes: if a word looks wrong, leave it out rather than guess. " +
+            "The transcript may be in Hindi or Hinglish (Hindi in Devanagari, English words in Latin letters): still write the notes in English. " +
             "Answer only with the headings asked for, each followed by short bullet points starting with \"- \"."
 
     private fun headings(t: Template, withTitle: Boolean) = buildString {

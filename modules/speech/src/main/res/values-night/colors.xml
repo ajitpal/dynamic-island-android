@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="hig_bg">#000000</color>
+    <color name="hig_card">#1C1C1E</color>
+    <color name="hig_label">#FFFFFF</color>
+    <color name="hig_secondary">#98989F</color>
+    <color name="hig_separator">#38383A</color>
+    <color name="hig_fill">#2C2C2E</color>
+    <color name="hig_bar">#F01C1C1E</color>
+    <color name="hig_blue">#409CFF</color>
+    <color name="hig_blue_fill">#0A84FF</color>
+    <color name="hig_green">#30D158</color>
+    <color name="hig_green_fill">#30D158</color>
+    <color name="hig_red">#FF6961</color>
+    <color name="hig_orange">#FFB340</color>
+    <color name="hig_orange_fill">#FF9F0A</color>
+    <color name="hig_gray_fill">#8E8E93</color>
+</resources>

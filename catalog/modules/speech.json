@@ -1,0 +1,23 @@
+{
+  "id": "speech",
+  "name": "Speech Pack",
+  "icon": "🗣",
+  "package": "com.ajit.dynamicisland.module.speech",
+  "summary": "Hindi and Hinglish speech-to-text on your phone, used by Meeting Notes.",
+  "developer": "Ajit Kumar Pal",
+  "firstParty": true,
+  "repo": "https://github.com/ajitpal/dynamic-island-android/tree/main/modules/speech",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501",
+  "permissions": [
+    {
+      "name": "android.permission.INTERNET",
+      "reason": "Downloads a speech model once"
+    },
+    {
+      "name": "android.permission.POST_NOTIFICATIONS",
+      "reason": "Shows download progress"
+    }
+  ],
+  "privacy": "Audio and transcripts stay on the phone. The internet is only used to download a model you choose."
+}
