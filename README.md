@@ -53,7 +53,7 @@ This app aims to be the clean alternative:
 | 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
 | 🎨 **Make it yours** | 7 themes (iPhone Black, Glass, Light, Rose, Ocean, Lavender, Graphite), width, height, roundness, opacity, glow outline, animation speed |
 | 🎙 **Meeting Notes** (module) | Record a meeting from the island: REC timer, live captions, on-device English transcript, playback, then **AI notes** (summary, decisions, action items). Nothing leaves the phone |
-| ✨ **AI Engine** (module) | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM) for meeting notes, an Inbox "Catch me up" summary and reply suggestions. Offline after a one-time model download |
+| ✨ **AI Engine** (module) | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, **Ask about this meeting**, a "Catch me up" summary in the Inbox or right in the island, and reply suggestions. Offline after a one-time model download |
 | 🧩 **Modules** | Optional add-on apps with their own permissions: **Automation Bridge** (Tasker/MacroDroid/adb → island), **Calendar** (next meeting, one-tap Join), **Meeting Notes** and **AI Engine**. [Build your own](docs/MODULES.md) |
 | 🙈 **Polite** | Hides an app's activity while that app is open, hides message text on the lock screen, per-app on/off |
 

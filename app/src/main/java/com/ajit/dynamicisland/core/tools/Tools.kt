@@ -29,6 +29,7 @@ object ToolCatalog {
         ToolDef("note", "Pin note", R.drawable.ic_note, "Everyday"),
         ToolDef("inbox", "Inbox", R.drawable.ic_inbox, "Everyday"),
         ToolDef("otp", "Copy OTP", R.drawable.ic_key, "Everyday"),
+        ToolDef("digest", "Catch me up", R.drawable.ic_spark, "Everyday"),
         ToolDef("timer:1", "Timer 1m", R.drawable.ic_timer, "Timers"),
         ToolDef("timer:3", "Timer 3m", R.drawable.ic_timer, "Timers"),
         ToolDef("timer:5", "Timer 5m", R.drawable.ic_timer, "Timers"),

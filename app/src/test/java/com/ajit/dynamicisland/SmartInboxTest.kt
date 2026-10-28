@@ -25,4 +25,13 @@ class SmartInboxTest {
         val r = SmartInbox.parseReplies("Here are three:\n1. Sounds good, see you then!\n- \"Can we do 7 instead?\"\n• Running late, 10 min\n4. Extra")
         assertEquals(listOf("Sounds good, see you then!", "Can we do 7 instead?", "Running late, 10 min"), r)
     }
+
+    @Test fun islandDigestIsShort() {
+        val t = "## Needs attention\n- Priya asked if you can join at 7\n- HDFC payment of Rs 2,499 done\n## Everything else\n- WhatsApp: 4 group messages\n- Swiggy: order delivered\n- Gmail: 3 newsletters\n- Uber: trip receipt\n- Extra line"
+        val out = SmartInbox.forIsland(t)
+        assertTrue(out.startsWith("• Priya asked"))
+        assertTrue(out.contains("Also:"))
+        assertTrue(out.lines().size <= 6)
+        assertFalse(out.contains("#"))
+    }
 }

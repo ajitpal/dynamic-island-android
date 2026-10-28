@@ -35,6 +35,18 @@ object SmartInbox {
         return s.replace(otp, "••••")
     }
 
+    /** The digest shortened for the island: headings dropped, bullets kept, at most ~6 lines. */
+    fun forIsland(text: String, maxLines: Int = 6): String {
+        val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
+        val out = mutableListOf<String>()
+        for (l in lines) {
+            if (l.startsWith("#")) { val h = l.trimStart('#').trim(); if (h.equals("Everything else", true) && out.isNotEmpty()) out += "Also:"; continue }
+            out += "• " + l.removePrefix("- ").removePrefix("* ").removePrefix("• ").trim()
+            if (out.size >= maxLines) break
+        }
+        return out.joinToString("\n").take(400)
+    }
+
     val REPLY_SYSTEM = "You suggest short replies to a chat message, written as the person who received it. " +
         "Reply in the same language and tone as the message. Give exactly 3 different options, one per line, " +
         "each under 12 words. No numbering, no quotes, no explanations."

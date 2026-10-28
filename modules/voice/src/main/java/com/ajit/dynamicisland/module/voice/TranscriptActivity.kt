@@ -31,6 +31,9 @@ class TranscriptActivity : AppCompatActivity() {
     private val tick = Handler(Looper.getMainLooper())
     private lateinit var rec: Recording
     private lateinit var notesBox: LinearLayout
+    private lateinit var askBox: LinearLayout
+    private var asking = false
+    @Volatile private var askCancelled = false
     private lateinit var titleView: TextView
     private val onChange: () -> Unit = { if (::notesBox.isInitialized) { reloadTitle(); renderNotes() } }
 
@@ -61,6 +64,12 @@ class TranscriptActivity : AppCompatActivity() {
         notesBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         c.addView(notesBox)
         renderNotes()
+        askBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        c.addView(askBox)
+        buildAsk()
+        // Find out (off the main thread) whether Gemini Nano is ready, then refresh.
+        if (VoicePrefs.useNano(this) && com.ajit.dynamicisland.nano.Nano.lastStatus == null)
+            Thread { com.ajit.dynamicisland.nano.Nano.status(); runOnUiThread { renderNotes(); buildAsk() } }.start()
 
         val items = Notes.actionItems(rec.lines)
         if (items.isNotEmpty() && NotesStore.load(this, rec.id) == null) {
@@ -112,11 +121,12 @@ class TranscriptActivity : AppCompatActivity() {
                 }
                 text(box, "${notes.template.label} notes by ${notes.model ?: "the AI Engine"}, on this phone. Small models make mistakes: check important details in the transcript.", 12f, alpha = 0.6f)
             }
+            Brain.anyInstalled(this) -> {}
             !AiClient.isInstalled(this) -> {
-                text(box, "Install the AI Engine module to get a summary, decisions and action items written on this phone.", 14f, alpha = 0.75f)
+                text(box, "Install the AI Engine module (or turn on Gemini Nano in Meeting Notes, on phones that have it) to get a summary, decisions and action items written on this phone.", 14f, alpha = 0.75f)
                 return
             }
-            !AiClient.isTrusted(this) -> { text(box, "The installed AI Engine isn't signed by the same developer, so Meeting Notes won't send it your transcript.", 14f, alpha = 0.75f); return }
+            else -> { text(box, "The installed AI Engine isn't signed by the same developer, so Meeting Notes won't send it your transcript.", 14f, alpha = 0.75f); return }
         }
         RecorderService.notesErrors[rec.id]?.let { text(box, "⚠ $it", 14f) }
         if (rec.lines.isEmpty()) return
@@ -128,6 +138,71 @@ class TranscriptActivity : AppCompatActivity() {
             setOnClickListener { pickTemplate(notes?.template ?: VoicePrefs.template(this@TranscriptActivity)) }
         })
         if (busy) text(box, "Busy recording or writing other notes; try again when it's done.", 12f, alpha = 0.6f)
+    }
+
+    // ---- Ask about this meeting ----
+
+    private fun buildAsk() {
+        val box = askBox
+        box.removeAllViews()
+        if (rec.lines.isEmpty() || !Brain.anyInstalled(this)) return
+        text(box, "💬 Ask about this meeting", 18f, bold = true)
+        val input = EditText(this).apply { hint = "e.g. What did we decide about the budget?"; minLines = 1; maxLines = 3 }
+        box.addView(input)
+        val live = TextView(this).apply { setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f); setPadding(0, dp(6), 0, dp(6)) }
+        val btn = MaterialButton(this).apply { text = if (asking) "Stop" else "Ask" }
+        btn.setOnClickListener {
+            if (asking) { askCancelled = true; return@setOnClickListener }
+            val q = input.text.toString().trim()
+            if (q.length < 3) { Toast.makeText(this, "Type a question first", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+            ask(q, live, btn) { input.setText("") }
+        }
+        box.addView(btn)
+        box.addView(live)
+        QaStore.load(this, rec.id).forEach { item ->
+            text(box, "Q: ${item.question}", 14f, bold = true)
+            box.addView(answerView(item.answer + (item.by?.let { "\n— ${it}" } ?: "")))
+        }
+    }
+
+    private fun ask(q: String, live: TextView, btn: MaterialButton, done: () -> Unit) {
+        asking = true; askCancelled = false; btn.text = "Stop"
+        live.text = "Thinking… (the first question loads the model, which takes a few seconds)"
+        val notes = NotesStore.load(this, rec.id)
+        Thread({
+            val brain = Brain(this)
+            val result = try {
+                val (maxIn, _) = brain.capacity() ?: Pair(0, "")
+                if (maxIn == 0) Brain.Out(null, 0, "No AI is available. Install the AI Engine module.")
+                else {
+                    val notesChars = notes?.let { Summary.format(it.sections).length } ?: 0
+                    val budget = (maxIn - Qa.SYSTEM.length - notesChars - q.length - 200).coerceAtLeast(1200)
+                    brain.generate(Qa.SYSTEM, Qa.prompt(q, notes, Qa.excerpts(rec.lines, q, budget)), Qa.ANSWER_TOKENS, 0.2f,
+                        onPartial = { p -> runOnUiThread { if (!askCancelled) live.text = p } }, isCancelled = { askCancelled })
+                }
+            } finally { brain.close() }
+            runOnUiThread {
+                asking = false
+                if (result.text != null && !askCancelled) {
+                    QaStore.add(this, rec.id, QaItem(q, result.text, System.currentTimeMillis(), brain.usedBy.joinToString(" + ").ifEmpty { null }))
+                    done(); buildAsk()
+                } else { btn.text = "Ask"; live.text = if (askCancelled) "" else "⚠ ${result.error ?: "Couldn't answer"}" }
+            }
+        }, "ask").start()
+    }
+
+    /** An answer whose [m:ss] timestamps jump the player to that moment. */
+    private fun answerView(answer: String): TextView {
+        val span = android.text.SpannableString(answer)
+        Qa.stamps(answer).forEach { (s, e, ms) ->
+            span.setSpan(object : android.text.style.ClickableSpan() {
+                override fun onClick(widget: android.view.View) { seek(ms) }
+            }, s, e, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        return TextView(this).apply {
+            text = span; setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f); setPadding(0, dp(2), 0, dp(12))
+            movementMethod = android.text.method.LinkMovementMethod.getInstance()
+        }
     }
 
     private fun pickTemplate(current: Template) {
@@ -147,7 +222,8 @@ class TranscriptActivity : AppCompatActivity() {
         }
     }
 
-    private fun export() = Notes.toText(rec.title, DateUtils.formatDateTime(this, rec.startedAt, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME), rec.durationMs, rec.lines, NotesStore.load(this, rec.id))
+    private fun export() = Notes.toText(rec.title, DateUtils.formatDateTime(this, rec.startedAt, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME), rec.durationMs, rec.lines, NotesStore.load(this, rec.id)) +
+        QaStore.load(this, rec.id).takeIf { it.isNotEmpty() }?.let { qa -> "\nQuestions\n" + qa.reversed().joinToString("\n") { "Q: ${it.question}\nA: ${it.answer}\n" } }.orEmpty()
 
     private fun share() = startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
         .putExtra(Intent.EXTRA_SUBJECT, rec.title).putExtra(Intent.EXTRA_TEXT, export()), "Share notes"))

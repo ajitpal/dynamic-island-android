@@ -18,6 +18,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.ajit.dynamicisland.nano.Nano
 import com.ajit.dynamicisland.sdk.HostVerifier
 import com.ajit.dynamicisland.sdk.IslandModuleService
 import com.google.android.material.button.MaterialButton
@@ -39,6 +40,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var output: TextView
     private lateinit var runBtn: MaterialButton
     private var testId: String? = null
+    private lateinit var nanoInfo: TextView
+    private lateinit var nanoBtn: MaterialButton
+    private lateinit var lastInput: EditText
+    private var nanoJob: kotlinx.coroutines.Job? = null
     private val onChange: () -> Unit = { refresh() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,6 +97,7 @@ class MainActivity : AppCompatActivity() {
 
         t("Try it", 18f, bold = true)
         val input = EditText(this).apply { hint = "Ask something, e.g. \"Summarise: …\""; minLines = 2 }
+        lastInput = input
         c.addView(input)
         runBtn = MaterialButton(this).apply {
             text = "Run"
@@ -103,6 +109,13 @@ class MainActivity : AppCompatActivity() {
         }
         c.addView(runBtn)
         output = t("", 15f).apply { setTextIsSelectable(true) }
+
+        // ---- Gemini Nano ----
+        t("Gemini Nano (built into some phones)", 18f, bold = true)
+        nanoInfo = t("Checking whether this phone has Gemini Nano…", 14f, alpha = 0.8f)
+        nanoBtn = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply { visibility = View.GONE }
+        c.addView(nanoBtn)
+        checkNano()
 
         t("Used by", 18f, bold = true)
         usedBy = t("", 14f, alpha = 0.8f)
@@ -131,6 +144,54 @@ class MainActivity : AppCompatActivity() {
             override fun onError(code: Int, message: String) = runOnUiThread { output.text = "⚠ $message"; finishTest() }
         })
     }
+
+    private fun checkNano() {
+        Thread {
+            val st = Nano.status()
+            runOnUiThread { showNano(st) }
+        }.start()
+    }
+
+    private fun showNano(st: Nano.Status) {
+        nanoBtn.visibility = View.GONE
+        when (st) {
+            Nano.Status.AVAILABLE -> {
+                nanoInfo.text = "✓ Gemini Nano is ready on this phone, with nothing to download. Android only lets an app use it while that app is on screen, " +
+                    "so Meeting Notes uses it for questions and notes while you have it open (turn it on there), and this engine's model for everything in the background. " +
+                    "Google's ML Kit may send anonymous usage statistics (not your text) when Nano is used."
+                nanoBtn.text = "Test Gemini Nano with the text above"; nanoBtn.visibility = View.VISIBLE
+                nanoBtn.setOnClickListener { testNano() }
+            }
+            Nano.Status.DOWNLOADABLE, Nano.Status.DOWNLOADING -> {
+                nanoInfo.text = "This phone supports Gemini Nano. Android downloads and updates it for all apps (it doesn't use this app's storage)."
+                nanoBtn.text = if (st == Nano.Status.DOWNLOADING) "Downloading… (tap to check)" else "Ask Android to download Gemini Nano"
+                nanoBtn.visibility = View.VISIBLE
+                nanoBtn.setOnClickListener {
+                    if (st == Nano.Status.DOWNLOADING) { checkNano(); return@setOnClickListener }
+                    nanoBtn.isEnabled = false
+                    nanoJob = Nano.download(
+                        onProgress = { b -> runOnUiThread { nanoInfo.text = "Downloading Gemini Nano… ${Formatter.formatShortFileSize(this, b)}" } },
+                        onDone = { err -> runOnUiThread { nanoBtn.isEnabled = true; if (err != null) nanoInfo.text = "⚠ $err (it can take a while after setting up a phone; try again later)" else checkNano() } },
+                    )
+                }
+            }
+            Nano.Status.ERROR -> nanoInfo.text = "Couldn't check Gemini Nano right now (Android's AICore didn't answer)."
+            Nano.Status.UNAVAILABLE -> nanoInfo.text = "This phone doesn't have Gemini Nano (Google supports it on some Pixel, Samsung, Xiaomi, POCO and other recent phones). The models above work on any phone."
+        }
+    }
+
+    private fun testNano() {
+        val q = lastInput.text.toString().trim().ifEmpty { "In two sentences, what can a small on-device language model do well?" }
+        output.text = "Asking Gemini Nano…"
+        Thread {
+            val t0 = android.os.SystemClock.elapsedRealtime()
+            val r = Nano.generateBlocking("You are a helpful, concise assistant.", q, 256, 0.6f) { p -> runOnUiThread { output.text = p } }
+            val ms = android.os.SystemClock.elapsedRealtime() - t0
+            runOnUiThread { output.text = r.text?.let { "$it\n\nGemini Nano · ${ms / 1000.0}s" } ?: "⚠ ${r.message}" }
+        }.start()
+    }
+
+    override fun onDestroy() { nanoJob?.cancel(); super.onDestroy() }
 
     private fun statsLine(): String {
         val s = LlmEngine.lastStats ?: return ""

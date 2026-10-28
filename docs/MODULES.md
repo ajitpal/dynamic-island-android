@@ -135,6 +135,8 @@ ai.close()
 ```
 The client checks the engine's signing certificate before sending anything, and the engine checks every caller's certificate. `status()` tells you whether a model is ready and roughly how much text fits in one request (`S_MAX_INPUT_CHARS`); split longer inputs, as Meeting Notes does. Third-party access will need an explicit per-app approval, planned for Phase 5.
 
+**Gemini Nano:** `modules/nano` wraps ML Kit's GenAI Prompt API. Android only accepts Nano requests from the **top foreground app** (even a foreground service gets `BACKGROUND_USE_BLOCKED`), inputs are limited to about 4000 tokens, and AICore applies a per-app quota. So a module should call Nano in its own process while its screen is open and fall back to the AI Engine otherwise; see `Brain.kt` in Meeting Notes. ML Kit adds the INTERNET permission (for Google's usage statistics), which is why the island app never links it.
+
 ## 6. Reference modules in this repo
 - **`modules/automation`**, Automation Bridge: bridges Tasker, MacroDroid and adb into the island using a secret key. Shows queued cards, tools and reply buttons.
 - **`modules/calendar`**, Calendar: uses the `READ_CALENDAR` permission (in the module only), a countdown, a progress phase, a Join link and `peek` at T-5 minutes.

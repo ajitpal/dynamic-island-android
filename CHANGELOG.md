@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0 (28 Oct 2026): Gemini Nano, ask your meetings, catch up from the island
+- **Gemini Nano (optional, on supported phones):** Meeting Notes can use the Gemini Nano model built into some recent phones (Android AICore), with nothing to download. Android only lets the app on screen use it, so it's used while Meeting Notes is open and the AI Engine takes over in the background or if Nano refuses. Off by default; the switch only appears on phones that have Nano. AI Engine shows whether your phone has it, can ask Android to download it, and can test it.
+- **Ask about this meeting:** type a question on a meeting's page ("What did we decide about the budget?"). The answer comes from the notes and the most relevant parts of the transcript, cites timestamps you can tap to jump the player there, and is saved with the meeting (and included when you share).
+- **Catch me up in the island:** a new island tool summarises your unread notifications right in the island (needs Smart Inbox and AI Engine; hidden on the lock screen), with Open Inbox and Mark read.
+- New `:modules:nano` library; the island app itself still has no internet permission.
+
 ## 1.7.1 (27 Oct 2026)
 - **New modules are ready to use straight away:** a module from the same developer as the island (signed with the same key) is switched on when you install it, its tools (e.g. **Record meeting**) are put on the first page of your island tools, and the island tells you. Modules from other developers still wait for your approval and get a "Review" glimpse.
 - **Modules screen:** an on/off switch for each module tool ("Show Record meeting in island tools"), and "Add new modules automatically" to turn this behaviour off. Removing a tool is remembered; it won't be added back.

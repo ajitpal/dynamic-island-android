@@ -1,7 +1,6 @@
 package com.ajit.dynamicisland.module.voice
 
 import android.content.Context
-import com.ajit.dynamicisland.sdk.ai.AiClient
 import com.ajit.dynamicisland.sdk.ai.AiContract
 
 /** Writes AI notes for a recording through the AI Engine module. Blocking: run on a worker thread. */
@@ -11,12 +10,10 @@ class NoteWriter(private val ctx: Context) {
     /** [progress] gets a short status line, a 0..1 fraction and the text being written. */
     fun write(rec: Recording, t: Template, progress: (String, Float, String) -> Unit, isCancelled: () -> Boolean): AiNotes {
         if (rec.lines.isEmpty()) throw Failed(AiContract.E_FAILED, "There's no transcript to summarise")
-        val ai = AiClient(ctx)
+        val ai = Brain(ctx)
         try {
-            val status = ai.statusBlocking() ?: throw Failed(AiContract.E_UNAVAILABLE, "Install the AI Engine module to write notes")
-            if (!status.getBoolean(AiContract.S_READY)) throw Failed(AiContract.E_NO_MODEL, "Open AI Engine and download a model first")
-            val model = status.getString(AiContract.S_MODEL)
-            val maxIn = status.getInt(AiContract.S_MAX_INPUT_CHARS, 9000)
+            val (maxIn, _) = ai.capacity() ?: throw Failed(AiContract.E_NO_MODEL,
+                if (com.ajit.dynamicisland.sdk.ai.AiClient.isTrusted(ctx)) "Open AI Engine and download a model first" else "Install the AI Engine module to write notes")
             val sys = Summary.system(t)
             val partBudget = (maxIn - sys.length - 900).coerceAtLeast(1500)
             val parts = Summary.chunk(rec.lines, partBudget)
@@ -27,9 +24,9 @@ class NoteWriter(private val ctx: Context) {
 
             fun ask(prompt: String, tokens: Int, label: String): String {
                 if (isCancelled()) throw Failed(AiContract.E_CANCELLED, "Cancelled")
-                val r = ai.generateBlocking(sys, prompt, tokens, 0.2f, onPartial = { progress(label, step.toFloat() / totalSteps, it) }, isCancelled = isCancelled)
+                val r = ai.generate(sys, prompt, tokens, 0.2f, onPartial = { progress(label, step.toFloat() / totalSteps, it) }, isCancelled = isCancelled)
                 step++
-                return r.text ?: throw Failed(r.errorCode, r.error ?: "The AI Engine couldn't write notes")
+                return r.text ?: throw Failed(r.code, r.error ?: "The AI couldn't write notes")
             }
 
             var notes = parts.mapIndexed { i, p ->
@@ -45,7 +42,7 @@ class NoteWriter(private val ctx: Context) {
                 notes = groups.map { g -> if (g.size == 1 && !last) g[0] else ask(Summary.mergePrompt(t, g, withTitle = last), Summary.FINAL_ANSWER_TOKENS, "Putting the notes together") }
             }
             val (title, sections) = Summary.parse(t, notes.single())
-            val result = AiNotes(t, title, sections, model, System.currentTimeMillis())
+            val result = AiNotes(t, title, sections, ai.usedBy.joinToString(" + ").ifEmpty { null }, System.currentTimeMillis())
             if (result.isEmpty()) throw Failed(AiContract.E_FAILED, "The model didn't return usable notes. Try again, or try a bigger model in AI Engine.")
             return result
         } finally { ai.close() }

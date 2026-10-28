@@ -67,3 +67,20 @@ object NotesStore {
 
     fun delete(ctx: Context, id: String) { file(ctx, id).delete() }
 }
+
+/** Questions asked about a meeting: recordings/<id>/qa.json (newest first). */
+object QaStore {
+    private fun file(ctx: Context, id: String) = File(Recordings.dir(ctx, id), "qa.json")
+
+    fun load(ctx: Context, id: String): List<QaItem> = try {
+        val a = JSONArray(file(ctx, id).readText())
+        (0 until a.length()).map { a.getJSONObject(it).let { o -> QaItem(o.getString("q"), o.getString("a"), o.optLong("at"), o.optString("by").takeIf { b -> b.isNotBlank() }) } }
+    } catch (e: Exception) { emptyList() }
+
+    fun add(ctx: Context, id: String, item: QaItem) {
+        val list = listOf(item) + load(ctx, id)
+        file(ctx, id).writeText(JSONArray().apply { list.take(50).forEach { put(JSONObject().put("q", it.question).put("a", it.answer).put("at", it.at).put("by", it.by)) } }.toString())
+    }
+
+    fun clear(ctx: Context, id: String) { file(ctx, id).delete() }
+}

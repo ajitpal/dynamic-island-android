@@ -33,6 +33,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var list: LinearLayout
     private lateinit var aiStatus: TextView
     private lateinit var aiButton: MaterialButton
+    private lateinit var nanoSwitch: com.google.android.material.materialswitch.MaterialSwitch
+    private lateinit var nanoInfo: TextView
     private val onChange: () -> Unit = { refreshRecording() }
 
     private val ask = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh() }
@@ -87,6 +89,13 @@ class MainActivity : AppCompatActivity() {
             isChecked = VoicePrefs.autoNotes(this@MainActivity)
             setOnCheckedChangeListener { _, on -> VoicePrefs.setAutoNotes(this@MainActivity, on) }
         })
+        nanoSwitch = com.google.android.material.materialswitch.MaterialSwitch(this).apply {
+            text = "Use Gemini Nano when this phone has it (only while Meeting Notes is open)"
+            isChecked = VoicePrefs.useNano(this@MainActivity); visibility = android.view.View.GONE
+            setOnCheckedChangeListener { _, on -> VoicePrefs.setUseNano(this@MainActivity, on); refresh() }
+        }
+        c.addView(nanoSwitch)
+        nanoInfo = text(c, "", 12f, alpha = 0.6f).apply { visibility = android.view.View.GONE }
         aiButton = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "Open AI Engine"; setOnClickListener { com.ajit.dynamicisland.sdk.ai.AiClient.openEngineApp(this@MainActivity) }
         }
@@ -130,6 +139,16 @@ class MainActivity : AppCompatActivity() {
             else -> "✓ AI Engine installed. Notes use the \"${VoicePrefs.template(this).label}\" template; pick another on a meeting's page."
         }
         aiButton.visibility = if (ai.isInstalled(this)) android.view.View.VISIBLE else android.view.View.GONE
+        val nano = com.ajit.dynamicisland.nano.Nano.lastStatus
+        if (nano == null) Thread { com.ajit.dynamicisland.nano.Nano.status(); runOnUiThread { refresh() } }.start()
+        val supported = nano != null && nano != com.ajit.dynamicisland.nano.Nano.Status.UNAVAILABLE && nano != com.ajit.dynamicisland.nano.Nano.Status.ERROR
+        nanoSwitch.visibility = if (supported) android.view.View.VISIBLE else android.view.View.GONE
+        nanoInfo.visibility = nanoSwitch.visibility
+        nanoInfo.text = when (nano) {
+            com.ajit.dynamicisland.nano.Nano.Status.AVAILABLE -> "Gemini Nano is ready on this phone: no download needed. Android only lets it run while this app is on screen, so notes written in the background still use the AI Engine. Google's ML Kit may send anonymous usage statistics (not your text) when Nano is used."
+            com.ajit.dynamicisland.nano.Nano.Status.DOWNLOADABLE, com.ajit.dynamicisland.nano.Nano.Status.DOWNLOADING -> "This phone supports Gemini Nano; Android will download it (open AI Engine → Gemini Nano to start)."
+            else -> ""
+        }
         refreshRecording()
         refreshList()
     }

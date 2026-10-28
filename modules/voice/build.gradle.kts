@@ -17,8 +17,8 @@ android {
         applicationId = "com.ajit.dynamicisland.module.voice"
         minSdk = 31
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
         // Moonshine ships native code for several ABIs; 64-bit ARM covers practically every Android 12+ phone.
         ndk { abiFilters += listOf("arm64-v8a") }
     }
@@ -50,6 +50,7 @@ android {
 
 dependencies {
     implementation(project(":module-sdk"))
+    implementation(project(":modules:nano"))
     // On-device speech-to-text (MIT): https://github.com/moonshine-ai/moonshine
     implementation("ai.moonshine:moonshine-voice:0.1.5")
     implementation("androidx.appcompat:appcompat:1.7.0")
