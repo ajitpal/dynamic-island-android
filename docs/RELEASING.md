@@ -32,4 +32,4 @@ Modules only trust an island signed with the release key, so releases must be si
 2. Add a `## <version>` section to `CHANGELOG.md` and update `ROADMAP.md`.
 3. `python3 tools/gen_docs.py`, commit, push to `main`. CI must be green.
 4. Tag and push: `git tag v1.9.0 && git push origin v1.9.0`.
-5. The `Release` workflow builds every APK, signs it, checks the certificate, and publishes the GitHub release with notes from the changelog. If the secrets are missing it stops instead of publishing unsigned APKs.
+5. The `Release` workflow builds every APK, signs it, checks the certificate, and publishes the GitHub release with notes from the changelog and `update.json` (each app's package, versionCode, file, SHA-256 and size). The Updater module reads `releases/latest/download/update.json`, so **every release must come from this workflow** (a release made by hand without `update.json` is invisible to the Updater). Bump a module's `versionCode` whenever it changes, or the Updater won't offer it. If the secrets are missing it stops instead of publishing unsigned APKs.

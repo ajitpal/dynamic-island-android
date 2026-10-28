@@ -49,6 +49,11 @@ In **Settings → Look and fit**:
 
 Choose a theme, width, height, roundness, opacity and animation speed to taste. The real island at the top updates live.
 
+## 5. Keep it up to date
+Install the **Updater** module (`Island-Module-Updater-v….apk`, listed first in **Modules → Get more**). It checks GitHub once a day and shows new versions in **Settings → Software Update**, as a tile on the Island tab and as a notification. Tap **Update All**: Android asks once whether Updater may install apps, then asks you to confirm each app. The island app itself still never goes online.
+
+Without the Updater, download new versions from [Releases](https://github.com/ajitpal/dynamic-island-android/releases/latest) as before.
+
 ## Troubleshooting
 | Symptom | Fix |
 |---|---|

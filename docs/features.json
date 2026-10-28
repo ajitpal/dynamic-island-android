@@ -36,6 +36,9 @@
      "links": ["Next meeting", "Open (settings)"], "permissions": ["Calendar"]},
     {"id": "automation", "icon": "🔗", "name": "Automation Bridge", "package": "com.ajit.dynamicisland.module.automation", "version": "1.1.0", "apk": "Island-Module-AutomationBridge",
      "summary": "Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key.",
-     "links": ["Two automation tools you name", "Open (settings)"], "permissions": ["None"]}
+     "links": ["Two automation tools you name", "Open (settings)"], "permissions": ["None"]},
+    {"id": "updater", "icon": "⬇️", "name": "Updater", "package": "com.ajit.dynamicisland.module.updater", "version": "1.0.0", "apk": "Island-Module-Updater",
+     "summary": "Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Off in Modules means no checks at all.",
+     "links": ["Software Update"], "permissions": ["Internet (GitHub only)", "Install apps (you confirm each)", "Notifications"]}
   ]
 }

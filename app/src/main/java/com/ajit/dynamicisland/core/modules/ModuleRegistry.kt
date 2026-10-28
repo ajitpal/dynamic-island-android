@@ -217,7 +217,7 @@ object ModuleRegistry {
         var changed = false
         fresh.forEach { m ->
             val auto = prefs.modulesAuto && m.trust == Trust.SAME_DEVELOPER && !m.approved
-            if (auto) { prefs.setApprovedModules(prefs.approvedModules() + m.pkg); changed = true }
+            if (auto) { prefs.setApprovedModules(prefs.approvedModules() + m.pkg); tellModule(m.pkg, true); changed = true }
             if (!m.approved) announce(m, auto)
         }
         return changed
@@ -261,7 +261,14 @@ object ModuleRegistry {
 
     fun setApproved(pkg: String, approved: Boolean) {
         prefs.setApprovedModules(if (approved) prefs.approvedModules() + pkg else prefs.approvedModules() - pkg)
+        tellModule(pkg, approved)
         rescan()
+    }
+
+    /** Let a module know it was turned on or off, so it can stop background work (e.g. the Updater's daily check). */
+    private fun tellModule(pkg: String, enabled: Boolean) = runCatching {
+        app.sendBroadcast(Intent(C.ACTION_MODULE_STATE).setPackage(pkg).putExtra(C.EXTRA_ENABLED, enabled)
+            .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES))
     }
 
     // ------------------------------------------------------------------ connections

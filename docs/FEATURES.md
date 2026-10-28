@@ -46,3 +46,4 @@ Optional apps that add abilities to the island, each with its own permissions (s
 - **AI Engine**: on-device language model (Qwen3 0.6B / 1.7B or Gemma 4 E2B on LiteRT-LM), optional GPU, "Try it" box with speed. Powers Meeting Notes (notes and **Ask about this meeting** with tappable timestamps) and Smart Inbox ("Catch me up" in the Inbox or as an island tool, ✨ reply suggestions; opt-in). On phones with **Gemini Nano**, Meeting Notes can use it while on screen, with no download.
 - **Calendar**: next-meeting countdown, pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs.
 - **Automation Bridge**: Tasker, MacroDroid or adb can show cards and tools in the island.
+- **Updater** (recommended): Software Update for the island and every module from GitHub Releases: daily check, what's new, Update All, checksum and signing-key checks, Android's install prompt. The island app stays offline.

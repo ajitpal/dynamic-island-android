@@ -10,7 +10,7 @@ Thanks for helping! The most useful contributions are:
 ## Development
 - `./gradlew assembleDebug testDebugUnitTest lintDebug` must pass. CI runs it on every push and pull request.
 - **Docs ship with the change.** Edit `docs/features.json` and run `python3 tools/gen_docs.py` (README and website sections between `GEN` markers are generated); add a `## <version>` entry to CHANGELOG.md and update ROADMAP.md. CI runs `tools/check_release.py` and fails if they're out of date.
-- **Screens changed?** Run `./gradlew :app:testDebugUnitTest -Pscreenshots=record` to re-render `docs/screenshots/app/`, and look at the images.
+- **Screens changed?** Run `./gradlew :app:testDebugUnitTest :modules:updater:testDebugUnitTest -Pscreenshots=record` to re-render `docs/screenshots/app/`, and look at the images.
 - **UI follows Apple's Human Interface Guidelines** through `app/.../ui/hig/Hig.kt`: inset grouped sections, 48 dp touch targets, text in sp, TalkBack labels, colours from `res/values/colors.xml` (light and dark). See [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
 - **Building a module?** See [docs/MODULES.md](docs/MODULES.md), or give your AI coding agent [docs/modules/AGENT_GUIDE.md](docs/modules/AGENT_GUIDE.md). Agents working on this repo read [AGENTS.md](AGENTS.md).
 - Keep the app **offline**: don't add the INTERNET permission or analytics SDKs.

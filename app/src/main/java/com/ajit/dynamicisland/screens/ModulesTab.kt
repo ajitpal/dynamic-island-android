@@ -112,7 +112,8 @@ class ModulesTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
 
     /** Modules listed in the catalog that aren't installed yet. */
     private fun getMore(installed: Set<String>) {
-        val missing = Catalog.load(a).filter { it.pkg !in installed }
+        // The Updater first: it keeps everything else current.
+        val missing = Catalog.load(a).filter { it.pkg !in installed }.sortedBy { if (it.pkg.endsWith(".updater")) 0 else 1 }
         if (missing.isEmpty()) return
         val s = hig.section(dynamic, "Get more", "Downloads open in your browser. After installing, the module turns on by itself if it's from this developer.")
         missing.forEach { c ->

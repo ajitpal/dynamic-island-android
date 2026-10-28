@@ -104,6 +104,14 @@ object IslandContract {
     /** Extra the island puts on module activities it opens. */
     const val EXTRA_ARG = "com.ajit.dynamicisland.ARG"
 
+    /**
+     * Sent by the island to a module's package when the person turns it on or off in the Modules tab
+     * ([EXTRA_ENABLED]). Declare a receiver with `android:permission="com.ajit.dynamicisland.permission.HOST"`
+     * so only the genuine island can send it, and stop any background work while off.
+     */
+    const val ACTION_MODULE_STATE = "com.ajit.dynamicisland.action.MODULE_STATE"
+    const val EXTRA_ENABLED = "com.ajit.dynamicisland.ENABLED"
+
     const val ACTION_TAP = "__tap"
 
     /** Limits the host enforces. */

@@ -126,6 +126,13 @@ Put your app-drawer entry on an **activity-alias named `.Launcher`** (not on the
 </activity-alias>
 ```
 
+**Turned on or off:** the island sends `IslandContract.ACTION_MODULE_STATE` (with `EXTRA_ENABLED`) to your package when the person switches your module on or off in the Modules tab. If your module does background work (like the Updater's daily check), stop it while off. Protect the receiver so only the island can send it:
+```xml
+<receiver android:name=".StateReceiver" android:exported="true" android:permission="com.ajit.dynamicisland.permission.HOST">
+    <intent-filter><action android:name="com.ajit.dynamicisland.action.MODULE_STATE" /></intent-filter>
+</receiver>
+```
+
 Long-pressing your tool in the island shows a card with your shortcuts and **Open · Manage · Remove**.
 
 ### Card cheat-sheet

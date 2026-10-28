@@ -30,6 +30,16 @@
   "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
  },
  {
+  "id": "updater",
+  "name": "Updater",
+  "icon": "⬇️",
+  "package": "com.ajit.dynamicisland.module.updater",
+  "summary": "Keeps the island and your modules up to date from GitHub.",
+  "developer": "Ajit Kumar Pal",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
+ },
+ {
   "id": "voice",
   "name": "Meeting Notes",
   "icon": "🎙",

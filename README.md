@@ -65,6 +65,7 @@ This app aims to be the clean alternative:
 | ✨ **AI Engine** (module) | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. |
 | 📅 **Calendar** (module) | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. |
 | 🔗 **Automation Bridge** (module) | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. |
+| ⬇️ **Updater** (module) | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Off in Modules means no checks at all. |
 <!-- /GEN:features -->
 
 Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.md)**.
@@ -90,6 +91,7 @@ Optional add-on apps, each with its own permissions. Modules from this repo swit
 | ✨ **AI Engine** 1.2.1 | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. | AI Engine, Try AI | Notifications, Internet (model download only) |
 | 📅 **Calendar** 1.1.0 | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. | Next meeting, Open (settings) | Calendar |
 | 🔗 **Automation Bridge** 1.1.0 | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. | Two automation tools you name, Open (settings) | None |
+| ⬇️ **Updater** 1.0.0 | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Off in Modules means no checks at all. | Software Update | Internet (GitHub only), Install apps (you confirm each), Notifications |
 <!-- /GEN:modules -->
 
 ## Install (2 minutes)
@@ -99,6 +101,7 @@ Optional add-on apps, each with its own permissions. Modules from this repo swit
 3. In the app, turn on **Notification access** and the **Accessibility service**.
 4. Follow **"Keep it running"** for your phone brand (the app detects it).
 5. Tap the **Try it** chips to see every state.
+6. **Stay up to date:** install the **Updater** module too. It checks GitHub once a day and installs new versions after you confirm; the island app itself stays offline.
 
 Step-by-step guides per brand, plus an ADB alternative: **[docs/INSTALL.md](docs/INSTALL.md)**.
 

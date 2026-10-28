@@ -10,7 +10,7 @@
 - Every change that users can see ships with its docs in the same commit:
   1. `docs/features.json` (features and modules) → `python3 tools/gen_docs.py` regenerates README and website sections.
   2. `catalog/modules/*.json` → `python3 tools/gen_catalog.py`.
-  3. Screens changed → `./gradlew :app:testDebugUnitTest -Pscreenshots=record` updates `docs/screenshots/app/`.
+  3. Screens changed → `./gradlew :app:testDebugUnitTest :modules:updater:testDebugUnitTest -Pscreenshots=record` updates `docs/screenshots/app/`.
   4. Bump `versionName`, add a `## <version>` section to CHANGELOG.md, update ROADMAP.md.
   CI fails if any of these is out of date (`tools/check_release.py`, `--check` flags, `-Pscreenshots=verify`).
 - Never commit `keystore.properties` or `*.jks`. Never add attribution trailers to commit messages.

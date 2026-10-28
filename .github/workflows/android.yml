@@ -34,12 +34,12 @@ jobs:
       - name: Build, unit tests & lint (island + SDK + all modules)
         run: ./gradlew assembleDebug testDebugUnitTest lintDebug --no-daemon
       # App screens are rendered from code; this fails when a screen changed without
-      # re-recording (./gradlew :app:testDebugUnitTest -Pscreenshots=record).
+      # re-recording (./gradlew :app:testDebugUnitTest :modules:updater:testDebugUnitTest -Pscreenshots=record).
       # Non-blocking for now, until it has proven stable across runners.
       - name: Screenshots match docs/screenshots/app
         id: shots
         continue-on-error: true
-        run: ./gradlew :app:testDebugUnitTest -Pscreenshots=verify --no-daemon
+        run: ./gradlew :app:testDebugUnitTest :modules:updater:testDebugUnitTest -Pscreenshots=verify --no-daemon
       - if: steps.shots.outcome == 'failure'
         run: echo "::warning::App screenshots differ from docs/screenshots/app. Re-record them with -Pscreenshots=record."
       - if: steps.shots.outcome == 'failure'

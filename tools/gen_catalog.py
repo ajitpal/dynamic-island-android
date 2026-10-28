@@ -16,6 +16,9 @@ BANNED = {  # permissions a module may never request
     "android.permission.SYSTEM_ALERT_WINDOW", "android.permission.READ_SMS", "android.permission.RECEIVE_SMS",
     "android.permission.QUERY_ALL_PACKAGES", "android.permission.REQUEST_INSTALL_PACKAGES", "android.permission.MANAGE_EXTERNAL_STORAGE",
 }
+# The Updater (first-party, release key) installs the updates people confirm; no other module may.
+RELEASE_CERT = "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
+FIRST_PARTY_ONLY = {"android.permission.REQUEST_INSTALL_PACKAGES"}
 
 
 def load():
@@ -31,7 +34,9 @@ def load():
         if not re.fullmatch(r"[0-9a-f]{64}", e.get("certSha256", "")): errors.append(f"{f.name}: certSha256 must be 64 lowercase hex characters")
         if not re.fullmatch(r"[a-z][a-z0-9_]*(\.[a-z0-9_]+)+", e.get("package", "")): errors.append(f"{f.name}: package name looks wrong")
         for p in e.get("permissions", []):
-            if p.get("name") in BANNED: errors.append(f"{f.name}: permission {p['name']} isn't allowed for modules")
+            first_party = e.get("firstParty") is True and e.get("certSha256") == RELEASE_CERT
+            if p.get("name") in FIRST_PARTY_ONLY and first_party: pass
+            elif p.get("name") in BANNED: errors.append(f"{f.name}: permission {p['name']} isn't allowed for modules")
             if len(p.get("reason", "")) < 8: errors.append(f"{f.name}: give a real reason for {p.get('name')}")
         for k in ("repo", "download"):
             if not str(e.get(k, "")).startswith("https://"): errors.append(f"{f.name}: {k} must be an https link")

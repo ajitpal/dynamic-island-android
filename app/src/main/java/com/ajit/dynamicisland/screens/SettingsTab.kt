@@ -5,6 +5,7 @@ import android.net.Uri
 import android.view.View
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
+import com.ajit.dynamicisland.MainActivity
 import com.ajit.dynamicisland.OnboardingActivity
 import com.ajit.dynamicisland.PageActivity
 import com.ajit.dynamicisland.R
@@ -23,6 +24,8 @@ class SettingsTab(private val a: AppCompatActivity, private val hig: Hig) : Tab 
 
     private fun open(key: String) = PageActivity.open(a, key)
     private fun web(url: String) = Setup.tryStart(a, Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+
+    private companion object { const val UPDATER_PKG = "com.ajit.dynamicisland.module.updater" }
 
     override fun refresh() {
         dynamic.removeAllViews()
@@ -52,6 +55,18 @@ class SettingsTab(private val a: AppCompatActivity, private val hig: Hig) : Tab 
 
         val about = hig.section(dynamic, "About",
             "v${a.packageManager.getPackageInfo(a.packageName, 0).versionName} · Open source (MIT) · Android 12+ phones with a punch-hole or notch")
+        // Like iPhone Settings → General → Software Update. Updates come from the optional Updater module,
+        // so this app keeps no internet permission.
+        val updater = com.ajit.dynamicisland.core.modules.ModuleRegistry.modules.value.firstOrNull { it.pkg == UPDATER_PKG }
+        about.add(hig.nav("Software Update", R.drawable.ic_download, Hig.Tile.GRAY,
+            value = when { updater == null -> "Get Updater"; !updater.approved -> "Off"; else -> null }) {
+            when {
+                updater == null -> web("https://github.com/ajitpal/dynamic-island-android/releases/latest")
+                !updater.approved -> a.startActivity(Intent(a, MainActivity::class.java)
+                    .putExtra(MainActivity.EXTRA_TAB, MainActivity.TAB_MODULES).putExtra(MainActivity.EXTRA_MODULE, UPDATER_PKG))
+                else -> com.ajit.dynamicisland.core.modules.ModuleRegistry.openModule(a, updater)
+            }
+        })
         about.add(hig.nav("Privacy", R.drawable.ic_shield, Hig.Tile.BLUE) { web("https://github.com/ajitpal/dynamic-island-android/blob/main/PRIVACY.md") })
         about.add(hig.nav("What's new", R.drawable.ic_stack, Hig.Tile.PINK) { web("https://ajitpal.github.io/dynamic-island-android/changelog.html") })
         about.add(hig.nav("Source code and help", R.drawable.ic_code, Hig.Tile.BLACK) { web("https://github.com/ajitpal/dynamic-island-android") })
