@@ -15,6 +15,7 @@
     {"icon": "💳", "title": "Payments", "summary": "Confirmation glimpse for Google Wallet and UPI apps (GPay, PhonePe, Paytm, BHIM, CRED)", "since": "1.2"},
     {"icon": "⚡", "title": "System glimpses", "summary": "Charging, low battery, silent/vibrate, DND, earbuds + battery, airplane mode, offline / back online, hotspot, NFC, unlock, flashlight", "since": "1.2"},
     {"icon": "🔴", "title": "Recording", "summary": "Screen and voice recording with a red REC timer, camera/mic in-use dots", "since": "1.2"},
+    {"icon": "🫧", "title": "Three at once", "summary": "Several activities run together: one in the island, the next in a circle beside it with a +1 badge. Tap to switch, touch and hold to see them all", "since": "2.0"},
     {"icon": "🧰", "title": "Island tools", "summary": "Long-press the empty island: 25+ tools you choose and arrange, any app, and shortcuts from your modules", "since": "1.4"},
     {"icon": "📥", "title": "Notification Inbox", "summary": "Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy, ✨ Catch me up", "since": "1.4"},
     {"icon": "🚫", "title": "No double pop-ups", "summary": "Turn off system banners per app, or move notifications into the island; never pops twice", "since": "1.4"},
@@ -40,8 +41,8 @@
     {"id": "automation", "icon": "🔗", "name": "Automation Bridge", "package": "com.ajit.dynamicisland.module.automation", "version": "1.1.0", "apk": "Island-Module-AutomationBridge",
      "summary": "Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key.",
      "links": ["Two automation tools you name", "Open (settings)"], "permissions": ["None"]},
-    {"id": "updater", "icon": "⬇️", "name": "Updater", "package": "com.ajit.dynamicisland.module.updater", "version": "1.0.0", "apk": "Island-Module-Updater",
-     "summary": "Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Off in Modules means no checks at all.",
-     "links": ["Software Update"], "permissions": ["Internet (GitHub only)", "Install apps (you confirm each)", "Notifications"]}
+    {"id": "updater", "icon": "⬇️", "name": "Updater", "package": "com.ajit.dynamicisland.module.updater", "version": "1.1.0", "apk": "Island-Module-Updater",
+     "summary": "Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all.",
+     "links": ["Software Update"], "permissions": ["Internet (GitHub and the project website only)", "Install apps (you confirm each)", "Notifications"]}
   ]
 }

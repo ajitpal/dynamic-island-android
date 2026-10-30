@@ -115,7 +115,8 @@ class ModulesTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
         // The Updater first: it keeps everything else current.
         val missing = Catalog.load(a).filter { it.pkg !in installed }.sortedBy { if (it.pkg.endsWith(".updater")) 0 else 1 }
         if (missing.isEmpty()) return
-        val s = hig.section(dynamic, "Get more", "Downloads open in your browser. After installing, the module turns on by itself if it's from this developer.")
+        val updated = if (Catalog.live) " List updated " + android.text.format.DateFormat.getMediumDateFormat(a).format(java.util.Date(Catalog.serial * 1000)) + " by the Updater." else ""
+        val s = hig.section(dynamic, "Get more", "Downloads open in your browser. After installing, the module turns on by itself if it's from this developer.$updated")
         missing.forEach { c ->
             s.add(hig.row(c.name, c.summary, hig.text(c.icon, Hig.Style.TITLE2).apply { gravity = Gravity.CENTER; minWidth = hig.dp(40) },
                 value = "Get", valueColor = hig.blue, onClick = {

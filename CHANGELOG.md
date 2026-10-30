@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.0 (31 Oct 2026): Three at once, and an open module ecosystem
+- **Three activities at once.** When several things run together (a recording, a delivery and a live score, say), the island shows one and the small circle beside it shows the next, with a **+1** badge for each one behind it. This keeps Apple's two-shape look while showing that more is running.
+  - **Tap the circle** to switch: what's in the circle moves into the island, and the next one moves into the circle. Taps go through every activity and wrap around.
+  - **Touch and hold the circle** to see them all in a list ("3 Activities"), with the one in the island marked. Tap a row to switch to it and open its card.
+  - **A new call always takes the island back**, even if you switched to something else; you can still switch away from it.
+  - TalkBack reads the circle as "Switch to Delivery. 1 more activity. Touch and hold to see all".
+  - Try it: **Island → Try it → Three at once**.
+- **Modules from other developers appear without an island update.** The module list (**Modules → Get more**) is now also published on the website, signed with the Dynamic Island release key. The **Updater 1.1.0** fetches it with its daily check, and the island checks the signature against its own key before using it, so a newly approved module shows up, and is trusted as an approved developer, within a day. The island still has no internet permission, and without the Updater the list that comes with the app is used. **Get more** says when the list was last updated.
+- **Developer site:** [ajitpal.github.io/dynamic-island-android/sdk](https://ajitpal.github.io/dynamic-island-android/sdk/) with an SDK overview and quick start, API version history, the module guide, the AI-agent guide, an **API reference generated from the SDK source** on every push, and a **module catalogue** page with search, permissions, privacy notes and certificate fingerprints. New issue forms to ask about a module or report a listed one.
+- **Obtainium:** an **Add to Obtainium** link on the website installs the island and keeps it updated straight from GitHub Releases.
+- **SDK 2.3:** `SignedCatalog` (the signed catalogue format the island and the Updater share). No changes for existing modules; keep `compact` text short, since a module's card may now sit in the circle or behind the badge.
+- **Not doing: IzzyOnDroid.** Its inclusion policy rejects apps written with AI tools and apps that integrate LLMs, so the planned listing is dropped.
+- Modules: **Updater 1.1.0** (catalogue download and a read-only provider only the island can read). The other modules are unchanged.
+
 ## 1.11.0 (28 Oct 2026): Meeting Notes in Hindi and Hinglish, and importing audio files
 - **Meeting Notes 1.4.0 understands Hindi and Hinglish.** Pick **English**, **हिन्दी (Hindi)** or **Hindi + English (Hinglish)** under **Language**. Hindi is written in Devanagari and English words stay in Latin letters, the way people actually mix them ("कल तक presentation ready करनी है"). Notes and action items are written in English, and action items are found in Hindi too ("भेज दूंगा", "करना है").
   - **Live, when your phone can:** if Android's own on-device speech recognition has Hindi (Android 13 or later, often a one-time language download that Meeting Notes offers to start), you get live captions in the island, like English.

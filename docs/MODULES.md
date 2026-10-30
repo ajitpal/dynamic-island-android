@@ -22,7 +22,7 @@ The SDK is published through JitPack, so your module can live in its own reposit
 // settings.gradle.kts
 dependencyResolutionManagement { repositories { google(); mavenCentral(); maven("https://jitpack.io") } }
 // module/build.gradle.kts (use the newest tag from https://jitpack.io/#ajitpal/dynamic-island-android)
-implementation("com.github.ajitpal.dynamic-island-android:module-sdk:v1.9.0")
+implementation("com.github.ajitpal.dynamic-island-android:module-sdk:v2.0.0")
 ```
 Inside this repository, first-party modules use `implementation(project(":module-sdk"))`.
 
@@ -170,7 +170,7 @@ Limits enforced by the island: 3 cards per module, 80-character titles, 400-char
 1. Sign your release APK with your own key (never the debug key) and publish it as a GitHub release (the template's `Release` workflow does both).
 2. Open a pull request that adds **`catalog/modules/<id>.json`** ([schema](../catalog/schema.json), [example](../templates/module-template/catalog-entry.example.json)) and the files `python3 tools/gen_catalog.py` regenerates. Don't edit `modules.xml` by hand: the allow-list is generated from the catalog.
 3. The **Module review** workflow downloads your APK and checks the signature against `certSha256`, the package name, the module service, that every permission is explained and none is banned, and that no development flag is left on. It posts a report on the PR; it never runs your code.
-4. A maintainer reviews the purpose, the permission reasons and the privacy note. Once merged, the next island release lists your module in **Modules → Get more** and on the website, as **Verified · approved developer**.
+4. A maintainer reviews the purpose, the permission reasons and the privacy note. Once merged, the website rebuilds and publishes the catalogue signed with the release key. People with the **Updater** module get it with the next daily check: your module appears in **Modules → Get more**, and the island verifies your certificate from that signed list, as **Verified · approved developer**, without waiting for an island release. Everyone else gets it with the next island release, which also adds your certificate to the manifest allow-list.
 
 The [agent guide](modules/AGENT_GUIDE.md) walks through all of this step by step.
 
@@ -221,4 +221,4 @@ Any format Android can decode works (it's converted to 16 kHz mono inside the Sp
 - **`modules/speech`**, Speech Pack: ONNX Runtime with a CTC model, decoding restricted to the scripts you want, Silero voice detection to split audio, a file-in / lines-out AIDL service, and resumable checksum-verified downloads.
 
 ## Contract stability
-`IslandContract.API_VERSION = 2` (API 2 added tiles, `mainActivity` and the launcher toggle). Everything travels as `Bundle`s: new keys are optional, and unknown keys are ignored. Breaking changes will bump the API version, and the island will keep supporting older versions.
+`IslandContract.API_VERSION = 2` (API 2 added tiles, `mainActivity` and the launcher toggle). Since 2.0 the island can show up to three activities at once: yours may be in the island, in the small circle beside it, or behind the "+1" badge, so keep `compact` text short and use a clear icon. Version history: [SDK overview](SDK.md#api-versions). Everything travels as `Bundle`s: new keys are optional, and unknown keys are ignored. Breaking changes will bump the API version, and the island will keep supporting older versions.

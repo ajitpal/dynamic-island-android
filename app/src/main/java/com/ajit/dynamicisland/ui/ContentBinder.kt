@@ -46,6 +46,8 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         fun suggestReplies(input: InputState)
         /** Long-press on a tool (module tools show that module's shortcuts and options). */
         fun toolLongPress(id: String) {}
+        /** A row in the "all activities" list was tapped. */
+        fun stackPick(id: String) {}
     }
 
     enum class MediaCmd { PREV, TOGGLE, NEXT }
@@ -387,6 +389,46 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
         }
         acts.addView(actionButton(IslandAction("See all", onClick = { host.inboxAction("all") }), null), LinearLayout.LayoutParams(0, dp(40), 1f))
         col.addView(acts, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+        return col
+    }
+
+    /**
+     * Touch and hold the circle: every running activity (up to [rows]), the one in the island
+     * marked, "and N more" when the list is cut. Tap a row to switch to it and see its card.
+     */
+    fun buildStack(topPad: Int, rows: List<IslandActivity>, currentId: String?, total: Int): View {
+        val col = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), topPad, dp(18), dp(14))
+        }
+        col.addView(label("$total Activities", pal.fg3, 12f).apply {
+            gravity = Gravity.CENTER
+            isAccessibilityHeading = true
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        rows.forEach { a ->
+            val hidden = host.hideContent(a)
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = dp(48)
+                setPadding(0, dp(6), 0, dp(6))
+                setOnClickListener { host.stackPick(a.id) }
+                contentDescription = buildString {
+                    append(a.title)
+                    if (!hidden && !a.text.isNullOrBlank()) append(". ").append(a.text)
+                    if (a.id == currentId) append(". In the island")
+                }
+            }
+            row.addView(leading(a, dp(30)), LinearLayout.LayoutParams(dp(30), dp(30)))
+            val texts = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+            texts.addView(label(a.title, pal.fg, 14.5f, bold = true))
+            val sub = if (hidden) "Unlock to see" else (a.text ?: a.compactText ?: "")
+            if (sub.isNotBlank()) texts.addView(label(sub, pal.fg2, 13f))
+            row.addView(texts, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(12); marginEnd = dp(8) })
+            if (a.id == currentId) row.addView(View(ctx).apply { background = circle(a.accent) }, LinearLayout.LayoutParams(dp(8), dp(8)))
+            col.addView(row)
+        }
+        if (total > rows.size) col.addView(label("and ${total - rows.size} more", pal.fg3, 12f).apply { gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) })
         return col
     }
 

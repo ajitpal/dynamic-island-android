@@ -6,6 +6,9 @@ allow-list in app/src/main/res/values/modules.xml (between the GEN markers), so 
 
     python3 tools/gen_catalog.py          # write
     python3 tools/gen_catalog.py --check  # CI: validate entries and fail if outputs are stale
+    python3 tools/gen_catalog.py --live _site/catalog.json --serial 1793400000
+        # the catalogue published on the website between releases (CI signs it with the release key;
+        # the Updater module downloads it and the island verifies it). Serial = commit time, never goes back.
 """
 import json, pathlib, re, sys
 
@@ -56,11 +59,24 @@ def outputs(entries):
     return catalog, xml_items
 
 
+def live(entries, serial):
+    """Signed-catalogue format (see module-sdk SignedCatalog.kt)."""
+    public = json.loads(outputs(entries)[0])
+    return json.dumps({"format": 1, "serial": serial, "modules": public}, ensure_ascii=False, separators=(",", ":")) + "\n"
+
+
 def main():
     check = "--check" in sys.argv
     entries, errors = load()
     if errors:
         sys.exit("Catalog problems:\n" + "\n".join("✗ " + e for e in errors))
+    if "--live" in sys.argv:
+        out = pathlib.Path(sys.argv[sys.argv.index("--live") + 1])
+        serial = int(sys.argv[sys.argv.index("--serial") + 1])
+        if serial <= 0: sys.exit("--serial must be a positive number (use the commit time)")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(live(entries, serial), encoding="utf-8")
+        print(f"Wrote live catalogue {out} ({len(entries)} modules, serial {serial})"); return
     catalog, xml_items = outputs(entries)
     cat_path = ROOT / "app/src/main/assets/catalog.json"
     xml_path = ROOT / "app/src/main/res/values/modules.xml"

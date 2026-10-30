@@ -53,6 +53,7 @@ This app aims to be the clean alternative:
 | 💳 **Payments** | Confirmation glimpse for Google Wallet and UPI apps (GPay, PhonePe, Paytm, BHIM, CRED) |
 | ⚡ **System glimpses** | Charging, low battery, silent/vibrate, DND, earbuds + battery, airplane mode, offline / back online, hotspot, NFC, unlock, flashlight |
 | 🔴 **Recording** | Screen and voice recording with a red REC timer, camera/mic in-use dots |
+| 🫧 **Three at once** | Several activities run together: one in the island, the next in a circle beside it with a +1 badge. Tap to switch, touch and hold to see them all |
 | 🧰 **Island tools** | Long-press the empty island: 25+ tools you choose and arrange, any app, and shortcuts from your modules |
 | 📥 **Notification Inbox** | Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy, ✨ Catch me up |
 | 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
@@ -66,7 +67,7 @@ This app aims to be the clean alternative:
 | ✨ **AI Engine** (module) | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. |
 | 📅 **Calendar** (module) | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. |
 | 🔗 **Automation Bridge** (module) | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. |
-| ⬇️ **Updater** (module) | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Off in Modules means no checks at all. |
+| ⬇️ **Updater** (module) | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all. |
 <!-- /GEN:features -->
 
 Full list and the iPhone / Pixel comparison: **[docs/FEATURES.md](docs/FEATURES.md)**.
@@ -93,7 +94,7 @@ Optional add-on apps, each with its own permissions. Modules from this repo swit
 | ✨ **AI Engine** 1.3.0 | A small language model on your phone (Qwen3 or Gemma 4 via LiteRT-LM, or Gemini Nano where available) for meeting notes, Catch me up and reply suggestions. Offline after a one-time download. | AI Engine, Try AI | Notifications, Internet (model download only) |
 | 📅 **Calendar** 1.1.0 | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. | Next meeting, Open (settings) | Calendar |
 | 🔗 **Automation Bridge** 1.1.0 | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. | Two automation tools you name, Open (settings) | None |
-| ⬇️ **Updater** 1.0.0 | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Off in Modules means no checks at all. | Software Update | Internet (GitHub only), Install apps (you confirm each), Notifications |
+| ⬇️ **Updater** 1.1.0 | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all. | Software Update | Internet (GitHub and the project website only), Install apps (you confirm each), Notifications |
 <!-- /GEN:modules -->
 
 ## Install (2 minutes)

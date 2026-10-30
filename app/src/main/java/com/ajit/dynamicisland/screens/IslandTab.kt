@@ -144,7 +144,7 @@ class IslandTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
             p("10 s timer") { IslandTools.startTimer(a, 10_000) }, p("Stopwatch") { IslandTools.startStopwatch(a) },
             p("Charging") { Demo.charging(a) }, p("Payment") { Demo.payment(a) }, p("Earbuds") { Demo.earbuds(a) },
             p("Live score") { Demo.liveScore(a) }, p("Screen recording") { Demo.recording(a) }, p("Unlock") { Demo.unlock(a) },
-            p("Clear") { Demo.clear() },
+            p("Three at once") { Demo.threeAtOnce(a) }, p("Clear") { Demo.clear() },
         )))
     }
 }

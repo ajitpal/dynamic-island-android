@@ -38,6 +38,8 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <!-- The signed module catalogue the Updater module downloaded (read-only, verified here). -->
+        <provider android:authorities="com.ajit.dynamicisland.module.updater.catalog" />
     </queries>
 
     <application

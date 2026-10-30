@@ -175,8 +175,9 @@ object ModuleRegistry {
             pm.checkSignatures(app.packageName, pkg) == PackageManager.SIGNATURE_MATCH -> Trust.SAME_DEVELOPER
             // Platform-enforced allow-list: granted only to apps signed by a certificate in knownCerts.
             pm.checkPermission(C.PERMISSION_MODULE_API, pkg) == PackageManager.PERMISSION_GRANTED -> Trust.APPROVED_DEVELOPER
-            // Same allow-list checked in code (also covers modules installed before the app).
-            cert in approvedCerts() -> Trust.APPROVED_DEVELOPER
+            // Same allow-list checked in code (also covers modules installed before the app),
+            // plus developers listed since this release in the signed catalogue (2.0).
+            cert in approvedCerts() || (cert.isNotEmpty() && cert in Catalog.certs(app)) -> Trust.APPROVED_DEVELOPER
             else -> Trust.UNVERIFIED
         }
     }

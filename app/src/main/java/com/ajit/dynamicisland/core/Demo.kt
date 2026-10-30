@@ -148,4 +148,14 @@ object Demo {
             R.drawable.ic_live, Colors.BLUE, 0, progress = 42.5f / 50f,
             actions = listOf(IslandAction("Hide", onClick = { IslandRepository.remove("demo:live") })))
     }
+
+    /** 2.0: three activities at once. The island shows one, the circle the next, with a "+1" badge. */
+    fun threeAtOnce(context: Context) {
+        val ctx = context.applicationContext
+        liveScore(ctx)
+        sys(ctx, "demo:delivery", Kind.LIVE, "Order on the way", "Arriving in 12 min · Rider is 2 km away", "12 min",
+            R.drawable.ic_live, Colors.ORANGE, 0, progress = 0.6f,
+            actions = listOf(IslandAction("Hide", onClick = { IslandRepository.remove("demo:delivery") })))
+        recording(ctx)
+    }
 }

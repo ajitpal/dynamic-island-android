@@ -1,0 +1,18 @@
+name: Report a listed module
+description: A module in the catalogue misbehaves, asks for too much, or isn't what it says
+labels: [module-report]
+body:
+  - type: input
+    id: module
+    attributes: { label: Module (name or package) }
+    validations: { required: true }
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What's wrong?
+      options: [Privacy or data use, Permissions it doesn't need, Broken or crashing, Misleading listing, Other]
+    validations: { required: true }
+  - type: textarea
+    id: details
+    attributes: { label: What happened? }
+    validations: { required: true }

@@ -169,6 +169,47 @@ class ScreenshotTest {
         IslandRepository.activities.value.values.firstOrNull { it.id.contains("score") || it.id.contains("live") }?.let { render(it, "island-04-live-score") }
     }
 
+    /** 2.0: three at once. The compact island with the circle and "+1" badge, and the touch-and-hold list. */
+    @Test fun threeAtOnce() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val themed = android.view.ContextThemeWrapper(ctx, com.ajit.dynamicisland.R.style.Theme_Island_Overlay)
+        val binder = ContentBinder(themed, FakeHost(Themes.byId("black")))
+        Demo.threeAtOnce(ctx)
+        settle()
+        val ordered = IslandRepository.activities.value.values.sortedWith(compareByDescending<IslandActivity> { it.priority }.thenByDescending { it.updatedAt })
+        val stack = com.ajit.dynamicisland.core.IslandStack.arrange(ordered, null) { it.id }
+        fun draw(v: View, name: String, w: Int) {
+            v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+            v.layout(0, 0, v.measuredWidth, v.measuredHeight)
+            val bmp = android.graphics.Bitmap.createBitmap(v.measuredWidth, v.measuredHeight, android.graphics.Bitmap.Config.ARGB_8888)
+            v.draw(android.graphics.Canvas(bmp)); bmp.captureRoboImage(out(name), opts)
+        }
+        // Compact: pill + circle with the badge (same binder calls as the overlay).
+        val h = 88
+        val row = LinearLayout(themed).apply { gravity = android.view.Gravity.CENTER; setBackgroundColor(0xFF1B2A4A.toInt()); setPadding(24, 36, 24, 36) }
+        val pill = LinearLayout(themed).apply { gravity = android.view.Gravity.CENTER_VERTICAL; background = com.ajit.dynamicisland.ui.rounded(Color.BLACK, h / 2f); setPadding(18, 0, 24, 0) }
+        val left = FrameLayout(themed); val right = FrameLayout(themed)
+        binder.bindCompact(stack.primary!!, left, right, 64)
+        pill.addView(left, LinearLayout.LayoutParams(0, h, 1f)); pill.addView(View(themed), LinearLayout.LayoutParams(70, 1)); pill.addView(right, LinearLayout.LayoutParams(0, h, 1f))
+        row.addView(pill, LinearLayout.LayoutParams(470, h))
+        val bubble = FrameLayout(themed)
+        val circle = FrameLayout(themed).apply { background = com.ajit.dynamicisland.ui.circle(Color.BLACK) }
+        circle.addView(binder.bubbleIcon(stack.bubble!!, h - 26), FrameLayout.LayoutParams(h - 26, h - 26, android.view.Gravity.CENTER))
+        bubble.addView(circle, FrameLayout.LayoutParams(h, h))
+        bubble.addView(android.widget.TextView(themed).apply {
+            text = com.ajit.dynamicisland.core.IslandStack.badge(stack.hidden); setTextColor(Color.WHITE); textSize = 9.5f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD; gravity = android.view.Gravity.CENTER; setPadding(8, 0, 8, 0); minWidth = 38
+            background = android.graphics.drawable.GradientDrawable().apply { setColor(0xFF0A84FF.toInt()); cornerRadius = 999f; setStroke(4, Color.BLACK) }
+        }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 38, android.view.Gravity.TOP or android.view.Gravity.END))
+        row.addView(bubble, LinearLayout.LayoutParams(h, h).apply { marginStart = 16 })
+        draw(row, "island-05-three-at-once", 786)
+        // Touch and hold the circle: all of them.
+        val frame = FrameLayout(themed).apply { setBackgroundColor(0xFF1B2A4A.toInt()); setPadding(24, 24, 24, 24) }
+        frame.addView(binder.buildStack(24, stack.all, stack.primary?.id, stack.count).apply { background = com.ajit.dynamicisland.ui.rounded(Color.BLACK, 64f) },
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        draw(frame, "island-06-all-activities", 786)
+    }
+
     private class FakeHost(override val palette: Palette) : ContentBinder.Host {
         override fun hideContent(a: IslandActivity) = false
         override fun open(a: IslandActivity) {}

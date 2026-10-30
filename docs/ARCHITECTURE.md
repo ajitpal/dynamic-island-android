@@ -10,6 +10,8 @@ IslandTools / Demo ────────────────────�
 | File | Role |
 |---|---|
 | `core/Model.kt` | `IslandActivity` (what to show), `Kind` (priority), `IslandAction` (buttons, inline input) |
+| `core/IslandStack.kt` | Which activity is in the island, which in the circle, how many behind the "+N" badge; tap-to-cycle order (pure Kotlin, unit-tested) |
+| `core/modules/Catalog.kt` | "Get more" list: bundled copy, or the newer signed catalogue the Updater downloaded (verified with the app's own key) |
 | `core/IslandRepository.kt` | Single in-process source of truth: activities, peeks, camera/mic/torch flags, auto-expiry |
 | `core/NotificationParser.kt` | Classifies notifications: call (CallStyle), payment, recording, live updates, navigation, timer, progress, message (MessagingStyle + RemoteInput quick reply), generic |
 | `core/MediaTracker.kt` | Follows every active `MediaSession` and publishes the one playing |

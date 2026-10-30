@@ -1,0 +1,28 @@
+name: Module idea or listing help
+description: Tell us about a module you're building or want listed in the catalogue
+labels: [module]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Listing happens through a pull request that adds `catalog/modules/<id>.json` (see the [guide](https://ajitpal.github.io/dynamic-island-android/sdk/modules.html#getting-listed)). Use this form if you'd like feedback first or got stuck.
+  - type: input
+    id: name
+    attributes: { label: Module name }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What does it show in the island? }
+    validations: { required: true }
+  - type: textarea
+    id: perms
+    attributes: { label: Which permissions does it need, and why? }
+    validations: { required: true }
+  - type: input
+    id: repo
+    attributes: { label: Source repository (if public) }
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Built with an AI coding agent?
+      options: ["No", "Yes, Claude", "Yes, Codex", "Yes, another agent"]

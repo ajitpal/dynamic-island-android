@@ -60,6 +60,8 @@ object Updater {
         set(State.Checking)
         worker.execute {
             val result = runCatching { Release.parse(get(Repo.MANIFEST_URL)) }
+            // The module catalogue rides along with the daily check (best-effort, never fails the check).
+            CatalogSync.sync(app)
             main.post {
                 val now = System.currentTimeMillis()
                 UPrefs.setLastCheck(app, now)

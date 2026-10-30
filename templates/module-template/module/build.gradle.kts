@@ -49,7 +49,7 @@ kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarg
 
 dependencies {
     // The Dynamic Island module SDK. Use the newest release tag from https://jitpack.io/#ajitpal/dynamic-island-android
-    implementation("com.github.ajitpal.dynamic-island-android:module-sdk:v1.9.0")
+    implementation("com.github.ajitpal.dynamic-island-android:module-sdk:v2.0.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     testImplementation("junit:junit:4.13.2")

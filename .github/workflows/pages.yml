@@ -21,14 +21,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the catalogue's serial is the time catalog/ last changed
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: SDK API reference
+        run: chmod +x gradlew && ./gradlew :module-sdk:dokkaGeneratePublicationHtml --no-daemon
       - name: Generate the site
         run: |
           pip install markdown==3.7
           python3 tools/gen_docs.py
           python3 tools/build_site.py _site
+      # The live module catalogue, signed with the release key: the Updater downloads it daily and the
+      # island verifies it, so newly approved modules appear without an island release.
+      - name: Sign the module catalogue
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "::warning::No signing secrets: the live catalogue isn't published."; exit 0; fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          KEYSTORE_FILE="$RUNNER_TEMP/release.jks" bash tools/sign_catalog.sh _site
+          rm -f "$RUNNER_TEMP/release.jks"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

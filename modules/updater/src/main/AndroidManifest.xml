@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Internet lives here, never in the Dynamic Island app: only to read update.json and download APKs from GitHub. -->
+    <!-- Internet lives here, never in the Dynamic Island app: only to read update.json and the signed module catalogue, and download APKs from GitHub. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Install the updates you confirm (Android shows its own prompt for each one). -->
@@ -54,6 +54,14 @@
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <receiver android:name=".InstallResultReceiver" android:exported="false" />
+
+        <!-- The signed module catalogue it downloaded, for the island's "Get more" list. Only the
+             genuine island (HOST signature permission) can read it; the island verifies it again. -->
+        <provider
+            android:name=".CatalogProvider"
+            android:authorities="com.ajit.dynamicisland.module.updater.catalog"
+            android:exported="true"
+            android:readPermission="com.ajit.dynamicisland.permission.HOST" />
 
         <!-- Only the genuine island (which holds its HOST signature permission) can turn checks on or off. -->
         <receiver

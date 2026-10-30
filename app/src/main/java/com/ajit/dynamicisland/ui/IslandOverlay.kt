@@ -82,7 +82,9 @@ class IslandOverlay(
         const val DIGEST_ID = "sys:digest"
         const val REPLY_LABEL = "Suggest replies"
         const val INBOX_ID = "__inbox"
-        fun isPanel(id: String?) = id == TOOLS_ID || id == INBOX_ID
+        /** Long-press the circle: every running activity in a list. */
+        const val STACK_ID = "__stack"
+        fun isPanel(id: String?) = id == TOOLS_ID || id == INBOX_ID || id == STACK_ID
     }
 
     private val ctx: Context = ContextThemeWrapper(base, R.style.Theme_Island_Overlay)
@@ -111,7 +113,16 @@ class IslandOverlay(
     private val compactRight = FrameLayout(ctx)
     private val expandedHost = FrameLayout(ctx)
     private val privacyDot = View(ctx)
-    private val bubble = FrameLayout(ctx).apply { background = circle(Color.BLACK); clipToOutline = true }
+    /** The small circle beside the island (second activity), with a "+N" badge when more are running. */
+    private val bubble = FrameLayout(ctx).apply { clipChildren = false; clipToPadding = false; isLongClickable = true }
+    private val bubbleCircle = FrameLayout(ctx).apply { background = circle(Color.BLACK); clipToOutline = true }
+    private val bubbleBadge = android.widget.TextView(ctx).apply {
+        setTextColor(Color.WHITE); textSize = 9.5f; typeface = android.graphics.Typeface.DEFAULT_BOLD
+        gravity = Gravity.CENTER; includeFontPadding = false
+        background = GradientDrawable().apply { setColor(0xFF0A84FF.toInt()); cornerRadius = 999f; setStroke(dp(1.5f), Color.BLACK) }
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        isVisible = false
+    }
 
     private val params = WindowManager.LayoutParams(
         1, 1,
@@ -154,6 +165,9 @@ class IslandOverlay(
     private var inputFor: String? = null
     private var primary: IslandActivity? = null
     private var secondary: IslandActivity? = null
+    /** All visible activities, how many are behind the badge, and what was running last refresh. */
+    private var stack: com.ajit.dynamicisland.core.IslandStack<IslandActivity> = com.ajit.dynamicisland.core.IslandStack(null, null, 0, emptyList())
+    private var previousIds: Set<String> = emptySet()
     private val tickers = mutableListOf<() -> Unit>()
 
     private val collapseRunnable = Runnable { if (input == null) collapse() }
@@ -178,6 +192,8 @@ class IslandOverlay(
         pill.addView(privacyDot, FrameLayout.LayoutParams(dp(7), dp(7), Gravity.END or Gravity.CENTER_VERTICAL).apply { marginEnd = dp(10) })
         root.addView(leftSpacer, LinearLayout.LayoutParams(0, 1))
         root.addView(pill, LinearLayout.LayoutParams(geo.idleW, geo.idleH))
+        bubble.addView(bubbleCircle, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        bubble.addView(bubbleBadge, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(14), Gravity.TOP or Gravity.END))
         root.addView(bubble, LinearLayout.LayoutParams(geo.compactH, geo.compactH).apply { marginStart = dp(6) })
         bubble.isVisible = false
         expandedHost.isVisible = false
@@ -188,8 +204,14 @@ class IslandOverlay(
             detector.onTouchEvent(e)
             true
         }
+        // Tap the circle: it becomes the island, and the next running activity moves into the circle.
         bubble.setOnClickListener {
             secondary?.let { preferredId = it.id; haptic(); refresh() }
+        }
+        // Touch and hold: all running activities in a list (the only way to reach a fourth one quickly).
+        bubble.setOnLongClickListener {
+            if (stack.count > 1) { haptic(); expand(STACK_ID) }
+            true
         }
         root.setOnTouchListener { _, e ->
             if (e.actionMasked == MotionEvent.ACTION_OUTSIDE && mode == Mode.EXPANDED && input == null) collapse()
@@ -315,10 +337,14 @@ class IslandOverlay(
         if (input != null && !force) return // don't rebuild while the user is typing
         val visible = IslandRepository.activities.value.values
             .filter { isVisible(it) }
-            .sortedWith(compareByDescending<IslandActivity> { if (it.id == preferredId) 1000 else it.priority }.thenByDescending { it.updatedAt })
-        if (preferredId != null && visible.none { it.id == preferredId }) preferredId = null
-        primary = visible.firstOrNull()
-        secondary = visible.getOrNull(1)
+            .sortedWith(compareByDescending<IslandActivity> { it.priority }.thenByDescending { it.updatedAt })
+        // A new call takes the island back from whatever the user switched to.
+        preferredId = com.ajit.dynamicisland.core.IslandStack.keepPreferred(preferredId, visible, previousIds, { it.id }, { it.kind == Kind.CALL })
+        previousIds = visible.mapTo(HashSet()) { it.id }
+        stack = com.ajit.dynamicisland.core.IslandStack.arrange(visible, preferredId) { it.id }
+        primary = stack.primary
+        secondary = stack.bubble
+        if (expandedId == STACK_ID && stack.count < 2) expandedId = null
 
         // A sticky peek (incoming call) closes as soon as it is no longer a peek (answered / ended).
         stickyPeekId?.let { id ->
@@ -402,6 +428,8 @@ class IslandOverlay(
                     binder.buildTools(topPad, pages[toolsPage].mapNotNull { toolCell(it) }, toolsPage, pages.size, input)
                 } else if (expandedId == INBOX_ID) {
                     binder.buildInbox(topPad, inboxCache, inboxUnread, isLocked())
+                } else if (expandedId == STACK_ID) {
+                    binder.buildStack(topPad, stack.all.take(com.ajit.dynamicisland.core.IslandStack.LIST_MAX), stack.primary?.id, stack.count)
                 } else {
                     binder.buildExpanded(a!!, topPad, if (inputFor == a.id) input else null)
                 }
@@ -425,10 +453,15 @@ class IslandOverlay(
             bubble.isVisible = false; bubbleW = 0
             (leftSpacer.layoutParams as LinearLayout.LayoutParams).width = 0
         } else {
-            bubble.removeAllViews()
+            bubbleCircle.removeAllViews()
             val inner = size - dp(10)
-            bubble.addView(binder.bubbleIcon(a, inner), FrameLayout.LayoutParams(inner, inner, Gravity.CENTER))
-            bubble.contentDescription = "Switch to ${a.title}"
+            bubbleCircle.addView(binder.bubbleIcon(a, inner), FrameLayout.LayoutParams(inner, inner, Gravity.CENTER))
+            val badge = com.ajit.dynamicisland.core.IslandStack.badge(stack.hidden)
+            bubbleBadge.text = badge ?: ""
+            bubbleBadge.isVisible = badge != null
+            bubbleBadge.minWidth = dp(14)
+            bubbleBadge.setPadding(dp(3), 0, dp(3), 0)
+            bubble.contentDescription = com.ajit.dynamicisland.core.IslandStack.bubbleDescription(a.title, stack.hidden)
             bubble.isVisible = true
             (bubble.layoutParams as LinearLayout.LayoutParams).apply { width = size; height = size }
             bubbleW = size + dp(6)
@@ -460,7 +493,7 @@ class IslandOverlay(
             p.stroke != 0 -> pillBg.setStroke(dp(1f), p.stroke)
             else -> pillBg.setStroke(0, Color.TRANSPARENT)
         }
-        (bubble.background as? GradientDrawable)?.setColor(col)
+        (bubbleCircle.background as? GradientDrawable)?.setColor(col)
     }
 
     private fun applyPill(w: Int, h: Int, r: Float) {
@@ -680,6 +713,14 @@ class IslandOverlay(
         }
         if (a.kind == Kind.MESSAGE) IslandRepository.remove(a.id)
         collapse()
+    }
+
+    /** A row in the "all activities" list: make it the island's activity and show its card. */
+    override fun stackPick(id: String) {
+        haptic()
+        preferredId = id
+        val a = IslandRepository.get(id)
+        if (a != null && (a.actions.isNotEmpty() || a.text != null)) expand(id) else collapse()
     }
 
     override fun media(a: IslandActivity, cmd: ContentBinder.MediaCmd) {
