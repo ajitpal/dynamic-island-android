@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.3.0 (31 Oct 2026): Scanner
+- **New Scanner module 1.0.0.** Scan codes and documents from the island, without Google ML Kit and without internet.
+  - **Scan Code** (island tool, tile or app): point the camera at a QR code or barcode (QR, Data Matrix, Aztec, PDF417, EAN/UPC, Code 128/39, ITF), or choose a photo. As soon as it's read, the camera closes and the island shows what it is, with the right buttons:
+    - **Links:** the address is shown first, then **Open**, Copy, Share.
+    - **Wi-Fi:** **Join** through Android's own "Save network" sheet, or Copy Password (copied as sensitive, so it doesn't show in the clipboard preview).
+    - **UPI payments:** shows who you're paying (name and UPI ID) and the amount, then **Pay** opens your UPI app, where you confirm.
+    - Phone numbers, email, SMS, map locations, contact cards (vCard, MECARD) and product barcodes (Search).
+  - **Scan Document:** take photos (or choose them), check the page corners it finds (drag them if they're off), choose **Color**, **Grayscale** or **Black & White**, add more pages, then **Save** one PDF to **Documents › Dynamic Island**. The island shows **Document Saved** with Open and Share.
+  - **Scanner screen:** your recent codes (tap to act on one again, Clear to forget them) and saved PDFs (touch and hold to share or delete).
+  - Codes are read on the phone (ZXing) and pictures aren't kept. Camera permission only; **no internet permission**.
+- The island lists Scanner under **Modules → Get more**; nothing else in the island changed.
+
 ## 2.2.1 (31 Oct 2026): Uninstalling and updating modules work properly
 - **Fixed: Uninstall in a module's ⋯ menu did nothing.** Since Android 9, an app needs the "request uninstall" permission before Android shows its uninstall confirmation, and the island didn't have it, so Android ignored the tap. The island now has it (you still confirm every uninstall in Android's own dialog), and if the confirmation can't open, App info opens with its Uninstall button.
 - **Fixed: a module stopped working in the island after it was updated.** When a module is updated, Android cuts the island's connection to it. The island kept the dead connection and never connected to the new version, so the module showed "Connecting…" and its tile, cards and shortcuts were missing until the island restarted. The island now drops that connection and connects to the updated module straight away (and the same after an uninstall).

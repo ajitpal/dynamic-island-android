@@ -1,0 +1,19 @@
+{
+  "id": "scanner",
+  "name": "Scanner",
+  "icon": "🔳",
+  "package": "com.ajit.dynamicisland.module.scanner",
+  "summary": "Scan QR codes and barcodes from the island (links, Wi-Fi, UPI, contacts) and documents into a straightened PDF.",
+  "developer": "Ajit Kumar Pal",
+  "firstParty": true,
+  "repo": "https://github.com/ajitpal/dynamic-island-android/tree/main/modules/scanner",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501",
+  "permissions": [
+    {
+      "name": "android.permission.CAMERA",
+      "reason": "Reads codes and photographs documents, only while a scanner screen is open"
+    }
+  ],
+  "privacy": "Codes and pages are read on the phone and pictures aren't kept. PDFs are saved in Documents › Dynamic Island. No internet permission."
+}

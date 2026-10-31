@@ -47,6 +47,9 @@
     {"id": "weather", "icon": "🌤️", "name": "Weather & AQI", "package": "com.ajit.dynamicisland.module.weather", "version": "1.0.0", "apk": "Island-Module-Weather",
      "summary": "The weather and India's air quality index (CPCB scale) in your island: a tile, an optional always-on temperature and AQI, and alerts before rain and when the air turns poor. Data from Open-Meteo; location only while you look.",
      "links": ["Weather", "Forecast & AQI"], "permissions": ["Internet (Open-Meteo only)", "Approximate location (optional, only while open)"]},
+    {"id": "scanner", "icon": "🔳", "name": "Scanner", "package": "com.ajit.dynamicisland.module.scanner", "version": "1.0.0", "apk": "Island-Module-Scanner",
+     "summary": "Scan QR codes and barcodes from the island: open links, join Wi-Fi, pay with UPI (the payee is shown first), call, email or add contacts. Scan documents into one straightened PDF in Color, Grayscale or Black & White. Read on your phone, no Google ML Kit, no internet.",
+     "links": ["Scan Code", "Scan Document", "Scans"], "permissions": ["Camera (only while scanning)"]},
     {"id": "updater", "icon": "⬇️", "name": "Updater", "package": "com.ajit.dynamicisland.module.updater", "version": "1.2.0", "apk": "Island-Module-Updater",
      "summary": "Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all.",
      "links": ["Software Update"], "permissions": ["Internet (GitHub and the project website only)", "Install apps (you confirm each)", "Notifications"]}
