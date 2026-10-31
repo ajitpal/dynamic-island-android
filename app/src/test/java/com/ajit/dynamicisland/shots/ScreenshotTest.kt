@@ -176,7 +176,9 @@ class ScreenshotTest {
         val binder = ContentBinder(themed, FakeHost(Themes.byId("black")))
         Demo.threeAtOnce(ctx)
         settle()
-        val ordered = IslandRepository.activities.value.values.sortedWith(compareByDescending<IslandActivity> { it.priority }.thenByDescending { it.updatedAt })
+        // A fixed time instead of a live timer, so the picture is the same on every run.
+        IslandRepository.get("demo:rec")?.let { IslandRepository.upsert(it.copy(chronoBase = 0L, compactText = "0:42")) }
+        val ordered = IslandRepository.activities.value.values.sortedWith(compareByDescending<IslandActivity> { it.priority }.thenByDescending { it.updatedAt }.thenBy { it.id })
         val stack = com.ajit.dynamicisland.core.IslandStack.arrange(ordered, null) { it.id }
         fun draw(v: View, name: String, w: Int) {
             v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))

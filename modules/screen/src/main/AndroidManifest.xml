@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Recording the screen runs as a visible foreground service (Android shows its own indicator too). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- Only when you choose a sound option: Android requires it for the microphone and for phone sound. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- No internet: recordings never leave the phone unless you share them. -->
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Island · Screen Recorder"
+        android:theme="@style/Theme.Module">
+
+        <service
+            android:name=".ScreenModule"
+            android:exported="true"
+            android:label="Screen Recorder">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.MODULE" />
+            </intent-filter>
+            <meta-data android:name="com.ajit.dynamicisland.module.DESCRIPTION"
+                android:value="Record your screen from the island: a 3-2-1 countdown, a red REC timer with Pause and Stop, sound from the microphone, the phone or both, and Play or Share when it's saved. Videos stay on your phone in Movies › Dynamic Island." />
+            <meta-data android:name="com.ajit.dynamicisland.module.SETTINGS_ACTIVITY" android:value=".MainActivity" />
+            <meta-data android:name="com.ajit.dynamicisland.module.DEVELOPER" android:value="Ajit Kumar Pal" />
+        </service>
+
+        <service
+            android:name=".RecorderService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection|microphone" />
+
+        <activity android:name=".MainActivity" android:exported="true" android:label="Screen Recorder" />
+
+        <!-- App-drawer entry on an alias, so the island can hide the icon (IslandContract.LAUNCHER_ALIAS). -->
+        <activity-alias
+            android:name=".Launcher"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Opened by the island (Record tool, tile, Play/Share buttons). Only the island and this app can open
+             them: no other app can start a screen recording or open your videos through them. -->
+        <activity
+            android:name=".CaptureActivity"
+            android:exported="true"
+            android:permission="com.ajit.dynamicisland.permission.HOST"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Module.Translucent" />
+        <activity
+            android:name=".OpenActivity"
+            android:exported="true"
+            android:permission="com.ajit.dynamicisland.permission.HOST"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Module.Translucent" />
+    </application>
+</manifest>

@@ -41,6 +41,9 @@
     {"id": "automation", "icon": "🔗", "name": "Automation Bridge", "package": "com.ajit.dynamicisland.module.automation", "version": "1.1.0", "apk": "Island-Module-AutomationBridge",
      "summary": "Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key.",
      "links": ["Two automation tools you name", "Open (settings)"], "permissions": ["None"]},
+    {"id": "screen", "icon": "⏺️", "name": "Screen Recorder", "package": "com.ajit.dynamicisland.module.screen", "version": "1.0.0", "apk": "Island-Module-ScreenRecorder",
+     "summary": "Record your screen from the island: 3-2-1 countdown, red REC timer with Pause and Stop, sound from the microphone, the phone or both, then Play or Share. Saved to Movies › Dynamic Island, never uploaded.",
+     "links": ["Record screen", "Recordings"], "permissions": ["Microphone (only for sound)", "Notifications"]},
     {"id": "updater", "icon": "⬇️", "name": "Updater", "package": "com.ajit.dynamicisland.module.updater", "version": "1.1.0", "apk": "Island-Module-Updater",
      "summary": "Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all.",
      "links": ["Software Update"], "permissions": ["Internet (GitHub and the project website only)", "Install apps (you confirm each)", "Notifications"]}

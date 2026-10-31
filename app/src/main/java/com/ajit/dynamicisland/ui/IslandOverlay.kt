@@ -337,7 +337,7 @@ class IslandOverlay(
         if (input != null && !force) return // don't rebuild while the user is typing
         val visible = IslandRepository.activities.value.values
             .filter { isVisible(it) }
-            .sortedWith(compareByDescending<IslandActivity> { it.priority }.thenByDescending { it.updatedAt })
+            .sortedWith(compareByDescending<IslandActivity> { it.priority }.thenByDescending { it.updatedAt }.thenBy { it.id })
         // A new call takes the island back from whatever the user switched to.
         preferredId = com.ajit.dynamicisland.core.IslandStack.keepPreferred(preferredId, visible, previousIds, { it.id }, { it.kind == Kind.CALL })
         previousIds = visible.mapTo(HashSet()) { it.id }

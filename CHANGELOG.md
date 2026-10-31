@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.0 (31 Oct 2026): Screen Recorder
+- **New Screen Recorder module 1.0.0.** Record your screen from the island, like Control Center's screen recording on an iPhone.
+  - **Start** with the **Record screen** island tool, the tile on the Island tab or the app. Android asks each time what to record (the whole screen, or a single app where Android offers it).
+  - A **3-2-1 countdown** in the island (can be turned off), then a **red REC timer** with **Pause** and **Stop**, in the island and in the notification. Tap Record screen again to stop.
+  - **Sound:** none, the **microphone**, the **phone's own sound** (from apps that allow it; calls and protected videos can't be recorded), or **both mixed**. Any sound option asks for microphone access once; if you say no, it records without sound and tells you.
+  - **Quality:** 720p, 1080p or full resolution at 30 or 60 fps. If the phone's video encoder can't handle full resolution, it records at the largest size it can.
+  - **Saved** as MP4 to **Movies › Dynamic Island**, so it shows in your gallery. A **Saved** card in the island has **Play** and **Share**, and the module's screen lists your recordings (touch and hold to share or delete).
+  - Stopping from Android's own controls (where your phone shows them) saves the video too. Pausing leaves no gap: the video plays straight through.
+  - **No internet permission.** Videos never leave the phone unless you share them.
+  - Note: the island's REC timer is on screen, so it's in the video too.
+- **Fixed: a module's recording could show twice.** A connected module's ongoing notification (for example Meeting Notes while recording) also appeared as a second timer next to the module's own card. The island now leaves those to the module's card.
+- The island lists Screen Recorder under **Modules → Get more**; nothing else in the island changed.
+
 ## 2.0.0 (31 Oct 2026): Three at once, and an open module ecosystem
 - **Three activities at once.** When several things run together (a recording, a delivery and a live score, say), the island shows one and the small circle beside it shows the next, with a **+1** badge for each one behind it. This keeps Apple's two-shape look while showing that more is running.
   - **Tap the circle** to switch: what's in the circle moves into the island, and the next one moves into the circle. Taps go through every activity and wrap around.

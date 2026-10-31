@@ -59,6 +59,10 @@ object NotificationParser {
         if (pkg == ctx.packageName || pkg == "android" || pkg == "com.android.systemui") return null
         if (prefs.isBlocked(pkg)) return null
         if ((n.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return null
+        // A connected module shows its own card (REC timer, progress…); its ongoing notification would
+        // show the same thing a second time, now visible with the "+1" circle (2.1).
+        if ((n.flags and (Notification.FLAG_ONGOING_EVENT or Notification.FLAG_FOREGROUND_SERVICE)) != 0 &&
+            com.ajit.dynamicisland.core.modules.ModuleRegistry.modules.value.any { it.pkg == pkg && it.connected }) return null
         val ex: Bundle = n.extras ?: Bundle()
         // Music is handled through MediaSessions (richer + controllable).
         if (ex.containsKey(Notification.EXTRA_MEDIA_SESSION)) return null

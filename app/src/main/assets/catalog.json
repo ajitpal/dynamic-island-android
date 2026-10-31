@@ -30,6 +30,16 @@
   "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
  },
  {
+  "id": "screen",
+  "name": "Screen Recorder",
+  "icon": "⏺️",
+  "package": "com.ajit.dynamicisland.module.screen",
+  "summary": "Record your screen from the island: countdown, REC timer with Pause and Stop, phone sound or mic, then Play or Share.",
+  "developer": "Ajit Kumar Pal",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
+ },
+ {
   "id": "speech",
   "name": "Speech Pack",
   "icon": "🗣",

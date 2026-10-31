@@ -218,6 +218,7 @@ Any format Android can decode works (it's converted to 16 kHz mono inside the Sp
 - **`modules/calendar`**, Calendar: uses the `READ_CALENDAR` permission (in the module only), a countdown, a progress phase, a Join link and `peek` at T-5 minutes.
 - **`modules/ai`**, AI Engine: LiteRT-LM, pinned model downloads with checksum, a bound AIDL service with caller checks, one request at a time with progress stages and a busy rule, idle unloading.
 - **`modules/voice`**, Meeting Notes: a tool that opens a translucent activity to start a `microphone` foreground service, a count-up REC card with live text and Pause/Stop buttons, on-device speech-to-text with Moonshine (English) or Android's on-device recognizer (Hindi, fed through `EXTRA_AUDIO_SOURCE`), file import, and a "saved" card that opens the transcript.
+- **`modules/screen`**, Screen Recorder: a tool that opens a translucent activity for Android's screen-capture consent, a `mediaProjection` (+ `microphone`) foreground service started before the projection (Android 14 rule), a virtual display into a hardware H.264 encoder plus AAC from the microphone and/or `AudioPlaybackCapture`, pause by dropping samples and closing the timestamp gap, MediaStore output, and Play / Share buttons that open your own HOST-protected activity.
 - **`modules/speech`**, Speech Pack: ONNX Runtime with a CTC model, decoding restricted to the scripts you want, Silero voice detection to split audio, a file-in / lines-out AIDL service, and resumable checksum-verified downloads.
 
 ## Contract stability
