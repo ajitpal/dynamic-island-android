@@ -69,6 +69,7 @@ object Updater {
                     onSuccess = { r ->
                         val ups = Repo.pending(r) { installedVersion(app, it) }
                         UPrefs.setAvailable(app, ups.size, r.version)
+                        PendingFile.write(app, ups.map { it.app })
                         set(if (ups.isEmpty()) State.UpToDate(now, r.version) else State.Available(r, ups.map { Item(it) }, now))
                         then(ups.size)
                     },
@@ -245,6 +246,7 @@ object Updater {
         val av = state as? State.Available ?: return
         val left = av.items.count { it.actionable }
         UPrefs.setAvailable(ctx, left, av.release.version)
+        PendingFile.write(ctx, av.items.filter { it.phase != Phase.DONE }.map { it.update.app })
         if (left == 0) set(State.UpToDate(System.currentTimeMillis(), av.release.version))
         UpdaterModule.instance?.refreshTile()
     }

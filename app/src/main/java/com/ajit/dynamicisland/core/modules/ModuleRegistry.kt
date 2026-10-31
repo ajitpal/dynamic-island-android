@@ -88,7 +88,23 @@ object ModuleRegistry {
     val tools: StateFlow<List<ModuleTool>> = _tools
 
     private val packageReceiver = object : BroadcastReceiver() {
-        override fun onReceive(c: Context, i: Intent) { main.postDelayed({ rescan() }, 500) }
+        override fun onReceive(c: Context, i: Intent) {
+            // An updated or removed module: drop the old connection first. Its binder is dead, and while the
+            // stale connection stayed in [conns] rescan() never bound the new version ("Connecting…" until
+            // the island restarted; fixed in 2.2.1).
+            val pkg = i.data?.schemeSpecificPart
+            if (pkg != null && (i.action == Intent.ACTION_PACKAGE_REPLACED || i.action == Intent.ACTION_PACKAGE_REMOVED ||
+                    i.getBooleanExtra(Intent.EXTRA_REPLACING, false)))
+                dropConnection(pkg)
+            main.postDelayed({ rescan() }, 500)
+        }
+    }
+
+    /** Forget a module's connection (cards and tile go with it) so the next rescan binds it fresh. */
+    private fun dropConnection(pkg: String) {
+        conns.remove(pkg)?.let { disconnect(it) }
+        ModuleUpdates.invalidate()
+        publish()
     }
 
     /** Idempotent. Called by the island service and by settings screens. */
@@ -307,9 +323,13 @@ object ModuleRegistry {
         }
 
         override fun onBindingDied(name: ComponentName?) {
-            module = null
-            clearCards(this)
+            // Android won't reconnect a dead binding: remove it, or rescan() would think it's still connected.
+            if (conns[info.pkg] === this) dropConnection(info.pkg) else { module = null; clearCards(this) }
             main.postDelayed({ rescan() }, 2000)
+        }
+
+        override fun onNullBinding(name: ComponentName?) {
+            if (conns[info.pkg] === this) dropConnection(info.pkg)
         }
     }
 

@@ -74,14 +74,28 @@ class CatalogProvider : ContentProvider() {
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
         if (mode != "r") throw SecurityException("read-only")
         val name = uri.lastPathSegment
-        if (name != SignedCatalog.FILE && name != SignedCatalog.SIG_FILE) throw FileNotFoundException(uri.toString())
+        if (name != SignedCatalog.FILE && name != SignedCatalog.SIG_FILE && name != PendingFile.NAME) throw FileNotFoundException(uri.toString())
         val f = CatalogSync.file(context!!, name)
         if (!f.exists()) throw FileNotFoundException(uri.toString())
         return ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY)
     }
-    override fun getType(uri: Uri): String? = if (uri.lastPathSegment == SignedCatalog.FILE) "application/json" else "application/octet-stream"
+    override fun getType(uri: Uri): String? = if (uri.lastPathSegment == SignedCatalog.SIG_FILE) "application/octet-stream" else "application/json"
     override fun query(uri: Uri, p: Array<out String>?, s: String?, a: Array<out String>?, o: String?): Cursor? = null
     override fun insert(uri: Uri, values: ContentValues?): Uri? = throw SecurityException("read-only")
     override fun delete(uri: Uri, s: String?, a: Array<out String>?) = throw SecurityException("read-only")
     override fun update(uri: Uri, v: ContentValues?, s: String?, a: Array<out String>?) = throw SecurityException("read-only")
 }
+
+/**
+ * The updates found by the last check (2.2.1), so the island's Modules tab can show "Update available"
+ * next to each module. Served by [CatalogProvider]; information only, installs still happen here.
+ */
+object PendingFile {
+    const val NAME = "updates.json"
+    fun write(ctx: Context, items: List<Release.App>) {
+        val arr = org.json.JSONArray()
+        items.forEach { a -> arr.put(org.json.JSONObject().put("package", a.pkg).put("name", a.name).put("versionName", a.versionName)) }
+        runCatching { CatalogSync.file(ctx, NAME).writeText(arr.toString()) }
+    }
+}
+

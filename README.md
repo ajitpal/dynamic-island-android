@@ -98,7 +98,7 @@ Optional add-on apps, each with its own permissions. Modules from this repo swit
 | 🔗 **Automation Bridge** 1.1.0 | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. | Two automation tools you name, Open (settings) | None |
 | ⏺️ **Screen Recorder** 1.0.0 | Record your screen from the island: 3-2-1 countdown, red REC timer with Pause and Stop, sound from the microphone, the phone or both, then Play or Share. Saved to Movies › Dynamic Island, never uploaded. | Record screen, Recordings | Microphone (only for sound), Notifications |
 | 🌤️ **Weather & AQI** 1.0.0 | The weather and India's air quality index (CPCB scale) in your island: a tile, an optional always-on temperature and AQI, and alerts before rain and when the air turns poor. Data from Open-Meteo; location only while you look. | Weather, Forecast & AQI | Internet (Open-Meteo only), Approximate location (optional, only while open) |
-| ⬇️ **Updater** 1.1.0 | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all. | Software Update | Internet (GitHub and the project website only), Install apps (you confirm each), Notifications |
+| ⬇️ **Updater** 1.2.0 | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all. | Software Update | Internet (GitHub and the project website only), Install apps (you confirm each), Notifications |
 <!-- /GEN:modules -->
 
 ## Install (2 minutes)
@@ -120,6 +120,7 @@ Step-by-step guides per brand, plus an ADB alternative: **[docs/INSTALL.md](docs
 | Accessibility service | Draw the island **above the status bar and lock screen**, and know which app is open (to hide its own activity). **No screen content is read** (`canRetrieveWindowContent=false`). |
 | Bluetooth (optional) | Show your earbuds' name |
 | Vibrate, network state, Wi-Fi state | Haptics; "offline / back online" and hotspot glimpses |
+| Request uninstall | **Uninstall** in a module's ⋯ menu. Android shows its own confirmation; the app can't remove anything by itself. |
 | **Internet** | **Not requested.** The app can't send anything anywhere. |
 
 Modules ask for their own permissions, only if you install them. For example, Meeting Notes asks for the microphone, and Meeting Notes and AI Engine use the internet only to download their models once.

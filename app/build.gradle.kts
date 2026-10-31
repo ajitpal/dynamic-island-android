@@ -20,8 +20,8 @@ android {
         applicationId = "com.ajit.dynamicisland"
         minSdk = 31          // Android 12+ (Poco M8 ships with Android 15 / HyperOS)
         targetSdk = 35
-        versionCode = 22
-        versionName = "2.2.0"
+        versionCode = 23
+        versionName = "2.2.1"
     }
 
     signingConfigs {
@@ -72,6 +72,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("io.github.takahirom.roborazzi:roborazzi:1.77.0")
     testImplementation("androidx.test:core-ktx:1.6.1")

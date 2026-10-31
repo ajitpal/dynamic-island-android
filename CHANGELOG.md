@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.1 (31 Oct 2026): Uninstalling and updating modules work properly
+- **Fixed: Uninstall in a module's ⋯ menu did nothing.** Since Android 9, an app needs the "request uninstall" permission before Android shows its uninstall confirmation, and the island didn't have it, so Android ignored the tap. The island now has it (you still confirm every uninstall in Android's own dialog), and if the confirmation can't open, App info opens with its Uninstall button.
+- **Fixed: a module stopped working in the island after it was updated.** When a module is updated, Android cuts the island's connection to it. The island kept the dead connection and never connected to the new version, so the module showed "Connecting…" and its tile, cards and shortcuts were missing until the island restarted. The island now drops that connection and connects to the updated module straight away (and the same after an uninstall).
+- **Module updates show in Modules.** When the Updater finds updates, the Modules tab shows "N Updates Available" at the top with **Update All**, and "Update available" on each module's card. Both open the Updater, which downloads, checks and installs them as before.
+- **Updater 1.2.0** shares the updates it found with the island (read-only, only the island can read it).
+
 ## 2.2.0 (31 Oct 2026): Weather & AQI
 - **New Weather & AQI module 1.0.0.** The weather and India's air quality index in your island.
   - **Tile** on the Island tab: temperature, sky, AQI and rain coming. The **Weather** island tool pops the weather open for a few seconds. **Keep in the Island** (off by default) shows the temperature and AQI beside the camera all the time.

@@ -14,6 +14,7 @@ import com.ajit.dynamicisland.core.Prefs
 import com.ajit.dynamicisland.core.modules.Catalog
 import com.ajit.dynamicisland.core.modules.ModuleInfo
 import com.ajit.dynamicisland.core.modules.ModuleRegistry
+import com.ajit.dynamicisland.core.modules.ModuleUpdates
 import com.ajit.dynamicisland.core.modules.Trust
 import com.ajit.dynamicisland.ui.hig.Hig
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -37,6 +38,7 @@ class ModulesTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
         dynamic.removeAllViews()
         val mods = ModuleRegistry.modules.value
         if (mods.isEmpty()) hig.note(dynamic, "No modules installed yet. Pick one below to add it.")
+        updates(mods)
         var focusView: View? = null
         mods.forEach { m -> val v = card(m); if (m.pkg == focusPkg) focusView = v }
         getMore(mods.map { it.pkg }.toSet())
@@ -59,6 +61,9 @@ class ModulesTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
         }
         s.add(hig.row(m.label, "${if (m.version.isNotEmpty()) "v${m.version} · " else ""}$trustText", hig.iconView(m.icon, 40), trailing = more,
             onClick = if (m.approved) ({ ModuleRegistry.openModule(a, m) }) else null))
+        ModuleUpdates.load(a).firstOrNull { it.pkg == m.pkg }?.let { u ->
+            s.add(hig.row("Update available · v${u.version}", "Installed v${m.version}", titleColor = hig.blue, chevron = true, onClick = { openUpdates() }))
+        }
         if (m.description.isNotBlank()) s.add(hig.text(m.description, Hig.Style.SUBHEAD, hig.secondary).apply { setPadding(hig.dp(16), hig.dp(10), hig.dp(16), hig.dp(10)) })
 
         when {
@@ -79,6 +84,32 @@ class ModulesTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
         return s.container
     }
 
+    /** Like the App Store's Updates: what the Updater module found, with one button to install them there. */
+    private fun updates(mods: List<ModuleInfo>) {
+        val ups = ModuleUpdates.load(a)
+        if (ups.isEmpty()) return
+        val s = hig.section(dynamic, if (ups.size == 1) "1 Update Available" else "${ups.size} Updates Available",
+            footer = "Updates are downloaded, checked and installed by the Updater module. Android asks you to confirm each app.")
+        s.add(hig.row(ups.joinToString(", ") { "${it.name} ${it.version}" }, null, titleColor = hig.label))
+        s.add(hig.action(if (ups.size == 1) "Update" else "Update All") { openUpdates() })
+    }
+
+    private fun openUpdates() {
+        if (!ModuleUpdates.openUpdater(a)) Setup.tryStart(a, Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ajitpal/dynamic-island-android/releases/latest")))
+    }
+
+    /**
+     * Android's own uninstall confirmation. Before 2.2.1 the island lacked REQUEST_DELETE_PACKAGES, so
+     * Android ignored the request without a word. If it still can't be opened, App info has Uninstall.
+     */
+    private fun uninstall(m: ModuleInfo) {
+        val ok = try { a.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:${m.pkg}"))); true } catch (e: Exception) { false }
+        if (!ok) {
+            android.widget.Toast.makeText(a, "Tap Uninstall on the next screen", android.widget.Toast.LENGTH_LONG).show()
+            Setup.openAppInfo(a, m.pkg)
+        }
+    }
+
     private fun menu(anchor: View, m: ModuleInfo) {
         val pm = PopupMenu(a, anchor, Gravity.END)
         val items = mutableListOf<Pair<String, () -> Unit>>()
@@ -94,7 +125,7 @@ class ModulesTab(private val a: AppCompatActivity, private val hig: Hig) : Tab {
             items += (if (shown) "Remove \"${t.label}\" from island tools" else "Add \"${t.label}\" to island tools") to { ModuleRegistry.setToolShown(t.fullId, !shown); refresh() }
         }
         if (m.approved) items += "Turn off" to { ModuleRegistry.setApproved(m.pkg, false) }
-        items += "Uninstall" to { a.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:${m.pkg}"))) }
+        items += "Uninstall…" to { uninstall(m) }
         items.forEachIndexed { i, (t, _) -> pm.menu.add(0, i, i, t) }
         pm.setOnMenuItemClickListener { items[it.itemId].second(); true }
         pm.show()

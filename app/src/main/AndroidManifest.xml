@@ -29,6 +29,8 @@
         android:description="@string/perm_host_desc"
         android:protectionLevel="signature" />
     <uses-permission android:name="com.ajit.dynamicisland.permission.HOST" />
+    <!-- "Uninstall" in Modules: without it Android ignores the request (Android 9+). Android still asks you to confirm. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <queries>
         <intent>
@@ -40,6 +42,11 @@
         </intent>
         <!-- The signed module catalogue the Updater module downloaded (read-only, verified here). -->
         <provider android:authorities="com.ajit.dynamicisland.module.updater.catalog" />
+        <!-- Uninstalling a module goes through Android's own confirmation. -->
+        <intent>
+            <action android:name="android.intent.action.DELETE" />
+            <data android:scheme="package" />
+        </intent>
     </queries>
 
     <application
