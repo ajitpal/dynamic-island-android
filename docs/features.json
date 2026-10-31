@@ -44,6 +44,9 @@
     {"id": "screen", "icon": "⏺️", "name": "Screen Recorder", "package": "com.ajit.dynamicisland.module.screen", "version": "1.0.0", "apk": "Island-Module-ScreenRecorder",
      "summary": "Record your screen from the island: 3-2-1 countdown, red REC timer with Pause and Stop, sound from the microphone, the phone or both, then Play or Share. Saved to Movies › Dynamic Island, never uploaded.",
      "links": ["Record screen", "Recordings"], "permissions": ["Microphone (only for sound)", "Notifications"]},
+    {"id": "weather", "icon": "🌤️", "name": "Weather & AQI", "package": "com.ajit.dynamicisland.module.weather", "version": "1.0.0", "apk": "Island-Module-Weather",
+     "summary": "The weather and India's air quality index (CPCB scale) in your island: a tile, an optional always-on temperature and AQI, and alerts before rain and when the air turns poor. Data from Open-Meteo; location only while you look.",
+     "links": ["Weather", "Forecast & AQI"], "permissions": ["Internet (Open-Meteo only)", "Approximate location (optional, only while open)"]},
     {"id": "updater", "icon": "⬇️", "name": "Updater", "package": "com.ajit.dynamicisland.module.updater", "version": "1.1.0", "apk": "Island-Module-Updater",
      "summary": "Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all.",
      "links": ["Software Update"], "permissions": ["Internet (GitHub and the project website only)", "Install apps (you confirm each)", "Notifications"]}

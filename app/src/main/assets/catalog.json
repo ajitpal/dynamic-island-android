@@ -68,5 +68,15 @@
   "developer": "Ajit Kumar Pal",
   "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
   "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
+ },
+ {
+  "id": "weather",
+  "name": "Weather & AQI",
+  "icon": "🌤️",
+  "package": "com.ajit.dynamicisland.module.weather",
+  "summary": "Weather and India's AQI (CPCB scale) in the island: tile, optional always-on temperature, rain-soon and poor-air alerts.",
+  "developer": "Ajit Kumar Pal",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501"
  }
 ]

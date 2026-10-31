@@ -1,0 +1,23 @@
+<resources>
+    <!-- Same palette as the Dynamic Island app (iPhone-style light and dark). -->
+    <style name="Theme.Module" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/hig_blue_fill</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorAccent">@color/hig_blue_fill</item>
+        <item name="android:colorBackground">@color/hig_bg</item>
+        <item name="android:windowBackground">@color/hig_bg</item>
+        <item name="android:textColorPrimary">@color/hig_label</item>
+        <item name="android:textColorSecondary">@color/hig_secondary</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/light_bars</item>
+    </style>
+    <style name="Theme.Module.Translucent" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Only to fetch the weather and air quality from Open-Meteo (no account, no ID). The island app never has internet. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Optional: "Current location", approximate, only while the Weather screen is open. Never in the background. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Keep the 30-minute update scheduled after a restart. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Island · Weather"
+        android:theme="@style/Theme.Module">
+
+        <service
+            android:name=".WeatherModule"
+            android:exported="true"
+            android:label="Weather &amp; AQI">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.MODULE" />
+            </intent-filter>
+            <meta-data android:name="com.ajit.dynamicisland.module.DESCRIPTION"
+                android:value="The weather and India's air quality index (CPCB scale) in your island: a tile, an optional always-on temperature, and alerts before rain and when the air turns poor. Data from Open-Meteo." />
+            <meta-data android:name="com.ajit.dynamicisland.module.SETTINGS_ACTIVITY" android:value=".MainActivity" />
+            <meta-data android:name="com.ajit.dynamicisland.module.DEVELOPER" android:value="Ajit Kumar Pal" />
+        </service>
+
+        <activity android:name=".MainActivity" android:exported="true" android:label="Weather" />
+
+        <!-- App-drawer entry on an alias, so the island can hide the icon (IslandContract.LAUNCHER_ALIAS). -->
+        <activity-alias
+            android:name=".Launcher"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <service
+            android:name=".UpdateJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Only the genuine island (HOST signature permission) can turn updates on or off. -->
+        <receiver
+            android:name=".ModuleStateReceiver"
+            android:exported="true"
+            android:permission="com.ajit.dynamicisland.permission.HOST">
+            <intent-filter>
+                <action android:name="com.ajit.dynamicisland.action.MODULE_STATE" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

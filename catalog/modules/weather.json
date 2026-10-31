@@ -1,0 +1,23 @@
+{
+  "id": "weather",
+  "name": "Weather & AQI",
+  "icon": "🌤️",
+  "package": "com.ajit.dynamicisland.module.weather",
+  "summary": "Weather and India's AQI (CPCB scale) in the island: tile, optional always-on temperature, rain-soon and poor-air alerts.",
+  "developer": "Ajit Kumar Pal",
+  "firstParty": true,
+  "repo": "https://github.com/ajitpal/dynamic-island-android/tree/main/modules/weather",
+  "download": "https://github.com/ajitpal/dynamic-island-android/releases/latest",
+  "certSha256": "12178c6a653dd8e19c2414b0f4375270706820c14b0fc42bc5137c44d5416501",
+  "permissions": [
+    {
+      "name": "android.permission.INTERNET",
+      "reason": "Fetches weather and air quality from Open-Meteo for the saved place"
+    },
+    {
+      "name": "android.permission.ACCESS_COARSE_LOCATION",
+      "reason": "Optional: approximate current location, only while the Weather screen is open"
+    }
+  ],
+  "privacy": "Sends only the place, rounded to about 1 km, to Open-Meteo, with no account or ID. Never uses location in the background."
+}

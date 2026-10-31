@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.0 (31 Oct 2026): Weather & AQI
+- **New Weather & AQI module 1.0.0.** The weather and India's air quality index in your island.
+  - **Tile** on the Island tab: temperature, sky, AQI and rain coming. The **Weather** island tool pops the weather open for a few seconds. **Keep in the Island** (off by default) shows the temperature and AQI beside the camera all the time.
+  - **Alerts** in the island: **rain due within 45 minutes** (at most once every two hours), and when the air turns **Poor (AQI 201+)** or gets worse (once per level per day). Each can be turned off.
+  - **India's AQI on the CPCB scale** (Good, Satisfactory, Moderate, Poor, Very Poor, Severe), with what each level means and the main pollutant. It's calculated the way CPCB does it, from PM2.5, PM10, NO₂, SO₂, O₃ and CO, using 24-hour averages (8-hour for O₃ and CO). The inputs are **model estimates** for your area (Copernicus CAMS, about 45 km), not a monitoring station's readings, and the app says so.
+  - **The Weather screen** (laid out like the iPhone Weather app): big temperature, today's high and low, feels-like, rain coming, air quality and the next 12 hours, with °C or °F.
+  - **Place:** **Current Location** (approximate, checked only while the Weather screen is open, never in the background) or **Choose City**. Only the place, rounded to about 1 km, is sent to Open-Meteo, with no account or ID. Updates every 30 minutes while the module is on; turning it off in Modules stops all downloads.
+  - Weather and air-quality data from **Open-Meteo.com** (CC BY 4.0) and the **Copernicus Atmosphere Monitoring Service**.
+- The island lists Weather & AQI under **Modules → Get more**; nothing else in the island changed.
+
 ## 2.1.0 (31 Oct 2026): Screen Recorder
 - **New Screen Recorder module 1.0.0.** Record your screen from the island, like Control Center's screen recording on an iPhone.
   - **Start** with the **Record screen** island tool, the tile on the Island tab or the app. Android asks each time what to record (the whole screen, or a single app where Android offers it).

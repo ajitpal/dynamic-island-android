@@ -68,6 +68,7 @@ This app aims to be the clean alternative:
 | 📅 **Calendar** (module) | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. |
 | 🔗 **Automation Bridge** (module) | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. |
 | ⏺️ **Screen Recorder** (module) | Record your screen from the island: 3-2-1 countdown, red REC timer with Pause and Stop, sound from the microphone, the phone or both, then Play or Share. Saved to Movies › Dynamic Island, never uploaded. |
+| 🌤️ **Weather & AQI** (module) | The weather and India's air quality index (CPCB scale) in your island: a tile, an optional always-on temperature and AQI, and alerts before rain and when the air turns poor. Data from Open-Meteo; location only while you look. |
 | ⬇️ **Updater** (module) | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all. |
 <!-- /GEN:features -->
 
@@ -96,6 +97,7 @@ Optional add-on apps, each with its own permissions. Modules from this repo swit
 | 📅 **Calendar** 1.1.0 | Next meeting countdown, a pop-up 5 minutes before with one-tap Join (Meet, Zoom, Teams, Webex), progress while it runs. | Next meeting, Open (settings) | Calendar |
 | 🔗 **Automation Bridge** 1.1.0 | Tasker, MacroDroid or adb can show cards and tools in the island, protected by a secret key. | Two automation tools you name, Open (settings) | None |
 | ⏺️ **Screen Recorder** 1.0.0 | Record your screen from the island: 3-2-1 countdown, red REC timer with Pause and Stop, sound from the microphone, the phone or both, then Play or Share. Saved to Movies › Dynamic Island, never uploaded. | Record screen, Recordings | Microphone (only for sound), Notifications |
+| 🌤️ **Weather & AQI** 1.0.0 | The weather and India's air quality index (CPCB scale) in your island: a tile, an optional always-on temperature and AQI, and alerts before rain and when the air turns poor. Data from Open-Meteo; location only while you look. | Weather, Forecast & AQI | Internet (Open-Meteo only), Approximate location (optional, only while open) |
 | ⬇️ **Updater** 1.1.0 | Keeps the island and every module up to date from GitHub Releases: checks once a day, shows what's new, and installs only after you tap Update and confirm. Also brings new listings to Modules → Get more between releases (signed catalogue). Off in Modules means no checks at all. | Software Update | Internet (GitHub and the project website only), Install apps (you confirm each), Notifications |
 <!-- /GEN:modules -->
 
