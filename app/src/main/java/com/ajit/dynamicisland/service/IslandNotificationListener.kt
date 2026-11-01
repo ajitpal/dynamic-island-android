@@ -21,9 +21,30 @@ class IslandNotificationListener : NotificationListenerService() {
         prefs = Prefs(this)
     }
 
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+
+    /**
+     * Safety net (issue #2): every 15 seconds, drop island items whose notification is gone. A missed
+     * "removed" callback (some skins skip it for ongoing notifications, or after the listener rebinds)
+     * left a recording timer running in the island after the recording had stopped.
+     */
+    private val reconcile = object : Runnable {
+        override fun run() {
+            try {
+                val live = activeNotifications?.mapTo(HashSet()) { "n:" + it.key }
+                if (live != null) IslandRepository.removeWhere { a ->
+                    a.id.startsWith("n:") && a.id !in live && a.id.removePrefix("n:") !in movedKeys && a.expiresAt == 0L
+                }
+            } catch (_: Exception) {}
+            handler.postDelayed(this, 15_000)
+        }
+    }
+
     override fun onListenerConnected() {
         super.onListenerConnected()
         connected = true
+        handler.removeCallbacks(reconcile)
+        handler.postDelayed(reconcile, 15_000)
         media = MediaTracker(this, ComponentName(this, IslandNotificationListener::class.java), prefs).also { it.start() }
         // Pick up things already running (a timer, a download, navigation) but don't re-announce old messages.
         try {
@@ -37,6 +58,7 @@ class IslandNotificationListener : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         connected = false
+        handler.removeCallbacks(reconcile)
         media?.stop(); media = null
         IslandRepository.removeWhere { it.id.startsWith("n:") }
         super.onListenerDisconnected()

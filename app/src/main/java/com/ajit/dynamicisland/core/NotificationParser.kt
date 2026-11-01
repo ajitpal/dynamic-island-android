@@ -124,7 +124,9 @@ object NotificationParser {
         // ---- Screen recording / voice recorder (red, like iOS) ---------------------------------
         if (ongoing && prefs.fRecording && RECORDER.containsMatchIn(pkg)) {
             val screen = pkg.contains("screen", ignoreCase = true)
-            val hasChrono = n.`when` in 1..now
+            // Count only while the recorder shows a running clock. A "saved" or "processing" notification also
+            // carries a time, and treating that as a timer kept REC counting after the recording ended (issue #2).
+            val hasChrono = chrono && !countDown && n.`when` in 1..now
             return IslandActivity(
                 id = id, kind = Kind.TIMER, packageName = pkg,
                 title = if (screen) "Screen recording" else (title ?: "Recording"), text = text ?: label,

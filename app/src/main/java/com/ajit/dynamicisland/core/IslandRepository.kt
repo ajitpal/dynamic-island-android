@@ -33,7 +33,10 @@ object IslandRepository {
         _activities.update { cur ->
             val old = cur[a.id]
             changed = old == null || old.contentHash != a.contentHash
-            cur + (a.id to a)
+            // Keep its place in the order: only something new that pops the island (a new message, an incoming
+            // call) moves to the front. Apps that re-post every second (recorders, downloads) used to become
+            // "newest" each time and swap places with the activity beside them: a flicker (issue #2).
+            cur + (a.id to if (old != null && !(a.peek && changed)) a.copy(updatedAt = old.updatedAt) else a)
         }
         if (a.peek && changed && !recentlyPeeked(a)) _peeks.tryEmit(a.id)
         if (a.expiresAt > 0) {

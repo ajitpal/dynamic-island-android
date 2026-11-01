@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.4.1 (2 Nov 2026): No more flicker, and recording timers that stop
+Fixes from [issue #2](https://github.com/ajitpal/dynamic-island-android/issues/2) (Galaxy S24 Ultra, One UI 9).
+- **Fixed: the island flickered when several things were running.** Apps that update their notification every second (screen recorders, downloads) moved to the front with every update, so with two or three activities the island and the circle beside it kept swapping. Activities now keep their place; only something new that pops the island (a new message, an incoming call) comes to the front.
+- **Fixed: the card redrew itself on every update.** The island and its expanded card now redraw only when something you can see changes (text, progress, buttons, artwork), not every time an app re-posts the same notification.
+- **Fixed: a screen-recording timer could keep running after the recording stopped.** The REC timer now counts only while the recorder's notification shows a running clock (a "saved" notification no longer restarts it), and every 15 seconds the island checks its items against the notifications that still exist and clears any left behind.
+
 ## 2.4.0 (2 Nov 2026): Info pill and pop-up size
 - **Info pill when idle** (requested in [issue #1](https://github.com/ajitpal/dynamic-island-android/issues/1)). Settings → Look and fit → **When idle** now has three choices: **Info Pill**, **Camera Only** (the invisible island, still the default) and **Hidden**.
   - The info pill stays as a small pill when nothing is running, with one item on each side of the camera. Choose each side: **Time**, **Battery** (bolt and green while charging, red at 15% or less), **Date**, **Next Alarm** (within 24 hours), **Unread Notifications**, **Network** or Nothing. Time and battery by default.

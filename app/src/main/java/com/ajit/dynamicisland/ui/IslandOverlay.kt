@@ -146,6 +146,8 @@ class IslandOverlay(
     private lateinit var geo: Geo
     private var mode = Mode.HIDDEN
     private var lastKey = ""
+    /** What was last drawn, so an update that changes nothing visible doesn't rebuild the island (issue #2). */
+    private var lastSig = ""
     private var curW = 0
     private var curH = 0
     private var curR = 0f
@@ -255,7 +257,7 @@ class IslandOverlay(
         geo = computeGeo()
         (compactGap.layoutParams as LinearLayout.LayoutParams).width = geo.camGap
         compactGap.requestLayout()
-        lastKey = ""
+        lastKey = ""; lastSig = ""
         refresh()
     }
 
@@ -370,6 +372,11 @@ class IslandOverlay(
     }
 
     private fun render(target: Mode, a: IslandActivity?) {
+        val privacyNow = prefs.fPrivacyDots && (IslandRepository.cameraInUse.value || IslandRepository.micInUse.value)
+        val sig = listOf(target, expandedId, inputFor, sigOf(a), sigOf(secondary), stack.hidden, privacyNow, IslandRepository.cameraInUse.value,
+            if (target == Mode.EXPANDED && isPanel(expandedId)) System.nanoTime() else 0).joinToString("|")
+        if (sig == lastSig && target != Mode.HIDDEN) return
+        lastSig = sig
         val key = "$target:${a?.id}:$expandedId:${inputFor}"
         val swap = key != lastKey
         lastKey = key
@@ -487,6 +494,12 @@ class IslandOverlay(
         }
         leftSpacer.requestLayout()
     }
+
+    /** Everything about an activity that changes how it looks (not its Drawable objects, which are new on every post). */
+    private fun sigOf(a: IslandActivity?): String = if (a == null) "-" else listOf(
+        a.id, a.kind, a.title, a.text, a.compactText, a.progress, a.indeterminate, a.chronoBase, a.countDown, a.incoming, a.isPlaying,
+        a.accent, a.image?.let { "${it.width}x${it.height}:${it.generationId}" }, a.actions.joinToString(",") { it.title }, hideContent(a),
+    ).joinToString("¦")
 
     // ------------------------------------------------------------------ info pill (2.4)
 
@@ -675,7 +688,7 @@ class IslandOverlay(
                     Mode.EXPANDED -> if (expandedId == TOOLS_ID && input == null) {
                         // Swipe between tool pages.
                         val pages = ToolLayout.pages(prefs.tools, prefs.toolsPerPage).size
-                        if (pages > 1) { toolsPage = (toolsPage + (if (velocityX < 0) 1 else pages - 1)) % pages; haptic(); rescheduleCollapse(); lastKey = ""; refresh() }
+                        if (pages > 1) { toolsPage = (toolsPage + (if (velocityX < 0) 1 else pages - 1)) % pages; haptic(); rescheduleCollapse(); lastKey = ""; lastSig = ""; refresh() }
                         else collapse()
                     } else if (input == null) collapse()
                     Mode.COMPACT -> primary?.let { dismissed[it.id] = it.contentHash; haptic(); refresh() }
@@ -959,7 +972,7 @@ class IslandOverlay(
             val unread = InboxStore.unreadCount(ctx)
             handler.post {
                 inboxCache = list; inboxUnread = unread
-                if (expandedId == INBOX_ID) { lastKey = ""; refresh() }
+                if (expandedId == INBOX_ID) { lastKey = ""; lastSig = ""; refresh() }
             }
         }.start()
     }
@@ -981,7 +994,7 @@ class IslandOverlay(
     override fun inboxAction(action: String) {
         haptic()
         when (action) {
-            "clear" -> { InboxStore.clearAll(ctx); inboxCache = emptyList(); inboxUnread = 0; lastKey = ""; refresh(force = true) }
+            "clear" -> { InboxStore.clearAll(ctx); inboxCache = emptyList(); inboxUnread = 0; lastKey = ""; lastSig = ""; refresh(force = true) }
             "all" -> { collapse(); launchIntent(Intent(ctx, com.ajit.dynamicisland.InboxActivity::class.java)) }
         }
     }
