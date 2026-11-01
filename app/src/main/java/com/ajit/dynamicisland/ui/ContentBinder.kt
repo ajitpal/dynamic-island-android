@@ -454,11 +454,49 @@ class ContentBinder(private val ctx: Context, private val host: Host) {
 
     fun bubbleIcon(a: IslandActivity, size: Int): View = leading(a, size)
 
+    /** Larger text in pop-ups (Settings → Look → Pop-ups, 2.4). Applies while [expanded] builds a card. */
+    var expandedScale = 1f
+    private var scale = 1f
+
+    /** Build a pop-up's content with the pop-up text size. */
+    fun expanded(build: ContentBinder.() -> View): View { scale = expandedScale; try { return build() } finally { scale = 1f } }
+
+    // ------------------------------------------------------------------ info pill (2.4)
+
+    /** One item each side of the camera when nothing is running (time, battery…). */
+    fun bindIdle(l: com.ajit.dynamicisland.core.IdleInfo.Cell?, r: com.ajit.dynamicisland.core.IdleInfo.Cell?, left: FrameLayout, right: FrameLayout, size: Int) {
+        left.removeAllViews(); right.removeAllViews()
+        l?.let { left.addView(idleCell(it, size), FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.START or Gravity.CENTER_VERTICAL)) }
+        r?.let { right.addView(idleCell(it, size), trailingParams()) }
+    }
+
+    private fun idleCell(c: com.ajit.dynamicisland.core.IdleInfo.Cell, size: Int): View {
+        val color = when { c.warn -> Colors.RED; c.good -> Colors.GREEN; else -> pal.fg }
+        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+        c.icon?.let { ic ->
+            val res = when (ic) {
+                com.ajit.dynamicisland.core.IdleInfo.Icon.BATTERY -> R.drawable.ic_battery
+                com.ajit.dynamicisland.core.IdleInfo.Icon.BOLT -> R.drawable.ic_bolt
+                com.ajit.dynamicisland.core.IdleInfo.Icon.ALARM -> R.drawable.ic_alarm
+                com.ajit.dynamicisland.core.IdleInfo.Icon.BELL -> R.drawable.ic_bell
+                com.ajit.dynamicisland.core.IdleInfo.Icon.WIFI -> R.drawable.ic_wifi
+                com.ajit.dynamicisland.core.IdleInfo.Icon.MOBILE -> R.drawable.ic_signal
+                com.ajit.dynamicisland.core.IdleInfo.Icon.OFFLINE -> R.drawable.ic_wifi_off
+            }
+            val s = (size * 0.62f).toInt()
+            row.addView(ImageView(ctx).apply { setImageDrawable(ContextCompat.getDrawable(ctx, res)); setColorFilter(color) }, LinearLayout.LayoutParams(s, s))
+        }
+        if (c.text.isNotEmpty()) row.addView(label(c.text, color, 13f, bold = true).apply {
+            if (c.icon != null) setPadding(dp(3), 0, 0, 0)
+        })
+        return row
+    }
+
     private fun label(text: CharSequence, color: Int, sp: Float, bold: Boolean = false, maxLines: Int = 1) =
         TextView(ctx).apply {
             this.text = text
             setTextColor(color)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, sp * scale)
             if (bold) typeface = android.graphics.Typeface.DEFAULT_BOLD
             this.maxLines = maxLines
             ellipsize = TextUtils.TruncateAt.END

@@ -59,6 +59,7 @@ class SettingsPages(private val a: AppCompatActivity, private val hig: Hig, priv
                 trailing = if (prefs.theme == th.id) hig.text("✓", Hig.Style.HEADLINE, hig.blue) else null,
                 onClick = { prefs.sp.edit().putString(Prefs.THEME, th.id).apply(); build(PAGE_LOOK) }))
         }
+        idle()
         val size = hig.section(column, "Size and shape", "Sizes start from your phone's status bar and camera hole. The real island updates while you drag.")
         slider(size, "Width", Prefs.WIDTH_SCALE, 60f, 180f, 100f, "%")
         slider(size, "Height", Prefs.HEIGHT_SCALE, 60f, 150f, 100f, "%")
@@ -66,6 +67,14 @@ class SettingsPages(private val a: AppCompatActivity, private val hig: Hig, priv
         slider(size, "Opacity", Prefs.OPACITY, 20f, 100f, 100f, "%")
         sw(size, "Glow outline in the activity's colour", Prefs.OUTLINE, false)
         slider(size, "Animation speed", Prefs.ANIM_SPEED, 50f, 200f, 100f, "%")
+        val pop = hig.section(column, "Pop-ups", "How wide a pop-up opens and how big its text is. How long it stays open is under Behaviour → Preview time.")
+        listOf("Narrow", "Standard", "Wide").forEachIndexed { i, label ->
+            pop.add(hig.row(label, if (i == 1) "Default" else null, trailing = if (prefs.popupWidth == i) check() else null,
+                onClick = { prefs.setInt(Prefs.POPUP_WIDTH, i); build(PAGE_LOOK) }).apply {
+                contentDescription = "Pop-up width $label" + if (prefs.popupWidth == i) ", selected" else ""
+            })
+        }
+        sw(pop, "Larger text in pop-ups", Prefs.POPUP_LARGE_TEXT, false)
         val fit = hig.section(column, "Invisible at rest",
             "With nothing running, the island shrinks to exactly your camera hole. Turn on Calibrate (the hole turns red), line it up with the sliders, then turn Calibrate off.")
         sw(fit, "Calibrate", Prefs.CALIBRATE, false, "Show the resting island in red")
@@ -74,6 +83,35 @@ class SettingsPages(private val a: AppCompatActivity, private val hig: Hig, priv
         slider(fit, "Move down", Prefs.OFFSET_Y, -20f, 40f, 0f, " dp")
         val r = hig.section(column)
         r.add(hig.action("Reset look and position", destructive = true) { prefs.resetLook(); build(PAGE_LOOK) })
+    }
+
+    private fun check() = hig.text("✓", Hig.Style.HEADLINE, hig.blue)
+
+    /** When nothing is running (2.4, GitHub issue #1): hidden, just the camera, or the info pill with two items you choose. */
+    private fun idle() {
+        val style = prefs.idleStyle
+        val s = hig.section(column, "When idle", when (style) {
+            com.ajit.dynamicisland.core.IdleInfo.Style.INFO -> "With nothing running, the island stays as a small pill showing what you choose on each side of the camera. Long-press it for your tools."
+            com.ajit.dynamicisland.core.IdleInfo.Style.CAMERA -> "With nothing running, the island shrinks to exactly your camera hole, so it's invisible."
+            com.ajit.dynamicisland.core.IdleInfo.Style.HIDDEN -> "With nothing running, the island is hidden. Long-press needs the pill, so tools open from the app."
+        })
+        com.ajit.dynamicisland.core.IdleInfo.Style.entries.reversed().forEach { st ->
+            s.add(hig.row(st.label, trailing = if (st == style) check() else null, onClick = {
+                prefs.setIdleStyle(st); build(PAGE_LOOK)
+            }).apply { contentDescription = st.label + if (st == style) ", selected" else "" })
+        }
+        if (style == com.ajit.dynamicisland.core.IdleInfo.Style.INFO) {
+            val items = hig.section(column, "Info pill")
+            fun pick(left: Boolean) {
+                val all = com.ajit.dynamicisland.core.IdleInfo.Item.entries
+                val cur = if (left) prefs.idleLeft else prefs.idleRight
+                MaterialAlertDialogBuilder(a).setTitle(if (left) "Left of the Camera" else "Right of the Camera")
+                    .setSingleChoiceItems(all.map { it.label }.toTypedArray(), all.indexOf(cur)) { d, i -> prefs.setIdleItem(left, all[i]); d.dismiss(); build(PAGE_LOOK) }
+                    .setNegativeButton("Cancel", null).show()
+            }
+            items.add(hig.nav("Left of the Camera", value = prefs.idleLeft.label) { pick(true) })
+            items.add(hig.nav("Right of the Camera", value = prefs.idleRight.label) { pick(false) })
+        }
     }
 
     // ---- What shows ----
@@ -104,7 +142,6 @@ class SettingsPages(private val a: AppCompatActivity, private val hig: Hig, priv
         slider(s, "Preview time", Prefs.PEEK_SECONDS, 2f, 10f, 5f, " s")
         sw(s, "Haptic feedback", Prefs.HAPTICS, true)
         val h = hig.section(column, "Hide", "Accessibility: if Android's \"Time to take action\" is set longer, previews stay open at least that long.")
-        sw(h, "Show the idle pill around the camera", Prefs.SHOW_IDLE, true)
         sw(h, "Hide message text on the lock screen", Prefs.PRIVACY_LOCK, true)
         sw(h, "Hide an app's activity while it's open", Prefs.HIDE_FG_APP, true)
         sw(h, "Hide in landscape", Prefs.HIDE_LANDSCAPE, true)

@@ -17,6 +17,8 @@ Dynamic Island grows as a **small core app plus optional add-on modules**. Each 
 | 5c. Weather & AQI | 2.2 | **Weather & AQI** module: Open-Meteo weather (now, today's high/low, next 12 hours), India's AQI computed on the CPCB scale from CAMS model data (PM2.5, PM10, NO₂, SO₂, O₃, CO with CPCB averaging), rain-in-45-minutes and Poor-air alerts in the island, tile, optional always-on temperature + AQI, current location only while the screen is open, °C/°F | ✅ shipped (2.2.0) |
 | 5d. Scanner | 2.3 | **Scanner** module: QR codes and barcodes (ZXing, on the phone) shown in the island with the right buttons (open link, join Wi-Fi, pay with UPI, call, email, add contact, search a product), and documents to one PDF (automatic page corners you can drag, perspective straightening, Color / Grayscale / Black & White), scan history, no ML Kit and no internet | ✅ shipped (2.3.0) |
 
+| 6. Requests | 2.4 | **Info pill** when idle (time, battery, date, next alarm, unread, network; choose each side of the camera) and **pop-up width and text size**, from [issue #1](https://github.com/ajitpal/dynamic-island-android/issues/1) | ✅ shipped (2.4.0) |
+
 **Not planned: IzzyOnDroid.** Its inclusion policy rejects apps written with generative AI tools and apps that integrate LLMs, and Dynamic Island is openly built with Claude. Install from GitHub Releases, keep up to date with the Updater module, or use Obtainium.
 
 ## Module security model (Phase 2, designed for third parties)

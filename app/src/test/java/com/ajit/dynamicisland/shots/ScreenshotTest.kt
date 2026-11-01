@@ -212,6 +212,30 @@ class ScreenshotTest {
         draw(frame, "island-06-all-activities", 786)
     }
 
+    /** 2.4: the info pill when nothing is running (time left of the camera, battery right). */
+    @Test fun infoPill() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val themed = android.view.ContextThemeWrapper(ctx, com.ajit.dynamicisland.R.style.Theme_Island_Overlay)
+        val binder = ContentBinder(themed, FakeHost(Themes.byId("black")))
+        val col = LinearLayout(themed).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(0xFF1B2A4A.toInt()); setPadding(24, 30, 24, 30) }
+        val h = 88
+        fun pill(now: com.ajit.dynamicisland.core.IdleInfo.Now, l: com.ajit.dynamicisland.core.IdleInfo.Item, r: com.ajit.dynamicisland.core.IdleInfo.Item) {
+            val row = LinearLayout(themed).apply { gravity = android.view.Gravity.CENTER_VERTICAL; background = com.ajit.dynamicisland.ui.rounded(Color.BLACK, h / 2f); setPadding(28, 0, 28, 0) }
+            val left = FrameLayout(themed); val right = FrameLayout(themed)
+            binder.bindIdle(com.ajit.dynamicisland.core.IdleInfo.cell(l, now), com.ajit.dynamicisland.core.IdleInfo.cell(r, now), left, right, 64)
+            row.addView(left, LinearLayout.LayoutParams(0, h, 1f)); row.addView(View(themed), LinearLayout.LayoutParams(70, 1)); row.addView(right, LinearLayout.LayoutParams(0, h, 1f))
+            col.addView(row, LinearLayout.LayoutParams(400, h).apply { gravity = android.view.Gravity.CENTER_HORIZONTAL; bottomMargin = 22 })
+        }
+        val n = com.ajit.dynamicisland.core.IdleInfo.Now(9, 41, false, "Sun", 1, 84, false, 6 to 30, 3, com.ajit.dynamicisland.core.IdleInfo.Net.WIFI)
+        pill(n, com.ajit.dynamicisland.core.IdleInfo.Item.TIME, com.ajit.dynamicisland.core.IdleInfo.Item.BATTERY)
+        pill(n.copy(battery = 12, charging = true), com.ajit.dynamicisland.core.IdleInfo.Item.DATE, com.ajit.dynamicisland.core.IdleInfo.Item.BATTERY)
+        pill(n, com.ajit.dynamicisland.core.IdleInfo.Item.ALARM, com.ajit.dynamicisland.core.IdleInfo.Item.UNREAD)
+        col.measure(View.MeasureSpec.makeMeasureSpec(786, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+        col.layout(0, 0, col.measuredWidth, col.measuredHeight)
+        val bmp = android.graphics.Bitmap.createBitmap(col.measuredWidth, col.measuredHeight, android.graphics.Bitmap.Config.ARGB_8888)
+        col.draw(android.graphics.Canvas(bmp)); bmp.captureRoboImage(out("island-07-info-pill"), opts)
+    }
+
     private class FakeHost(override val palette: Palette) : ContentBinder.Host {
         override fun hideContent(a: IslandActivity) = false
         override fun open(a: IslandActivity) {}

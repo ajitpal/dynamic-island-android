@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.4.0 (2 Nov 2026): Info pill and pop-up size
+- **Info pill when idle** (requested in [issue #1](https://github.com/ajitpal/dynamic-island-android/issues/1)). Settings → Look and fit → **When idle** now has three choices: **Info Pill**, **Camera Only** (the invisible island, still the default) and **Hidden**.
+  - The info pill stays as a small pill when nothing is running, with one item on each side of the camera. Choose each side: **Time**, **Battery** (bolt and green while charging, red at 15% or less), **Date**, **Next Alarm** (within 24 hours), **Unread Notifications**, **Network** or Nothing. Time and battery by default.
+  - It keeps itself up to date, works with your theme, width, height and roundness, and steps aside as soon as something runs. Long-press it for your tools and swipe down for the Inbox, as before. TalkBack reads it ("9:41, Battery 84 percent").
+  - No new permission; the app is still offline.
+- **Pop-up size:** Settings → Look and fit → **Pop-ups**: width (**Narrow**, **Standard** or **Wide**) and **Larger text in pop-ups**. How long a pop-up stays open is still under Behaviour → Preview time.
+- The "Show the idle pill around the camera" switch in Behaviour moved into **When idle** (Hidden is the same as turning it off).
+
 ## 2.3.0 (31 Oct 2026): Scanner
 - **New Scanner module 1.0.0.** Scan codes and documents from the island, without Google ML Kit and without internet.
   - **Scan Code** (island tool, tile or app): point the camera at a QR code or barcode (QR, Data Matrix, Aztec, PDF417, EAN/UPC, Code 128/39, ITF), or choose a photo. As soon as it's read, the camera closes and the island shows what it is, with the right buttons:

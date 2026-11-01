@@ -305,7 +305,10 @@ class IslandOverlay(
         // The window's top is the compact pill's top; smaller shapes are centred on the camera inside it.
         val top = max(0, camCy - compactH / 2)
         IslandDebug.geometry = "statusBar=${sbH}px cutout=${cut?.toShortString() ?: "none"} cam=${camD}px idle=${idle}px compact=${compactW}x${compactH}px"
-        return Geo(sw, sh, cx, top, idle, idle, camD + dp(10), sw - dp(16), compactH, compactW)
+        // Pop-up width (Settings → Look → Pop-ups): narrow, standard (today's) or wide.
+        val expandedW = when (prefs.popupWidth) { 0 -> (sw * 0.84f).roundToInt(); 2 -> sw - dp(6); else -> sw - dp(16) }
+        binder.expandedScale = if (prefs.popupLargeText) 1.18f else 1f
+        return Geo(sw, sh, cx, top, idle, idle, camD + dp(10), expandedW, compactH, compactW)
     }
 
     // ------------------------------------------------------------------ state machine
@@ -389,7 +392,22 @@ class IslandOverlay(
         pill.contentDescription = a?.let { "${it.title}. ${it.text ?: ""}" } ?: "Dynamic Island"
 
         when (target) {
-            Mode.IDLE -> {
+            Mode.IDLE -> if (prefs.idleStyle == com.ajit.dynamicisland.core.IdleInfo.Style.INFO && !prefs.calibrate) {
+                // Info pill (2.4): one item left and one right of the camera, kept current every second.
+                expandedHost.isVisible = false
+                compactRow.isVisible = true
+                privacyDot.isVisible = privacy
+                setBubble(null)
+                compactLeft.setPadding((g.compactH * 0.32f).roundToInt(), 0, 0, 0)
+                compactRight.setPadding(0, 0, if (privacy) dp(22) else (g.compactH * 0.32f).roundToInt(), 0)
+                idleKey = ""
+                bindInfoPill()
+                tickers += { bindInfoPill() }
+                applyLook(null)
+                val extra = (g.compactH * 3.4f * prefs.widthScale).roundToInt()
+                animateTo((g.compactW + extra).coerceAtMost(g.screenW - dp(24)), g.compactH, pillRadius(g.compactH))
+                if (swap) fadeIn(compactRow)
+            } else {
                 compactRow.isVisible = false
                 expandedHost.isVisible = false
                 privacyDot.isVisible = privacy
@@ -425,13 +443,13 @@ class IslandOverlay(
                     val ids = prefs.tools
                     val pages = ToolLayout.pages(ids, prefs.toolsPerPage)
                     toolsPage = toolsPage.coerceIn(0, pages.size - 1)
-                    binder.buildTools(topPad, pages[toolsPage].mapNotNull { toolCell(it) }, toolsPage, pages.size, input)
+                    binder.expanded { buildTools(topPad, pages[toolsPage].mapNotNull { toolCell(it) }, toolsPage, pages.size, input) }
                 } else if (expandedId == INBOX_ID) {
-                    binder.buildInbox(topPad, inboxCache, inboxUnread, isLocked())
+                    binder.expanded { buildInbox(topPad, inboxCache, inboxUnread, isLocked()) }
                 } else if (expandedId == STACK_ID) {
-                    binder.buildStack(topPad, stack.all.take(com.ajit.dynamicisland.core.IslandStack.LIST_MAX), stack.primary?.id, stack.count)
+                    binder.expanded { buildStack(topPad, stack.all.take(com.ajit.dynamicisland.core.IslandStack.LIST_MAX), stack.primary?.id, stack.count) }
                 } else {
-                    binder.buildExpanded(a!!, topPad, if (inputFor == a.id) input else null)
+                    binder.expanded { buildExpanded(a!!, topPad, if (inputFor == a.id) input else null) }
                 }
                 expandedHost.addView(content)
                 content.measure(
@@ -468,6 +486,55 @@ class IslandOverlay(
             (leftSpacer.layoutParams as LinearLayout.LayoutParams).width = bubbleW
         }
         leftSpacer.requestLayout()
+    }
+
+    // ------------------------------------------------------------------ info pill (2.4)
+
+    private var idleKey = ""
+
+    /** Rebuild the two items only when what they say changes (the ticker runs twice a second). */
+    private fun bindInfoPill() {
+        val now = idleNow()
+        val l = com.ajit.dynamicisland.core.IdleInfo.cell(prefs.idleLeft, now)
+        val r = com.ajit.dynamicisland.core.IdleInfo.cell(prefs.idleRight, now)
+        val key = "$l|$r"
+        if (key == idleKey) return
+        idleKey = key
+        binder.bindIdle(l, r, compactLeft, compactRight, (geo.compactH * 0.74f).roundToInt())
+        pill.contentDescription = com.ajit.dynamicisland.core.IdleInfo.spoken(l, r)
+    }
+
+    private fun idleNow(): com.ajit.dynamicisland.core.IdleInfo.Now {
+        val c = java.util.Calendar.getInstance()
+        val bm = ctx.getSystemService(android.os.BatteryManager::class.java)
+        val level = bm?.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+        val alarm = try {
+            ctx.getSystemService(android.app.AlarmManager::class.java)?.nextAlarmClock?.triggerTime
+                ?.takeIf { it - System.currentTimeMillis() in 0..24 * 3600_000L }
+                ?.let { t -> java.util.Calendar.getInstance().apply { timeInMillis = t }.let { it.get(java.util.Calendar.HOUR_OF_DAY) to it.get(java.util.Calendar.MINUTE) } }
+        } catch (e: Exception) { null }
+        val cm = ctx.getSystemService(android.net.ConnectivityManager::class.java)
+        val caps = try { cm?.getNetworkCapabilities(cm.activeNetwork) } catch (e: Exception) { null }
+        val net = when {
+            caps == null -> com.ajit.dynamicisland.core.IdleInfo.Net.OFFLINE
+            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) -> com.ajit.dynamicisland.core.IdleInfo.Net.WIFI
+            else -> com.ajit.dynamicisland.core.IdleInfo.Net.MOBILE
+        }
+        if (prefs.idleLeft == com.ajit.dynamicisland.core.IdleInfo.Item.UNREAD || prefs.idleRight == com.ajit.dynamicisland.core.IdleInfo.Item.UNREAD) refreshUnread()
+        return com.ajit.dynamicisland.core.IdleInfo.Now(
+            c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE), android.text.format.DateFormat.is24HourFormat(ctx),
+            java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault()).format(c.time), c.get(java.util.Calendar.DAY_OF_MONTH),
+            level, bm?.isCharging == true, alarm, inboxUnread, net,
+        )
+    }
+
+    private var unreadAt = 0L
+    /** The unread count lives in the encrypted inbox: read it off the main thread, at most every 20 s. */
+    private fun refreshUnread(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - unreadAt < 20_000) return
+        unreadAt = now
+        Thread { val n = InboxStore.unreadCount(ctx); handler.post { inboxUnread = n } }.start()
     }
 
     // ------------------------------------------------------------------ animation & window
@@ -898,7 +965,10 @@ class IslandOverlay(
     }
 
     /** Called when the inbox changes (new notification, cleared…). */
-    fun onInboxChanged() { if (expandedId == INBOX_ID && input == null) loadInbox() }
+    fun onInboxChanged() {
+        if (expandedId == INBOX_ID && input == null) loadInbox()
+        refreshUnread(force = true)
+    }
 
     override fun openInbox(e: InboxEntry) {
         haptic()

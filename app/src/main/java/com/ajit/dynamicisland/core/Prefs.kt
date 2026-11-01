@@ -27,6 +27,22 @@ class Prefs(context: Context) {
 
     // Behaviour
     val showIdle get() = b(SHOW_IDLE, true)
+    /** When nothing runs: hidden, just the camera hole, or the info pill (2.4). */
+    val idleStyle: IdleInfo.Style get() = when {
+        !showIdle -> IdleInfo.Style.HIDDEN
+        sp.getString(IDLE_STYLE, null) == IdleInfo.Style.INFO.name -> IdleInfo.Style.INFO
+        else -> IdleInfo.Style.CAMERA
+    }
+    fun setIdleStyle(s: IdleInfo.Style) = sp.edit().putBoolean(SHOW_IDLE, s != IdleInfo.Style.HIDDEN)
+        .putString(IDLE_STYLE, if (s == IdleInfo.Style.INFO) s.name else IdleInfo.Style.CAMERA.name).apply()
+    val idleLeft get() = item(IDLE_LEFT, IdleInfo.Item.TIME)
+    val idleRight get() = item(IDLE_RIGHT, IdleInfo.Item.BATTERY)
+    private fun item(key: String, def: IdleInfo.Item) = runCatching { IdleInfo.Item.valueOf(sp.getString(key, def.name)!!) }.getOrDefault(def)
+    fun setIdleItem(left: Boolean, item: IdleInfo.Item) = sp.edit().putString(if (left) IDLE_LEFT else IDLE_RIGHT, item.name).apply()
+
+    /** Pop-up (expanded island) width: 0 narrow, 1 standard, 2 wide. */
+    val popupWidth get() = sp.getInt(POPUP_WIDTH, 1).coerceIn(0, 2)
+    val popupLargeText get() = b(POPUP_LARGE_TEXT, false)
     val peek get() = b(PEEK, true)
     /** Tap the compact island to preview the full notification instead of opening the app. */
     val tapPreview get() = b(TAP_PREVIEW, true)
@@ -131,6 +147,11 @@ class Prefs(context: Context) {
         const val F_PAYMENTS = "f_payments"
         const val F_RECORDING = "f_recording"
         const val SHOW_IDLE = "show_idle"
+        const val IDLE_STYLE = "idle_style"
+        const val IDLE_LEFT = "idle_left"
+        const val IDLE_RIGHT = "idle_right"
+        const val POPUP_WIDTH = "popup_width"
+        const val POPUP_LARGE_TEXT = "popup_large_text"
         const val PEEK = "peek"
         const val TAP_PREVIEW = "tap_preview"
         const val UNLOCK_ANIM = "unlock_anim"

@@ -54,10 +54,11 @@ This app aims to be the clean alternative:
 | ⚡ **System glimpses** | Charging, low battery, silent/vibrate, DND, earbuds + battery, airplane mode, offline / back online, hotspot, NFC, unlock, flashlight |
 | 🔴 **Recording** | Screen and voice recording with a red REC timer, camera/mic in-use dots |
 | 🫧 **Three at once** | Several activities run together: one in the island, the next in a circle beside it with a +1 badge. Tap to switch, touch and hold to see them all |
+| 🔋 **Info pill** | Optional: when nothing is running, a small pill shows what you choose beside the camera (time, battery, date, next alarm, unread count or network) |
 | 🧰 **Island tools** | Long-press the empty island: 25+ tools you choose and arrange, any app, and shortcuts from your modules |
 | 📥 **Notification Inbox** | Every notification kept (encrypted, on-device) until you clear it: search, filters, OTP copy, ✨ Catch me up |
 | 🚫 **No double pop-ups** | Turn off system banners per app, or move notifications into the island; never pops twice |
-| 🎨 **Make it yours** | 7 themes, width, height, roundness, opacity, glow outline, animation speed |
+| 🎨 **Make it yours** | 7 themes, width, height, roundness, opacity, glow outline, animation speed, pop-up width and text size |
 | 📱 **Simple app** | A short first-run setup, then three tabs (Island, Modules, Settings) laid out the way iPhone settings are |
 | ⏻ **On/off switch** | Turn the island off and on from the app or a Quick Settings tile; your Inbox keeps working |
 | ♿ **Accessible** | Large-text ready, 48 dp touch targets, TalkBack labels, respects reduced motion and your "time to take action" setting |

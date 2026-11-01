@@ -20,8 +20,8 @@ android {
         applicationId = "com.ajit.dynamicisland"
         minSdk = 31          // Android 12+ (Poco M8 ships with Android 15 / HyperOS)
         targetSdk = 35
-        versionCode = 24
-        versionName = "2.3.0"
+        versionCode = 25
+        versionName = "2.4.0"
     }
 
     signingConfigs {

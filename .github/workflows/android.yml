@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Its own Python: `pip install` into the runner's system Python can be refused (PEP 668).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: README and website match docs/features.json
         run: python3 tools/gen_docs.py --check
       - name: Versions, changelog, roadmap and screenshots are consistent
