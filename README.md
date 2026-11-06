@@ -6,6 +6,8 @@
 Music, calls, timers, message previews with quick reply, live scores, deliveries, payments, charging and more.
 At rest it shrinks into your camera hole and disappears.
 
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/ajitpal/badge.svg)](https://hub.xerj.org/contributors/ajitpal)
+
 [**Website**](https://ajitpal.github.io/dynamic-island-android/) ·
 [**Download APK**](https://github.com/ajitpal/dynamic-island-android/releases/latest) ·
 [Install guide](docs/INSTALL.md) ·
